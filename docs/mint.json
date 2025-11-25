@@ -1,0 +1,52 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Blindly Documentation",
+  "logo": {
+    "dark": "/images/main-trans.png",
+    "light": "/images/main-trans.png"
+  },
+  "favicon": "/favicon.ico",
+  "colors": {
+    "primary": "#ba18cc",
+    "light": "#9018cc",
+    "dark": "#0D9373",
+    "anchors": {
+      "from": "#ba370f",
+      "to": "#eb6e49"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Contact",
+      "url": "mailto:kartik.mellob@coffeecodes.in"
+    },
+    {
+      "name": "Portfolio of creator",
+      "url": "https://mellob.in"
+    }
+  ],
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Blog",
+      "icon": "newspaper",
+      "url": "https://blogs.mellob.in"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": ["introduction"]
+    }
+  ],
+  "footerSocials": {
+    "x": "https://x.com/mellob1989",
+    "github": "https://github.com/MelloB1989/karma",
+    "linkedin": "https://www.linkedin.com/in/mellobai"
+  }
+}
