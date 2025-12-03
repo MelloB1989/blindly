@@ -1,5 +1,16 @@
 {
+  "name": "blindly",
+  "version": "1.0.0",
+  "scripts": {
+    "db:generate": "cd db && npx drizzle-kit generate"
+  },
   "dependencies": {
-    "turbo": "^2.6.1"
+    "turbo": "^2.6.1",
+    "@neondatabase/serverless": "^0.9.4",
+    "drizzle-orm": "^0.32.1",
+    "postgres": "^3.4.4"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.23.0"
   }
 }

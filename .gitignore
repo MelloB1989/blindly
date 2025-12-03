@@ -4,3 +4,4 @@ node_modules
 .env.prod
 .env.stage
 .env.test
+llm-docs
