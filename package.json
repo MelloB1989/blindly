@@ -2,7 +2,12 @@
   "name": "blindly",
   "version": "1.0.0",
   "scripts": {
-    "db:generate": "cd db && npx drizzle-kit generate"
+    "db:generate": "cd db && npx drizzle-kit generate",
+    "db:migrate": "cd db && npx drizzle-kit migrate",
+    "gqlgen": "cd services && go run github.com/99designs/gqlgen generate",
+    "start:backend": "cd services && go run main.go",
+    "start:app": "cd expo && bunx expo start",
+    "build:backend": "cd services && go build -o backend"
   },
   "dependencies": {
     "turbo": "^2.6.1",

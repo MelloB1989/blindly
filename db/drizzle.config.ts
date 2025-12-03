@@ -1,23 +1,28 @@
 import type { Config } from "drizzle-kit";
 
+if (
+  !process.env.DB_HOST ||
+  !process.env.DB_USER ||
+  !process.env.DB_PASSWORD ||
+  !process.env.DB_NAME ||
+  !process.env.DB_PORT
+) {
+  console.error(
+    "DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, or DB_PORT environment variable is not set",
+  );
+  process.exit(1);
+}
+
 export default {
   schema: "./db/schema.ts",
   out: "./drizzle",
-  dialect: "postgresql", // 'pg' | 'mysql2' | 'better-sqlite' | 'libsql' | 'turso'
+  dialect: "postgresql",
   dbCredentials: {
-    host: "10.2.0.130",
-    user: "mellob",
-    password: "mellob1989",
-    database: "lyzn-prod",
-    // database: "n8n",
-    port: 5432,
-    ssl: false,
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: Number(process.env.DB_PORT),
+    ssl: process.env.DB_SSL === "true" ? true : false,
   },
-  // dbCredentials: {
-  //   host: "ep-gentle-boat-a83pm7ga-pooler.eastus2.azure.neon.tech",
-  //   user: "neondb_owner",
-  //   password: "npg_xasbqiC9r2NS",
-  //   database: "neondb",
-  //   ssl: true,
-  // },
 } satisfies Config;
