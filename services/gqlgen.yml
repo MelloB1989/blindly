@@ -1,0 +1,54 @@
+schema:
+  - internal/graph/**/*.graphqls
+exec:
+  package: graph
+  layout: single-file
+
+  filename: internal/graph/generated.go
+
+model:
+  filename: internal/graph/model/models_gen.go
+  package: model
+
+resolver:
+  package: graph
+  layout: follow-schema
+
+  dir: internal/graph
+  filename_template: "{name}.resolvers.go"
+
+call_argument_directives_with_null: true
+
+models:
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.ID
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int64
+      - github.com/99designs/gqlgen/graphql.Int32
+  UUID:
+    model:
+      - github.com/99designs/gqlgen/graphql.UUID
+  Int:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int32
+  Int64:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int64
+  Float:
+    model:
+      - github.com/99designs/gqlgen/graphql.Float
+  Float64:
+    model:
+      - github.com/99designs/gqlgen/graphql.Float64
+
+  # User models
+  User:
+    model: blindly/internal/models.User
+  Address:
+    model: blindly/internal/models.Address
+
+directives:
+  auth:
+    implementation: "directives.AuthDirective"
