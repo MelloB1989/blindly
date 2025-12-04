@@ -14,7 +14,7 @@ if (
 }
 
 export default {
-  schema: "./db/schema.ts",
+  schema: "./schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
