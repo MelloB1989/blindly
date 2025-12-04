@@ -1,13 +1,18 @@
 {
   "name": "blindly",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "scripts": {
+    "release:patch": "npm version patch && git push && git push --tags",
+    "release:minor": "npm version minor && git push && git push --tags",
+    "release:major": "npm version major && git push && git push --tags",
+    "sync:expo": "node ./scripts/sync_expo_appjson.js",
     "db:generate": "cd db && npx drizzle-kit generate",
     "db:migrate": "cd db && npx drizzle-kit migrate",
-    "gqlgen": "cd services && go run github.com/99designs/gqlgen@v0.17.84 generate",
-    "start:backend": "cd services && go run main.go",
-    "start:app": "cd expo && bunx expo start",
-    "build:backend": "cd services && go build -o backend"
+    "db:browser": "cd db && npx drizzle-kit studio",
+    "gqlgen": "cd services && (go run github.com/99designs/gqlgen@v0.17.84 generate || true) && go run ./tools/add_import.go",
+    "start:backend": "cd services && go run -ldflags \"-X main.Version=$(git describe --tags --always --dirty)\" main.go",
+    "start:app": "npm run sync:expo && cd expo && bunx expo start",
+    "build:backend": "cd services && go build -ldflags \"-X main.Version=$(git describe --tags --always --dirty)\" -o backend"
   },
   "dependencies": {
     "turbo": "^2.6.1",

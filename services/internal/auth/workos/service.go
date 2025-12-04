@@ -21,7 +21,7 @@ func NewWorkosAuth() auth.AuthService {
 
 func (*WorkosAuth) CreateUser(u model.CreateUserInput) (*model.AuthPayload, error) {
 	usermanagement.SetAPIKey(
-		config.GetEnvRaw("WORKOS_API_KEY"),
+		getWorkosClient().ApiKey,
 	)
 
 	user, err := usermanagement.CreateUser(
@@ -81,13 +81,13 @@ func (*WorkosAuth) CreateUser(u model.CreateUserInput) (*model.AuthPayload, erro
 
 func (*WorkosAuth) LoginWithPassword(email, password string) (*model.AuthPayload, error) {
 	usermanagement.SetAPIKey(
-		config.GetEnvRaw("WORKOS_API_KEY"),
+		getWorkosClient().ApiKey,
 	)
 
 	response, err := usermanagement.AuthenticateWithPassword(
 		context.Background(),
 		usermanagement.AuthenticateWithPasswordOpts{
-			ClientID: config.GetEnvRaw("WORKOS_CLIENT_ID"),
+			ClientID: getWorkosClient().ClientId,
 			Email:    email,
 			Password: password,
 		},
@@ -119,7 +119,7 @@ func (*WorkosAuth) LoginWithPassword(email, password string) (*model.AuthPayload
 
 func (*WorkosAuth) RequestEmailLoginCode(email string) (bool, error) {
 	usermanagement.SetAPIKey(
-		config.GetEnvRaw("WORKOS_API_KEY"),
+		getWorkosClient().ApiKey,
 	)
 
 	response, err := usermanagement.CreateMagicAuth(
@@ -140,13 +140,13 @@ func (*WorkosAuth) RequestEmailLoginCode(email string) (bool, error) {
 
 func (*WorkosAuth) VerifyEmailLoginCode(email, code string) (*model.AuthPayload, error) {
 	usermanagement.SetAPIKey(
-		config.GetEnvRaw("WORKOS_API_KEY"),
+		getWorkosClient().ApiKey,
 	)
 
 	response, err := usermanagement.AuthenticateWithMagicAuth(
 		context.Background(),
 		usermanagement.AuthenticateWithMagicAuthOpts{
-			ClientID: config.GetEnvRaw("WORKOS_CLIENT_ID"),
+			ClientID: getWorkosClient().ClientId,
 			Email:    email,
 			Code:     code,
 		},
@@ -179,7 +179,7 @@ func (*WorkosAuth) VerifyEmailLoginCode(email, code string) (*model.AuthPayload,
 
 func (*WorkosAuth) IsServiceHealthy() bool {
 	usermanagement.SetAPIKey(
-		config.GetEnvRaw("WORKOS_API_KEY"),
+		getWorkosClient().ApiKey,
 	)
 
 	response, err := usermanagement.ListUsers(
@@ -194,4 +194,26 @@ func (*WorkosAuth) IsServiceHealthy() bool {
 	}
 
 	return len(response.Data) > 0
+}
+
+func getWorkosClient() struct {
+	ClientId string
+	ApiKey   string
+} {
+	if config.GetEnvRaw("ENVIRONMENT") == "DEV" {
+		return struct {
+			ClientId string
+			ApiKey   string
+		}{
+			ClientId: config.GetEnvRaw("DEV_WORKOS_CLIENT_ID"),
+			ApiKey:   config.GetEnvRaw("DEV_WORKOS_API_KEY"),
+		}
+	}
+	return struct {
+		ClientId string
+		ApiKey   string
+	}{
+		ClientId: getWorkosClient().ClientId,
+		ApiKey:   getWorkosClient().ApiKey,
+	}
 }

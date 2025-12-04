@@ -2,74 +2,26 @@ import React, { useState } from "react";
 import {
   View,
   SafeAreaView,
-  ActivityIndicator,
-  Alert,
   Image,
 } from "react-native";
 import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
-import { Sparkles, Mail, Shield } from "lucide-react-native";
-import { authService } from "../../services/auth";
+import { Sparkles, UserPlus, Shield, LogIn } from "lucide-react-native";
 import { useStore } from "../../store/useStore";
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { login, setAuthLoading } = useStore();
-  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useStore();
 
-  const handleGetStarted = async () => {
-    setIsLoading(true);
-    setAuthLoading(true);
-
-    try {
-      const result = await authService.signInWithSSO();
-
-      if (result.success && result.user && result.tokens) {
-        // Transform WorkOS user to app UserProfile
-        const userProfile = {
-          id: result.user.id,
-          email: result.user.email,
-          firstName: result.user.firstName || "User",
-          lastName: result.user.lastName || "",
-          bio: "",
-          hobbies: [],
-          personalityTraits: {},
-          photos: result.user.profilePictureUrl
-            ? [result.user.profilePictureUrl]
-            : [],
-          isVerified: false,
-          isPhotosRevealed: false,
-        };
-
-        login(userProfile, result.tokens.accessToken);
-
-        // Navigate to onboarding or main app
-        router.replace("/(auth)/hobbies" as Href);
-      } else {
-        // Handle auth failure
-        if (result.error !== "Authentication cancelled") {
-          Alert.alert(
-            "Authentication Failed",
-            result.error || "Please try again",
-          );
-        }
-      }
-    } catch (error) {
-      console.error("Auth error:", error);
-      Alert.alert(
-        "Authentication Error",
-        "Something went wrong. Please try again.",
-      );
-    } finally {
-      setIsLoading(false);
-      setAuthLoading(false);
-    }
+  const handleGetStarted = () => {
+    // Navigate to signup screen
+    router.push("/(auth)/signup" as Href);
   };
 
-  const handleSignIn = async () => {
-    // Same flow for sign in - WorkOS handles both
-    await handleGetStarted();
+  const handleSignIn = () => {
+    // Navigate to login screen
+    router.push("/(auth)/login" as Href);
   };
 
   const handleDemoMode = () => {
@@ -160,25 +112,18 @@ export default function WelcomeScreen() {
             variant="primary"
             size="lg"
             onPress={handleGetStarted}
-            disabled={isLoading}
             className="w-full"
-            icon={
-              isLoading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Mail size={20} color="#FFFFFF" />
-              )
-            }
+            icon={<UserPlus size={20} color="#FFFFFF" />}
           >
-            {isLoading ? "Connecting..." : "Get Started"}
+            Get Started
           </Button>
 
           <Button
             variant="secondary"
             size="md"
             onPress={handleSignIn}
-            disabled={isLoading}
             className="w-full top-4"
+            icon={<LogIn size={20} color="#E6E6F0" />}
           >
             I already have an account
           </Button>

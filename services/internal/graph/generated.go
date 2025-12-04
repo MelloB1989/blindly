@@ -3316,7 +3316,7 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"email", "password", "first_name", "last_name", "dob", "pfp", "bio", "hobbies", "interests", "user_prompts", "personality_traits", "photos", "address"}
+	fieldsInOrder := [...]string{"email", "password", "first_name", "last_name", "dob", "pfp", "bio", "hobbies", "interests", "user_prompts", "photos", "address"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3393,13 +3393,6 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 				return it, err
 			}
 			it.UserPrompts = data
-		case "personality_traits":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("personality_traits"))
-			data, err := ec.unmarshalOPersonalityTraitInput2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐPersonalityTraitInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.PersonalityTraits = data
 		case "photos":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("photos"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)

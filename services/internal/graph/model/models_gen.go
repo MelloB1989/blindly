@@ -20,19 +20,18 @@ type AuthPayload struct {
 }
 
 type CreateUserInput struct {
-	Email             string                   `json:"email"`
-	Password          string                   `json:"password"`
-	FirstName         string                   `json:"first_name"`
-	LastName          string                   `json:"last_name"`
-	Dob               time.Time                `json:"dob"`
-	Pfp               *string                  `json:"pfp,omitempty"`
-	Bio               *string                  `json:"bio,omitempty"`
-	Hobbies           []string                 `json:"hobbies,omitempty"`
-	Interests         []string                 `json:"interests,omitempty"`
-	UserPrompts       []string                 `json:"user_prompts,omitempty"`
-	PersonalityTraits []*PersonalityTraitInput `json:"personality_traits,omitempty"`
-	Photos            []string                 `json:"photos,omitempty"`
-	Address           *AddressInput            `json:"address,omitempty"`
+	Email       string        `json:"email"`
+	Password    string        `json:"password"`
+	FirstName   string        `json:"first_name"`
+	LastName    string        `json:"last_name"`
+	Dob         time.Time     `json:"dob"`
+	Pfp         *string       `json:"pfp,omitempty"`
+	Bio         *string       `json:"bio,omitempty"`
+	Hobbies     []string      `json:"hobbies,omitempty"`
+	Interests   []string      `json:"interests,omitempty"`
+	UserPrompts []string      `json:"user_prompts,omitempty"`
+	Photos      []string      `json:"photos,omitempty"`
+	Address     *AddressInput `json:"address,omitempty"`
 }
 
 type Mutation struct {

@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+var Version = "dev" // overridden at build/run time
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -28,7 +30,7 @@ func main() {
 	}()
 
 	l := logger.NewLogger()
-	l.Startup()
+	l.Startup(Version)
 
 	// Wait for SIGINT or SIGTERM
 	stop := make(chan os.Signal, 1)

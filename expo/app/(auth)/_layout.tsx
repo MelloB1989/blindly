@@ -17,6 +17,10 @@ export default function AuthLayout() {
             animation: "fade",
           }}
         />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="signup" />
+        <Stack.Screen name="email-login" />
+        <Stack.Screen name="verify-code" />
         <Stack.Screen name="hobbies" />
         <Stack.Screen name="personality" />
       </Stack>

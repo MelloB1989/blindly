@@ -8,8 +8,9 @@ import "react-native-reanimated";
 import "../global.css";
 
 import { useStore } from "../store/useStore";
-import { authService } from "../services/auth";
+import { graphqlAuthService } from "../services/graphql-auth";
 import apiService from "../services/api";
+import { setAccessToken as setGraphQLToken } from "../services/graphql-client";
 
 // Custom dark theme matching our design system
 const BlindlyDarkTheme = {
@@ -48,26 +49,33 @@ function RootLayoutNav() {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const result = await authService.restoreSession();
+        const result = await graphqlAuthService.restoreSession();
 
-        if (result.success && result.user && result.tokens) {
+        if (result.success && result.user) {
           const userProfile = {
             id: result.user.id,
             email: result.user.email,
-            firstName: result.user.firstName || "User",
-            lastName: result.user.lastName || "",
-            bio: "",
-            hobbies: [],
-            personalityTraits: {},
-            photos: result.user.profilePictureUrl
-              ? [result.user.profilePictureUrl]
-              : [],
-            isVerified: false,
+            firstName: result.user.first_name || "User",
+            lastName: result.user.last_name || "",
+            bio: result.user.bio || "",
+            hobbies: result.user.hobbies || [],
+            personalityTraits: result.user.personality_traits
+              ? Object.fromEntries(
+                result.user.personality_traits.map((t) => [t.key, t.value]),
+              )
+              : {},
+            photos: result.user.photos || [],
+            isVerified: result.user.is_verified,
             isPhotosRevealed: false,
           };
 
-          handleLogin(userProfile, result.tokens.accessToken);
-          apiService.setToken(result.tokens.accessToken);
+          // Get the stored access token
+          const storedToken = result.accessToken || accessToken;
+          if (storedToken) {
+            handleLogin(userProfile, storedToken);
+            apiService.setToken(storedToken);
+            await setGraphQLToken(storedToken);
+          }
         }
       } catch (error) {
         console.error("Failed to restore session:", error);
@@ -77,12 +85,13 @@ function RootLayoutNav() {
     };
 
     restoreSession();
-  }, [handleLogin, setAuthLoading]);
+  }, [handleLogin, setAuthLoading, accessToken]);
 
   // Set API token when access token changes
   useEffect(() => {
     if (accessToken) {
       apiService.setToken(accessToken);
+      setGraphQLToken(accessToken);
     }
   }, [accessToken]);
 
