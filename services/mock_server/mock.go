@@ -1184,7 +1184,7 @@ func StartMockServer(ctx context.Context) error {
 	// fmt.Println("  POST   /api/ai/chat            - Chat with AI companion")
 	// fmt.Println("")
 
-	server := &http.Server{Addr: ":8080"}
+	server := &http.Server{Addr: ":8081"}
 
 	go func() {
 		<-ctx.Done()

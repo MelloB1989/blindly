@@ -67,3 +67,13 @@ export const comments = pgTable("comments", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   content: text("content").notNull(),
 });
+
+export const user_files = pgTable("user_files", {
+  id: varchar("id").primaryKey().notNull(),
+  uid: varchar("uid").notNull(),
+  key: varchar("key").notNull(),
+  s3_path: varchar("s3_path").notNull(),
+  visibility: varchar("visibility").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});

@@ -25,6 +25,7 @@ type CreateUserInput struct {
 	FirstName   string        `json:"first_name"`
 	LastName    string        `json:"last_name"`
 	Dob         time.Time     `json:"dob"`
+	Gender      *string       `json:"gender,omitempty"`
 	Pfp         *string       `json:"pfp,omitempty"`
 	Bio         *string       `json:"bio,omitempty"`
 	Hobbies     []string      `json:"hobbies,omitempty"`
@@ -56,6 +57,7 @@ type UpdateUserInput struct {
 	Dob               *time.Time               `json:"dob,omitempty"`
 	Pfp               *string                  `json:"pfp,omitempty"`
 	Bio               *string                  `json:"bio,omitempty"`
+	Gender            *string                  `json:"gender,omitempty"`
 	Hobbies           []string                 `json:"hobbies,omitempty"`
 	Interests         []string                 `json:"interests,omitempty"`
 	UserPrompts       []string                 `json:"user_prompts,omitempty"`

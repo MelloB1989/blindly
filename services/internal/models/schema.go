@@ -61,3 +61,14 @@ type Comment struct {
 	CreatedAt time.Time `json:"created_at"`
 	Content   string    `json:"content"`
 }
+
+type UserFiles struct {
+	TableName  struct{}  `karma_table:"user_files"`
+	Id         string    `json:"id" karma:"primary"`
+	Uid        string    `json:"uid"`
+	Key        string    `json:"key"`
+	S3Path     string    `json:"s3_path"`
+	Visibility string    `json:"visibility"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}

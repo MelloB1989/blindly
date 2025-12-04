@@ -19,7 +19,8 @@ ________  ___       ___  ________   ________  ___           ___    ___
                                                           \|___|/
 `)
 	c.Printf("Blindly v(%s)\n", ver)
-	log.Println("Server started")
+	log.Println("Server started on 9000")
 	log.Println("Graphql running on port 7777")
-	log.Println("Mock server running on port 8080")
+	log.Println("GoFiber running on port 8080")
+	log.Println("Mock server running on port 8081")
 }

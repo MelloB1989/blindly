@@ -88,6 +88,7 @@ type ComplexityRoot struct {
 		Dob               func(childComplexity int) int
 		Email             func(childComplexity int) int
 		FirstName         func(childComplexity int) int
+		Gender            func(childComplexity int) int
 		Hobbies           func(childComplexity int) int
 		Id                func(childComplexity int) int
 		Interests         func(childComplexity int) int
@@ -295,6 +296,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.User.FirstName(childComplexity), true
+	case "User.gender":
+		if e.complexity.User.Gender == nil {
+			break
+		}
+
+		return e.complexity.User.Gender(childComplexity), true
 	case "User.hobbies":
 		if e.complexity.User.Hobbies == nil {
 			break
@@ -794,6 +801,8 @@ func (ec *executionContext) fieldContext_AuthPayload_user(_ context.Context, fie
 				return ec.fieldContext_User_dob(ctx, field)
 			case "pfp":
 				return ec.fieldContext_User_pfp(ctx, field)
+			case "gender":
+				return ec.fieldContext_User_gender(ctx, field)
 			case "bio":
 				return ec.fieldContext_User_bio(ctx, field)
 			case "hobbies":
@@ -1013,7 +1022,16 @@ func (ec *executionContext) _Mutation_updateMe(ctx context.Context, field graphq
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().UpdateMe(ctx, fc.Args["input"].(model.UpdateUserInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNUser2ᚖblindlyᚋinternalᚋmodelsᚐUser,
 		true,
 		true,
@@ -1040,6 +1058,8 @@ func (ec *executionContext) fieldContext_Mutation_updateMe(ctx context.Context, 
 				return ec.fieldContext_User_dob(ctx, field)
 			case "pfp":
 				return ec.fieldContext_User_pfp(ctx, field)
+			case "gender":
+				return ec.fieldContext_User_gender(ctx, field)
 			case "bio":
 				return ec.fieldContext_User_bio(ctx, field)
 			case "hobbies":
@@ -1087,7 +1107,16 @@ func (ec *executionContext) _Mutation_refreshToken(ctx context.Context, field gr
 		func(ctx context.Context) (any, error) {
 			return ec.resolvers.Mutation().RefreshToken(ctx)
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNAuthPayload2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐAuthPayload,
 		true,
 		true,
@@ -1180,7 +1209,16 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 		func(ctx context.Context) (any, error) {
 			return ec.resolvers.Query().Me(ctx)
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalOUser2ᚖblindlyᚋinternalᚋmodelsᚐUser,
 		true,
 		false,
@@ -1207,6 +1245,8 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 				return ec.fieldContext_User_dob(ctx, field)
 			case "pfp":
 				return ec.fieldContext_User_pfp(ctx, field)
+			case "gender":
+				return ec.fieldContext_User_gender(ctx, field)
 			case "bio":
 				return ec.fieldContext_User_bio(ctx, field)
 			case "hobbies":
@@ -1504,6 +1544,35 @@ func (ec *executionContext) _User_pfp(ctx context.Context, field graphql.Collect
 }
 
 func (ec *executionContext) fieldContext_User_pfp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_gender(ctx context.Context, field graphql.CollectedField, obj *models.User) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_gender,
+		func(ctx context.Context) (any, error) {
+			return obj.Gender, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_User_gender(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
@@ -3316,7 +3385,7 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"email", "password", "first_name", "last_name", "dob", "pfp", "bio", "hobbies", "interests", "user_prompts", "photos", "address"}
+	fieldsInOrder := [...]string{"email", "password", "first_name", "last_name", "dob", "gender", "pfp", "bio", "hobbies", "interests", "user_prompts", "photos", "address"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3358,6 +3427,13 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 				return it, err
 			}
 			it.Dob = data
+		case "gender":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Gender = data
 		case "pfp":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pfp"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -3454,7 +3530,7 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"first_name", "last_name", "dob", "pfp", "bio", "hobbies", "interests", "user_prompts", "personality_traits", "photos", "is_verified", "address"}
+	fieldsInOrder := [...]string{"first_name", "last_name", "dob", "pfp", "bio", "gender", "hobbies", "interests", "user_prompts", "personality_traits", "photos", "is_verified", "address"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3496,6 +3572,13 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 				return it, err
 			}
 			it.Bio = data
+		case "gender":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Gender = data
 		case "hobbies":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hobbies"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -3877,6 +3960,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_dob(ctx, field, obj)
 		case "pfp":
 			out.Values[i] = ec._User_pfp(ctx, field, obj)
+		case "gender":
+			out.Values[i] = ec._User_gender(ctx, field, obj)
 		case "bio":
 			out.Values[i] = ec._User_bio(ctx, field, obj)
 		case "hobbies":

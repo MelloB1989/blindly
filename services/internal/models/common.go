@@ -50,3 +50,10 @@ type Claims struct {
 	Pfp         string `json:"pfp"`
 	jwt.StandardClaims
 }
+
+type ResponseHTTP struct {
+	Success bool   `json:"success"`
+	Data    any    `json:"data"`
+	Message string `json:"message"`
+	Error   any    `json:"error"`
+}

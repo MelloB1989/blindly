@@ -35,7 +35,7 @@ func GetUserById(id string) (*models.User, error) {
 	)
 
 	var u []models.User
-	if err := usersORM.GetByFieldEquals("id", id).Scan(&u); err != nil {
+	if err := usersORM.GetByFieldEquals("Id", id).Scan(&u); err != nil {
 		return nil, err
 	}
 	if len(u) == 0 {

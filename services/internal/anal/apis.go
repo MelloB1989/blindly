@@ -3,6 +3,7 @@ package anal
 import (
 	"log"
 
+	"github.com/MelloB1989/karma/config"
 	"github.com/posthog/posthog-go"
 )
 
@@ -29,6 +30,9 @@ func (e *AnalyticsEngine) SetProperty(property Properties, val any) {
 }
 
 func (e *AnalyticsEngine) SendEvent(event Events) {
+	if config.GetEnvRaw("ENVIRONMENT") == "DEV" {
+		return
+	}
 	e.client.Enqueue(posthog.Capture{
 		DistinctId: e.UniqueIdentifier,
 		Event:      string(event),
@@ -37,6 +41,9 @@ func (e *AnalyticsEngine) SendEvent(event Events) {
 }
 
 func (e *AnalyticsEngine) SendRequestError(error Events, err any) {
+	if config.GetEnvRaw("ENVIRONMENT") == "DEV" {
+		return
+	}
 	e.SetProperty(ERROR_LIST, err)
 	e.SetProperty(ERROR_TYPE, error)
 	e.client.Enqueue(posthog.Capture{
