@@ -48,6 +48,26 @@ models:
     model: blindly/internal/models.User
   Address:
     model: blindly/internal/models.Address
+  ExtraMetadata:
+    model: blindly/internal/models.ExtraMetadata
+
+  # Match models
+  Match:
+    model: blindly/internal/models.Match
+  PostUnlockRating:
+    model: blindly/internal/models.PostUnlockRating
+  Chat:
+    model: blindly/internal/models.Chat
+  ActivityType:
+    model: blindly/internal/models.ActivityType
+  UserProfileActivity:
+    model: blindly/internal/models.UserProfileActivity
+
+  # Swipe models
+  Swipe:
+    model: blindly/internal/models.Swipe
+  SwipeType:
+    model: blindly/internal/models.SwipeType
 
 directives:
   auth:

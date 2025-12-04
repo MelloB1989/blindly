@@ -18,6 +18,7 @@ func CreateUser(user models.User) (*models.User, error) {
 	user.UpdatedAt = time.Now()
 
 	usersORM := orm.Load(&models.User{})
+	defer usersORM.Close()
 
 	if err := usersORM.Insert(&user); err != nil {
 		return nil, err
@@ -33,6 +34,7 @@ func GetUserById(id string) (*models.User, error) {
 		orm.WithInfiniteCacheTTL(),
 		orm.WithCacheMethod(config.GetEnvRaw("CACHE_METHOD")),
 	)
+	defer usersORM.Close()
 
 	var u []models.User
 	if err := usersORM.GetByFieldEquals("Id", id).Scan(&u); err != nil {
@@ -48,6 +50,7 @@ func GetUserById(id string) (*models.User, error) {
 
 func UpdateUser(user models.User) (*models.User, error) {
 	usersORM := orm.Load(&models.User{})
+	defer usersORM.Close()
 
 	if err := usersORM.Update(&user, user.Id); err != nil {
 		return nil, err

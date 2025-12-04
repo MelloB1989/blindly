@@ -4,6 +4,10 @@ package model
 
 import (
 	"blindly/internal/models"
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 )
 
@@ -17,6 +21,15 @@ type AddressInput struct {
 type AuthPayload struct {
 	AccessToken string       `json:"access_token"`
 	User        *models.User `json:"user"`
+}
+
+type Connection struct {
+	Chat               *models.Chat  `json:"chat"`
+	Match              *models.Match `json:"match"`
+	LastMessage        string        `json:"last_message"`
+	UnreadMessages     int32         `json:"unread_messages"`
+	PercentageComplete float64       `json:"percentage_complete"`
+	ConnectionProfile  *UserPublic   `json:"connection_profile"`
 }
 
 type CreateUserInput struct {
@@ -51,6 +64,32 @@ type PersonalityTraitInput struct {
 type Query struct {
 }
 
+type RecommendationsResult struct {
+	Items      []*RecommendedProfile `json:"items"`
+	NextCursor *string               `json:"next_cursor,omitempty"`
+	HasMore    bool                  `json:"has_more"`
+	FetchedAt  time.Time             `json:"fetched_at"`
+}
+
+type RecommendedProfile struct {
+	Profile            *UserPublic `json:"profile"`
+	MatchScore         float64     `json:"match_score"`
+	CompatibilityScore float64     `json:"compatibility_score"`
+	CommonInterests    []string    `json:"common_interests"`
+	DistanceKm         *float64    `json:"distance_km,omitempty"`
+	Reason             *string     `json:"reason,omitempty"`
+}
+
+type SwipeResponse struct {
+	Swipe *models.Swipe `json:"swipe"`
+	Match *models.Match `json:"match,omitempty"`
+}
+
+type SwipedProfile struct {
+	Profile *UserPublic   `json:"profile"`
+	Swipe   *models.Swipe `json:"swipe"`
+}
+
 type UpdateUserInput struct {
 	FirstName         *string                  `json:"first_name,omitempty"`
 	LastName          *string                  `json:"last_name,omitempty"`
@@ -65,4 +104,77 @@ type UpdateUserInput struct {
 	Photos            []string                 `json:"photos,omitempty"`
 	IsVerified        *bool                    `json:"is_verified,omitempty"`
 	Address           *AddressInput            `json:"address,omitempty"`
+}
+
+type UserPublic struct {
+	ID                string                `json:"id"`
+	Name              string                `json:"name"`
+	Pfp               string                `json:"pfp"`
+	Bio               string                `json:"bio"`
+	Dob               string                `json:"dob"`
+	Gender            string                `json:"gender"`
+	Hobbies           []string              `json:"hobbies"`
+	Interests         []string              `json:"interests"`
+	UserPrompts       []string              `json:"user_prompts"`
+	PersonalityTraits []string              `json:"personality_traits"`
+	Photos            []string              `json:"photos"`
+	IsVerified        bool                  `json:"is_verified"`
+	Extra             *models.ExtraMetadata `json:"extra,omitempty"`
+	CreatedAt         time.Time             `json:"created_at"`
+	IsOnline          bool                  `json:"is_online"`
+}
+
+type ActivityClass string
+
+const (
+	ActivityClassReceived ActivityClass = "RECEIVED"
+	ActivityClassSent     ActivityClass = "SENT"
+)
+
+var AllActivityClass = []ActivityClass{
+	ActivityClassReceived,
+	ActivityClassSent,
+}
+
+func (e ActivityClass) IsValid() bool {
+	switch e {
+	case ActivityClassReceived, ActivityClassSent:
+		return true
+	}
+	return false
+}
+
+func (e ActivityClass) String() string {
+	return string(e)
+}
+
+func (e *ActivityClass) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ActivityClass(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ActivityClass", str)
+	}
+	return nil
+}
+
+func (e ActivityClass) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *ActivityClass) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e ActivityClass) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

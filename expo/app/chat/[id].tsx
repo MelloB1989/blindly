@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   SafeAreaView,
@@ -8,13 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
 import { Avatar } from "../../components/ui/Avatar";
 import { Badge } from "../../components/ui/Badge";
-import { Card } from "../../components/ui/Card";
 import {
   ChevronLeft,
   Send,
@@ -24,97 +24,185 @@ import {
   MoreVertical,
   X,
 } from "lucide-react-native";
-import { MOCK_CHATS, getUserById, AI_RIZZ_SUGGESTIONS } from "../../constants/mockData";
+import { AI_RIZZ_SUGGESTIONS } from "../../constants/mockData";
 import { useStore } from "../../store/useStore";
+import {
+  chatService,
+  ChatWebSocket,
+  Message,
+  Connection,
+} from "../../services/chat-service";
 
-interface Message {
-  id: string;
-  text: string;
-  senderId: string;
-  timestamp: string;
-  isAiSuggested: boolean;
-}
-
-export default function ChatScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function ChatDetailScreen() {
+  const { id: chatId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
-  const { addMessage } = useStore();
+  const { user } = useStore();
+  const wsRef = useRef<ChatWebSocket | null>(null);
 
-  // Find the chat from mock data
-  const chat = MOCK_CHATS.find((c) => c.id === id);
-  const otherUser = chat ? getUserById(chat.userId) : null;
-
-  const [messages, setMessages] = useState<Message[]>(chat?.messages || []);
+  // State
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [connection, setConnection] = useState<Connection | null>(null);
   const [inputText, setInputText] = useState("");
   const [showAiSuggestions, setShowAiSuggestions] = useState(false);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [isConnecting, setIsConnecting] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
 
-  const messagesCount = messages.length;
-  const messagesRequired = chat?.messagesRequired || 20;
-  const canUnlock = messagesCount >= messagesRequired;
-  const isUnlocked = otherUser?.isRevealed || false;
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Fetch connection info
   useEffect(() => {
-    // Scroll to bottom when messages change
+    const fetchConnection = async () => {
+      const result = await chatService.getMyConnections();
+      if (result.success && result.connections) {
+        const conn = result.connections.find((c) => c.chat.id === chatId);
+        if (conn) {
+          setConnection(conn);
+        }
+      }
+    };
+    fetchConnection();
+  }, [chatId]);
+
+  // WebSocket connection
+  useEffect(() => {
+    if (!chatId) return;
+
+    const ws = new ChatWebSocket(chatId);
+    wsRef.current = ws;
+
+    ws.onConnected = () => {
+      setIsConnecting(false);
+      setIsConnected(true);
+      // Query initial messages
+      ws.queryMessages(50);
+    };
+
+    ws.onDisconnected = () => {
+      setIsConnected(false);
+    };
+
+    ws.onMessage = (message) => {
+      setMessages((prev) => {
+        // Check if message already exists
+        const exists = prev.some((m) => m.id === message.id);
+        if (exists) {
+          // Update existing message
+          return prev.map((m) => (m.id === message.id ? message : m));
+        }
+        // Add new message
+        return [...prev, message];
+      });
+    };
+
+    ws.onMessagesLoaded = (loadedMessages) => {
+      setMessages(loadedMessages.reverse()); // API returns newest first
+    };
+
+    ws.onTypingStarted = () => {
+      setOtherUserTyping(true);
+    };
+
+    ws.onTypingStopped = () => {
+      setOtherUserTyping(false);
+    };
+
+    ws.onError = (error) => {
+      console.error("WebSocket error:", error);
+      setIsConnecting(false);
+    };
+
+    ws.connect();
+
+    return () => {
+      ws.disconnect();
+    };
+  }, [chatId]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages]);
 
+  // Mark messages as seen when viewing
+  useEffect(() => {
+    if (!wsRef.current || !isConnected || !user) return;
+
+    const unseenMessages = messages
+      .filter((m) => m.sender_id !== user.id && !m.seen)
+      .map((m) => m.id);
+
+    if (unseenMessages.length > 0) {
+      wsRef.current.markMessagesSeen(unseenMessages);
+    }
+  }, [messages, isConnected, user]);
+
   const handleBack = () => {
     router.back();
   };
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
+  const handleInputChange = (text: string) => {
+    setInputText(text);
 
+    // Handle typing indicator
+    if (text && !isTyping) {
+      setIsTyping(true);
+      wsRef.current?.startTyping();
+    }
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      if (isTyping) {
+        setIsTyping(false);
+        wsRef.current?.stopTyping();
+      }
+    }, 2000);
+  };
+
+  const handleSend = () => {
+    if (!inputText.trim() || !wsRef.current || !isConnected) return;
+
+    // Stop typing indicator
+    if (isTyping) {
+      setIsTyping(false);
+      wsRef.current.stopTyping();
+    }
+
+    // Generate temporary ID for optimistic update
+    const tempId = `temp-${Date.now()}`;
     const newMessage: Message = {
-      id: `m${Date.now()}`,
-      text: inputText.trim(),
-      senderId: "me",
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isAiSuggested: false,
+      id: tempId,
+      type: "text",
+      content: inputText.trim(),
+      sender_id: user?.id || "me",
+      received: false,
+      seen: false,
+      media: [],
+      reactions: [],
+      created_at: new Date().toISOString(),
     };
 
+    // Optimistic update
     setMessages((prev) => [...prev, newMessage]);
     setInputText("");
     setShowAiSuggestions(false);
 
-    // Simulate a reply after a delay
-    if (Math.random() > 0.5) {
-      setTimeout(() => {
-        const replyMessage: Message = {
-          id: `m${Date.now() + 1}`,
-          text: getRandomReply(),
-          senderId: chat?.userId || "other",
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          isAiSuggested: false,
-        };
-        setMessages((prev) => [...prev, replyMessage]);
-      }, 1500 + Math.random() * 2000);
-    }
-  };
-
-  const getRandomReply = () => {
-    const replies = [
-      "That's really interesting!",
-      "I totally agree with you on that.",
-      "Haha, you're funny! 😄",
-      "Tell me more about that!",
-      "I've been thinking the same thing lately.",
-      "That's a great point!",
-      "I'd love to hear more about your thoughts on this.",
-      "Wow, I never thought about it that way.",
-    ];
-    return replies[Math.floor(Math.random() * replies.length)];
+    // Send via WebSocket
+    wsRef.current.sendMessage({
+      type: "text",
+      content: newMessage.content,
+    });
   };
 
   const handleAiSuggest = () => {
@@ -123,7 +211,6 @@ export default function ChatScreen() {
 
     // Simulate AI loading
     setTimeout(() => {
-      // Get 3 random suggestions
       const shuffled = [...AI_RIZZ_SUGGESTIONS].sort(() => 0.5 - Math.random());
       setAiSuggestions(shuffled.slice(0, 3));
       setIsLoadingAi(false);
@@ -136,17 +223,19 @@ export default function ChatScreen() {
   };
 
   const handleUnlockRequest = () => {
-    if (!canUnlock) {
+    if (!connection) return;
+
+    if (connection.percentage_complete < 1) {
       Alert.alert(
         "Not Yet!",
-        `Send ${messagesRequired - messagesCount} more messages to unlock photos.`,
+        `Keep chatting to unlock photos. You're ${Math.round(connection.percentage_complete * 100)}% there!`,
       );
       return;
     }
 
     Alert.alert(
       "Request Photo Reveal",
-      `Ask ${otherUser?.firstName} to reveal photos? They'll need to accept.`,
+      `Ask ${connection.connection_profile.name} to reveal photos? They'll need to accept.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -160,41 +249,56 @@ export default function ChatScreen() {
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
-    const isMe = item.senderId === "me";
+    const isMe = item.sender_id === user?.id;
 
     return (
-      <View
-        className={`mb-3 ${isMe ? "items-end" : "items-start"} px-4`}
-      >
+      <View className={`mb-3 ${isMe ? "items-end" : "items-start"} px-4`}>
         <View
-          className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-            isMe
-              ? "bg-primary rounded-br-sm"
-              : "bg-surface-elevated rounded-bl-sm"
-          }`}
+          className={`max-w-[80%] rounded-2xl px-4 py-3 ${isMe
+            ? "bg-primary rounded-br-sm"
+            : "bg-surface-elevated rounded-bl-sm"
+            }`}
         >
           <Typography variant="body" className={isMe ? "text-white" : ""}>
-            {item.text}
+            {item.content}
           </Typography>
         </View>
         <View className="flex-row items-center mt-1 gap-1">
           <Typography variant="caption" color="muted">
-            {item.timestamp}
+            {new Date(item.created_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </Typography>
-          {item.isAiSuggested && (
-            <View className="flex-row items-center">
-              <Sparkles size={10} color="#FFD166" />
-              <Typography variant="caption" color="ai" className="ml-0.5">
-                AI
-              </Typography>
-            </View>
+          {isMe && item.seen && (
+            <Typography variant="caption" color="primary">
+              ✓✓
+            </Typography>
+          )}
+          {isMe && !item.seen && item.received && (
+            <Typography variant="caption" color="muted">
+              ✓
+            </Typography>
           )}
         </View>
       </View>
     );
   };
 
-  if (!chat || !otherUser) {
+  // Loading state
+  if (isConnecting && !connection) {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center">
+        <ActivityIndicator size="large" color="#7C3AED" />
+        <Typography variant="body" color="muted" className="mt-4">
+          Connecting to chat...
+        </Typography>
+      </SafeAreaView>
+    );
+  }
+
+  // Not found state
+  if (!connection) {
     return (
       <SafeAreaView className="flex-1 bg-background items-center justify-center">
         <Typography variant="h2">Chat not found</Typography>
@@ -204,6 +308,10 @@ export default function ChatScreen() {
       </SafeAreaView>
     );
   }
+
+  const profile = connection.connection_profile;
+  const isUnlocked = connection.match.is_unlocked;
+  const progressPercent = Math.round(connection.percentage_complete * 100);
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -219,16 +327,21 @@ export default function ChatScreen() {
 
           <Pressable className="flex-row items-center flex-1">
             <Avatar
-              source={isUnlocked ? otherUser.photos[0] : undefined}
-              fallback={otherUser.firstName}
+              source={isUnlocked ? profile.pfp : undefined}
+              fallback={profile.name}
               locked={!isUnlocked}
               size="md"
               className="mr-3"
             />
             <View className="flex-1">
-              <Typography variant="h3" className="text-lg">
-                {otherUser.firstName}
-              </Typography>
+              <View className="flex-row items-center">
+                <Typography variant="h3" className="text-lg">
+                  {profile.name}
+                </Typography>
+                {profile.is_online && (
+                  <View className="w-2 h-2 rounded-full bg-success ml-2" />
+                )}
+              </View>
               <View className="flex-row items-center">
                 {isUnlocked ? (
                   <View className="flex-row items-center">
@@ -237,11 +350,15 @@ export default function ChatScreen() {
                       Photos Unlocked
                     </Typography>
                   </View>
+                ) : otherUserTyping ? (
+                  <Typography variant="caption" color="primary">
+                    typing...
+                  </Typography>
                 ) : (
                   <View className="flex-row items-center">
                     <Lock size={12} color="#A6A6B2" />
                     <Typography variant="caption" color="muted" className="ml-1">
-                      {messagesCount}/{messagesRequired} messages
+                      {progressPercent}% to unlock
                     </Typography>
                   </View>
                 )}
@@ -252,12 +369,18 @@ export default function ChatScreen() {
           {!isUnlocked && (
             <Pressable
               onPress={handleUnlockRequest}
-              className={`px-3 py-2 rounded-full ${
-                canUnlock ? "bg-primary" : "bg-surface-elevated"
-              }`}
+              className={`px-3 py-2 rounded-full ${connection.percentage_complete >= 1
+                ? "bg-primary"
+                : "bg-surface-elevated"
+                }`}
             >
               <View className="flex-row items-center">
-                <Unlock size={16} color={canUnlock ? "#FFFFFF" : "#A6A6B2"} />
+                <Unlock
+                  size={16}
+                  color={
+                    connection.percentage_complete >= 1 ? "#FFFFFF" : "#A6A6B2"
+                  }
+                />
               </View>
             </Pressable>
           )}
@@ -267,6 +390,15 @@ export default function ChatScreen() {
           </Pressable>
         </View>
 
+        {/* Connection Status Banner */}
+        {!isConnected && !isConnecting && (
+          <View className="bg-error/20 px-4 py-2">
+            <Typography variant="caption" color="danger" className="text-center">
+              Connection lost. Reconnecting...
+            </Typography>
+          </View>
+        )}
+
         {/* Progress Bar (only show if not unlocked) */}
         {!isUnlocked && (
           <View className="px-4 py-2 bg-surface">
@@ -275,14 +407,14 @@ export default function ChatScreen() {
                 Progress to unlock photos
               </Typography>
               <Typography variant="caption" color="primary">
-                {Math.round((messagesCount / messagesRequired) * 100)}%
+                {progressPercent}%
               </Typography>
             </View>
             <View className="h-1.5 bg-surface-elevated rounded-full overflow-hidden">
               <View
                 className="h-full bg-primary rounded-full"
                 style={{
-                  width: `${Math.min((messagesCount / messagesRequired) * 100, 100)}%`,
+                  width: `${Math.min(progressPercent, 100)}%`,
                 }}
               />
             </View>
@@ -295,12 +427,32 @@ export default function ChatScreen() {
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingVertical: 16 }}
+          contentContainerStyle={{ paddingVertical: 16, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={() =>
             flatListRef.current?.scrollToEnd({ animated: false })
           }
+          ListEmptyComponent={
+            <View className="flex-1 items-center justify-center py-16">
+              <Typography variant="body" color="muted">
+                Say hello! 👋
+              </Typography>
+            </View>
+          }
         />
+
+        {/* Typing Indicator */}
+        {otherUserTyping && (
+          <View className="px-4 pb-2">
+            <View className="flex-row items-center">
+              <View className="bg-surface-elevated rounded-2xl px-4 py-2">
+                <Typography variant="caption" color="muted">
+                  {profile.name} is typing...
+                </Typography>
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* AI Suggestions */}
         {showAiSuggestions && (
@@ -354,7 +506,7 @@ export default function ChatScreen() {
             <View className="flex-1 flex-row items-center bg-surface-elevated rounded-full px-4 py-2">
               <TextInput
                 value={inputText}
-                onChangeText={setInputText}
+                onChangeText={handleInputChange}
                 placeholder="Type a message..."
                 placeholderTextColor="#A6A6B2"
                 className="flex-1 text-body text-base py-1"
@@ -367,16 +519,15 @@ export default function ChatScreen() {
             {/* Send Button */}
             <Pressable
               onPress={handleSend}
-              disabled={!inputText.trim()}
-              className={`w-10 h-10 rounded-full items-center justify-center ${
-                inputText.trim()
-                  ? "bg-primary active:bg-primary/80"
-                  : "bg-surface-elevated"
-              }`}
+              disabled={!inputText.trim() || !isConnected}
+              className={`w-10 h-10 rounded-full items-center justify-center ${inputText.trim() && isConnected
+                ? "bg-primary active:bg-primary/80"
+                : "bg-surface-elevated"
+                }`}
             >
               <Send
                 size={20}
-                color={inputText.trim() ? "#FFFFFF" : "#A6A6B2"}
+                color={inputText.trim() && isConnected ? "#FFFFFF" : "#A6A6B2"}
               />
             </Pressable>
           </View>

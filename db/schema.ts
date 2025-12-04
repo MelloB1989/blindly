@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   photos: json("photos").default([]),
   is_verified: boolean("is_verified").default(false),
   address: json("address").notNull().default({}),
+  extra: json("extra").default({}),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -76,4 +77,20 @@ export const user_files = pgTable("user_files", {
   visibility: varchar("visibility").notNull(),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const user_profile_activities = pgTable("user_profile_activities", {
+  id: varchar("id").primaryKey().notNull(),
+  user_id: varchar("user_id").notNull(),
+  type: varchar("type").notNull(), // "poke", "view", "superlike"
+  target_id: varchar("target_id").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const swipes = pgTable("swipes", {
+  id: varchar("id").primaryKey().notNull(),
+  user_id: varchar("user_id").notNull(),
+  target_id: varchar("target_id").notNull(),
+  action_type: varchar("action_type").notNull(), // "like", "superlike", "dislike"
+  created_at: timestamp("created_at").defaultNow().notNull(),
 });

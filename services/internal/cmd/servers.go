@@ -24,13 +24,17 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-func StartGoFiber() {
+func StartGoFiber(ctx context.Context) {
 	godotenv.Load()
 	app := routes.Routes()
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: getFiberCORSOrigins(),
 		AllowHeaders: "Content-Type, Authorization, Connection, Upgrade, Sec-WebSocket-Key, Sec-WebSocket-Version, Sec-WebSocket-Protocol, Cache-Control",
 	}))
+	go func() {
+		<-ctx.Done()
+		app.ShutdownWithContext(context.Background())
+	}()
 	app.Listen(":8080")
 }
 

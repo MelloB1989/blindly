@@ -15,6 +15,21 @@ type Address {
     coordinates: [Float!] # [latitude, longitude]
 }
 
+type ExtraMetadata {
+    school: String
+    work: String
+    looking_for: [String]!
+    zodiac: String
+    languages: [String]!
+    excercise: String
+    drinking: String
+    smoking: String
+    kids: String
+    religion: String
+    ethnicity: String
+    sexuality: String
+}
+
 type User {
     id: String!
     first_name: String!
@@ -31,8 +46,27 @@ type User {
     photos: [String!]!
     is_verified: Boolean!
     address: Address
+    extra: ExtraMetadata
     created_at: Time
     updated_at: Time
+}
+
+type UserPublic {
+    id: String!
+    name: String!
+    pfp: String! # Blur is applied dynamically
+    bio: String!
+    dob: String!
+    gender: String!
+    hobbies: [String!]!
+    interests: [String!]!
+    user_prompts: [String!]!
+    personality_traits: [String!]!
+    photos: [String!]! # Blur is applied dynamically
+    is_verified: Boolean!
+    extra: ExtraMetadata
+    created_at: Time!
+    is_online: Boolean!
 }
 
 """

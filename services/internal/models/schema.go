@@ -19,13 +19,14 @@ type User struct {
 	Photos            []string       `json:"photos" db:"photos"`
 	IsVerified        bool           `json:"is_verified"`
 	Address           Address        `json:"address" db:"address"`
+	Extra             ExtraMetadata  `json:"extra"`
 	CreatedAt         time.Time      `json:"created_at"`
 	UpdatedAt         time.Time      `json:"updated_at"`
 }
 
 type Match struct {
 	TableName        string           `karma_table:"matches" json:"-"`
-	Id               int              `json:"id"`
+	Id               string           `json:"id" karma:"primary"`
 	SheId            string           `json:"she_id"`
 	HeId             string           `json:"he_id"`
 	Score            int              `json:"score"`
@@ -36,7 +37,7 @@ type Match struct {
 
 type Chat struct {
 	TableName string    `karma_table:"chats" json:"-"`
-	Id        int       `json:"id"`
+	Id        string    `json:"id" karma:"primary"`
 	MatchId   string    `json:"match_id"`
 	CreatedAt time.Time `json:"created_at"`
 	Messages  []Message `json:"messages" db:"messages"`
@@ -44,7 +45,7 @@ type Chat struct {
 
 type Post struct {
 	TableName string    `karma_table:"posts" json:"-"`
-	Id        int       `json:"id"`
+	Id        string    `json:"id" karma:"primary"`
 	UserId    string    `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 	Content   string    `json:"content"`
@@ -54,7 +55,7 @@ type Post struct {
 
 type Comment struct {
 	TableName string    `karma_table:"comments" json:"-"`
-	Id        int       `json:"id"`
+	Id        string    `json:"id" karma:"primary"`
 	PostId    string    `json:"post_id"`
 	ReplyToId string    `json:"reply_to_id"`
 	UserId    string    `json:"user_id"`
@@ -71,4 +72,22 @@ type UserFiles struct {
 	Visibility string    `json:"visibility"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+type UserProfileActivity struct {
+	TableName string       `karma_table:"user_profile_activities" json:"-"`
+	Id        string       `json:"id" karma:"primary"`
+	UserId    string       `json:"user_id"`
+	Type      ActivityType `json:"type"`
+	TargetId  string       `json:"target_id"`
+	CreatedAt time.Time    `json:"created_at"`
+}
+
+type Swipe struct {
+	TableName  string    `karma_table:"swipes" json:"-"`
+	Id         string    `json:"id" karma:"primary"`
+	UserId     string    `json:"user_id"`
+	TargetId   string    `json:"target_id"`
+	ActionType SwipeType `json:"action_type"` // "like", "superlike", "dislike"
+	CreatedAt  time.Time `json:"created_at"`
 }

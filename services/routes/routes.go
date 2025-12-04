@@ -1,11 +1,13 @@
 package routes
 
 import (
+	"blindly/internal/handlers/chat"
 	"blindly/internal/handlers/fs"
 	"blindly/internal/middlewares"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/websocket/v2"
 )
 
 func Routes() *fiber.App {
@@ -22,6 +24,10 @@ func Routes() *fiber.App {
 
 	fsRoutes := v1.Group("/fs")
 	fsRoutes.Post("/upload", middlewares.IsUserVerified, fs.StoreUserFile)
+
+	chatserviceRoutes := v1.Group("/chat")
+	chatserviceRoutes.Post("/flush", chat.FlushHandler)
+	chatserviceRoutes.Get("/ws/:chatId", websocket.New(chat.WSHandler))
 
 	return app
 }

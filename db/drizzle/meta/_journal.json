@@ -15,6 +15,34 @@
       "when": 1764834318479,
       "tag": "0001_happy_the_hunter",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764876613936,
+      "tag": "0002_mean_daredevil",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1764878139536,
+      "tag": "0003_stiff_orphan",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1764878661547,
+      "tag": "0004_last_proemial_gods",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1764884322977,
+      "tag": "0005_mean_toro",
+      "breakpoints": true
     }
   ]
 }

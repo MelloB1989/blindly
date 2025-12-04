@@ -19,7 +19,7 @@ func main() {
 
 	go mockserver.StartMockServer(ctx)
 	go cmd.StartGraphql(ctx)
-	go cmd.StartGoFiber()
+	go cmd.StartGoFiber(ctx)
 	go cmd.StartProxyServer(ctx)
 
 	l := logger.NewLogger()

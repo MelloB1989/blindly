@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   FlatList,
@@ -9,13 +9,19 @@ import {
   Platform,
   UIManager,
   Image,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Avatar } from "../../components/ui/Avatar";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
-import { MOCK_CHATS, MOCK_USERS, getUserById } from "../../constants/mockData";
+import { chatService, Connection } from "../../services/chat-service";
+import {
+  activityService,
+  UserProfileActivity,
+} from "../../services/activity-service";
 import {
   Lock,
   Unlock,
@@ -45,6 +51,55 @@ export default function ChatScreen() {
     "viewed_you",
   );
 
+  // Data states
+  const [connections, setConnections] = useState<Connection[]>([]);
+  const [receivedActivities, setReceivedActivities] = useState<
+    UserProfileActivity[]
+  >([]);
+  const [sentActivities, setSentActivities] = useState<UserProfileActivity[]>(
+    [],
+  );
+
+  // Loading states
+  const [isLoadingConnections, setIsLoadingConnections] = useState(true);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch data
+  const fetchConnections = useCallback(async () => {
+    const result = await chatService.getMyConnections();
+    if (result.success && result.connections) {
+      setConnections(result.connections);
+    }
+    setIsLoadingConnections(false);
+  }, []);
+
+  const fetchActivities = useCallback(async () => {
+    const [received, sent] = await Promise.all([
+      activityService.getReceivedActivities(),
+      activityService.getSentActivities(),
+    ]);
+
+    if (received.success && received.activities) {
+      setReceivedActivities(received.activities);
+    }
+    if (sent.success && sent.activities) {
+      setSentActivities(sent.activities);
+    }
+    setIsLoadingActivities(false);
+  }, []);
+
+  useEffect(() => {
+    fetchConnections();
+    fetchActivities();
+  }, [fetchConnections, fetchActivities]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([fetchConnections(), fetchActivities()]);
+    setIsRefreshing(false);
+  };
+
   const handleTabChange = (tab: TabType) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setActiveTab(tab);
@@ -58,36 +113,44 @@ export default function ChatScreen() {
     router.push(`/user/${userId}` as Href);
   };
 
+  // Get filtered activities
+  const receivedPokes = activityService.filterByType(receivedActivities, "POKE");
+  const sentPokes = activityService.filterByType(sentActivities, "POKE");
+  const viewedYou = activityService.filterByType(
+    receivedActivities,
+    "PROFILE_VIEW",
+  );
+  const youViewed = activityService.filterByType(sentActivities, "PROFILE_VIEW");
+
   // --- Render Components ---
 
-  const renderMessageItem = ({ item }: { item: (typeof MOCK_CHATS)[0] }) => {
-    const otherUser = getUserById(item.userId);
-    if (!otherUser) return null;
-
-    const progressPercent = Math.round(
-      (item.messagesCount / item.messagesRequired) * 100,
-    );
+  const renderMessageItem = ({ item }: { item: Connection }) => {
+    const profile = item.connection_profile;
+    const progressPercent = Math.round(item.percentage_complete * 100);
 
     return (
       <Pressable
-        onPress={() => handleChatPress(item.id)}
+        onPress={() => handleChatPress(item.chat.id)}
         className="flex-row items-center p-4 border-b border-surface-elevated active:bg-surface-elevated/50"
       >
         <View className="mr-4">
           <Avatar
-            source={otherUser.isRevealed ? otherUser.photos[0] : undefined}
-            fallback={otherUser.firstName}
-            locked={!otherUser.isRevealed}
+            source={item.match.is_unlocked ? profile.pfp : undefined}
+            fallback={profile.name}
+            locked={!item.match.is_unlocked}
             size="md"
           />
+          {profile.is_online && (
+            <View className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-success border-2 border-background" />
+          )}
         </View>
         <View className="flex-1 justify-center">
           <View className="flex-row justify-between items-baseline mb-1">
             <View className="flex-row items-center gap-2">
               <Typography variant="h3" className="text-base">
-                {otherUser.firstName}
+                {profile.name}
               </Typography>
-              {item.canUnlock && !otherUser.isRevealed && (
+              {item.percentage_complete >= 1 && !item.match.is_unlocked && (
                 <Badge
                   label="Can Unlock"
                   variant="ai"
@@ -97,21 +160,21 @@ export default function ChatScreen() {
               )}
             </View>
             <Typography variant="caption" color="muted">
-              {item.updatedAt}
+              {new Date(item.chat.created_at).toLocaleDateString()}
             </Typography>
           </View>
           <View className="flex-row justify-between items-center">
             <Typography
               variant="body"
-              color={item.unreadCount > 0 ? "default" : "muted"}
+              color={item.unread_messages > 0 ? "default" : "muted"}
               numberOfLines={1}
               className="flex-1 mr-4 text-sm"
             >
-              {item.lastMessage}
+              {item.last_message || "Start the conversation!"}
             </Typography>
-            {item.unreadCount > 0 && (
+            {item.unread_messages > 0 && (
               <Badge
-                label={item.unreadCount}
+                label={item.unread_messages}
                 variant="primary"
                 size="sm"
                 className="min-w-[20px] h-5 px-1.5 items-center justify-center rounded-full"
@@ -119,8 +182,8 @@ export default function ChatScreen() {
             )}
           </View>
 
-          {/* Enhanced Unlock Progress */}
-          {!otherUser.isRevealed && (
+          {/* Unlock Progress */}
+          {!item.match.is_unlocked && (
             <View className="mt-3 bg-surface-elevated/50 p-2 rounded-lg border border-white/5">
               <View className="flex-row items-center justify-between mb-2">
                 <View className="flex-row items-center gap-1.5">
@@ -131,17 +194,16 @@ export default function ChatScreen() {
                 </View>
                 <Typography
                   variant="caption"
-                  color={item.canUnlock ? "primary" : "muted"}
+                  color={item.percentage_complete >= 1 ? "primary" : "muted"}
                   className="font-bold"
                 >
-                  {item.messagesCount}/{item.messagesRequired} msgs
+                  {progressPercent}%
                 </Typography>
               </View>
               <View className="h-1.5 bg-surface rounded-full overflow-hidden">
                 <View
-                  className={`h-full rounded-full ${
-                    item.canUnlock ? "bg-primary" : "bg-primary/50"
-                  }`}
+                  className={`h-full rounded-full ${item.percentage_complete >= 1 ? "bg-primary" : "bg-primary/50"
+                    }`}
                   style={{ width: `${Math.min(progressPercent, 100)}%` }}
                 />
               </View>
@@ -157,29 +219,27 @@ export default function ChatScreen() {
     type,
     direction,
   }: {
-    item: (typeof MOCK_USERS)[0];
+    item: UserProfileActivity;
     type: "poke" | "view";
     direction: "incoming" | "outgoing";
   }) => {
-    // Simulate locked state (most are locked initially)
-    const isLocked = !item.isRevealed;
+    const profile = item.target_user;
+    const isLocked = true; // Photos are blurred by default
 
     return (
       <Pressable
-        onPress={() => handleProfilePress(item.id)}
+        onPress={() => handleProfilePress(profile.id)}
         className="flex-row items-center p-4 border-b border-surface-elevated active:bg-surface-elevated/50"
       >
         <View className="mr-4 relative">
           <View className="w-14 h-14 rounded-full overflow-hidden bg-surface-elevated border border-white/10">
-            {/* Image (Blurred if locked) */}
             <Image
-              source={{ uri: item.photos[0] }}
+              source={{ uri: profile.pfp }}
               className="w-full h-full"
               resizeMode="cover"
             />
             {isLocked && (
               <View className="absolute inset-0 bg-primary/30 items-center justify-center overflow-hidden">
-                {/* Blue effect overlay */}
                 <BlurView
                   intensity={40}
                   tint="dark"
@@ -189,7 +249,6 @@ export default function ChatScreen() {
               </View>
             )}
           </View>
-          {/* Type Icon Badge */}
           <View className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-surface border-2 border-background items-center justify-center shadow-sm">
             {type === "poke" ? (
               <Hand size={12} color="#7C3AED" />
@@ -202,10 +261,10 @@ export default function ChatScreen() {
         <View className="flex-1">
           <View className="flex-row items-center justify-between">
             <Typography variant="h3" className="text-base">
-              {item.firstName}, {item.age}
+              {profile.name}
             </Typography>
             <Typography variant="caption" color="muted">
-              {type === "poke" ? "2h ago" : "1d ago"}
+              {new Date(profile.created_at).toLocaleDateString()}
             </Typography>
           </View>
           <View className="flex-row items-center mt-1">
@@ -235,7 +294,7 @@ export default function ChatScreen() {
             variant="outline"
             size="sm"
             className="h-8 px-3"
-            onPress={() => handleProfilePress(item.id)}
+            onPress={() => handleProfilePress(profile.id)}
           >
             <Typography variant="label" color="primary">
               View
@@ -246,12 +305,15 @@ export default function ChatScreen() {
     );
   };
 
-  // --- Mock Data for Tabs ---
-  // Using MOCK_USERS to simulate pokes/views
-  const receivedPokes = MOCK_USERS.slice(0, 2);
-  const sentPokes = MOCK_USERS.slice(2, 4);
-  const viewedYou = MOCK_USERS.slice(2, 4);
-  const youViewed = MOCK_USERS.slice(4, 6);
+  // Loading component
+  const LoadingView = () => (
+    <View className="flex-1 items-center justify-center py-16">
+      <ActivityIndicator size="large" color="#7C3AED" />
+      <Typography variant="body" color="muted" className="mt-4">
+        Loading...
+      </Typography>
+    </View>
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -346,91 +408,135 @@ export default function ChatScreen() {
       {/* Content Area */}
       <View className="flex-1">
         {activeTab === "messages" &&
-          (MOCK_CHATS.length > 0 ? (
+          (isLoadingConnections ? (
+            <LoadingView />
+          ) : connections.length > 0 ? (
             <FlatList
-              data={MOCK_CHATS}
+              data={connections}
               renderItem={renderMessageItem}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.chat.id}
               contentContainerStyle={{ paddingBottom: 20 }}
               showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  tintColor="#7C3AED"
+                />
+              }
             />
           ) : (
             <EmptyState
               icon={MessageCircle}
-              title="No Conversations"
+              title="No Conversations Yet"
               message="Match with someone to start chatting!"
               action={() => router.push("/(tabs)/swipe" as Href)}
+              actionLabel="Start Swiping"
             />
           ))}
 
-        {activeTab === "pokes" && (
-          <FlatList
-            data={pokeFilter === "received" ? receivedPokes : sentPokes}
-            renderItem={({ item }) =>
-              renderInteractionItem({
-                item,
-                type: "poke",
-                direction: pokeFilter === "received" ? "incoming" : "outgoing",
-              })
-            }
-            keyExtractor={(item) => `poke-${item.id}`}
-            contentContainerStyle={{ paddingBottom: 20 }}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <EmptyState
-                icon={Hand}
-                title={
-                  pokeFilter === "received"
-                    ? "No Pokes Received"
-                    : "No Pokes Sent"
-                }
-                message={
-                  pokeFilter === "received"
-                    ? "Send pokes to get noticed!"
-                    : "Go poke someone!"
-                }
-              />
-            }
-          />
-        )}
+        {activeTab === "pokes" &&
+          (isLoadingActivities ? (
+            <LoadingView />
+          ) : (
+            <FlatList
+              data={pokeFilter === "received" ? receivedPokes : sentPokes}
+              renderItem={({ item }) =>
+                renderInteractionItem({
+                  item,
+                  type: "poke",
+                  direction: pokeFilter === "received" ? "incoming" : "outgoing",
+                })
+              }
+              keyExtractor={(item) => `poke-${item.id}`}
+              contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  tintColor="#7C3AED"
+                />
+              }
+              ListEmptyComponent={
+                <EmptyState
+                  icon={Hand}
+                  title={
+                    pokeFilter === "received"
+                      ? "No Pokes Received"
+                      : "No Pokes Sent"
+                  }
+                  message={
+                    pokeFilter === "received"
+                      ? "When someone pokes you, they'll appear here!"
+                      : "Poke someone to let them know you're interested!"
+                  }
+                />
+              }
+            />
+          ))}
 
-        {activeTab === "views" && (
-          <FlatList
-            data={viewFilter === "viewed_you" ? viewedYou : youViewed}
-            renderItem={({ item }) =>
-              renderInteractionItem({
-                item,
-                type: "view",
-                direction:
-                  viewFilter === "viewed_you" ? "incoming" : "outgoing",
-              })
-            }
-            keyExtractor={(item) => `view-${item.id}`}
-            contentContainerStyle={{ paddingBottom: 20 }}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <EmptyState
-                icon={Eye}
-                title={
-                  viewFilter === "viewed_you"
-                    ? "No Views Yet"
-                    : "You haven't viewed anyone"
-                }
-                message={
-                  viewFilter === "viewed_you"
-                    ? "Optimize your profile to get more views."
-                    : "Start swiping to view profiles!"
-                }
-              />
-            }
-          />
-        )}
+        {activeTab === "views" &&
+          (isLoadingActivities ? (
+            <LoadingView />
+          ) : (
+            <FlatList
+              data={viewFilter === "viewed_you" ? viewedYou : youViewed}
+              renderItem={({ item }) =>
+                renderInteractionItem({
+                  item,
+                  type: "view",
+                  direction:
+                    viewFilter === "viewed_you" ? "incoming" : "outgoing",
+                })
+              }
+              keyExtractor={(item) => `view-${item.id}`}
+              contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  tintColor="#7C3AED"
+                />
+              }
+              ListEmptyComponent={
+                <EmptyState
+                  icon={Eye}
+                  title={
+                    viewFilter === "viewed_you"
+                      ? "No Profile Views Yet"
+                      : "You Haven't Viewed Anyone"
+                  }
+                  message={
+                    viewFilter === "viewed_you"
+                      ? "When someone views your profile, they'll show up here."
+                      : "Start swiping to discover new profiles!"
+                  }
+                />
+              }
+            />
+          ))}
       </View>
     </SafeAreaView>
   );
 }
 
-const EmptyState = ({ icon: Icon, title, message, action }: any) => (
+interface EmptyStateProps {
+  icon: React.ComponentType<{ size: number; color: string }>;
+  title: string;
+  message: string;
+  action?: () => void;
+  actionLabel?: string;
+}
+
+const EmptyState = ({
+  icon: Icon,
+  title,
+  message,
+  action,
+  actionLabel = "Start Swiping",
+}: EmptyStateProps) => (
   <View className="flex-1 items-center justify-center px-8 py-16">
     <View className="w-20 h-20 rounded-full bg-surface-elevated items-center justify-center mb-4">
       <Icon size={40} color="#7C3AED" />
@@ -443,7 +549,7 @@ const EmptyState = ({ icon: Icon, title, message, action }: any) => (
     </Typography>
     {action && (
       <Button variant="primary" onPress={action}>
-        Start Swiping
+        {actionLabel}
       </Button>
     )}
   </View>

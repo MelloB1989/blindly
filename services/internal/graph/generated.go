@@ -42,9 +42,12 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Match() MatchResolver
 	Mutation() MutationResolver
+	PostUnlockRating() PostUnlockRatingResolver
 	Query() QueryResolver
 	User() UserResolver
+	UserProfileActivity() UserProfileActivityResolver
 }
 
 type DirectiveRoot struct {
@@ -63,11 +66,53 @@ type ComplexityRoot struct {
 		User        func(childComplexity int) int
 	}
 
+	Chat struct {
+		CreatedAt func(childComplexity int) int
+		Id        func(childComplexity int) int
+		MatchId   func(childComplexity int) int
+	}
+
+	Connection struct {
+		Chat               func(childComplexity int) int
+		ConnectionProfile  func(childComplexity int) int
+		LastMessage        func(childComplexity int) int
+		Match              func(childComplexity int) int
+		PercentageComplete func(childComplexity int) int
+		UnreadMessages     func(childComplexity int) int
+	}
+
+	ExtraMetadata struct {
+		Drinking   func(childComplexity int) int
+		Ethnicity  func(childComplexity int) int
+		Excercise  func(childComplexity int) int
+		Kids       func(childComplexity int) int
+		Languages  func(childComplexity int) int
+		LookingFor func(childComplexity int) int
+		Religion   func(childComplexity int) int
+		School     func(childComplexity int) int
+		Sexuality  func(childComplexity int) int
+		Smoking    func(childComplexity int) int
+		Work       func(childComplexity int) int
+		Zodiac     func(childComplexity int) int
+	}
+
+	Match struct {
+		HeId             func(childComplexity int) int
+		Id               func(childComplexity int) int
+		IsUnlocked       func(childComplexity int) int
+		MatchedAt        func(childComplexity int) int
+		PostUnlockRating func(childComplexity int) int
+		Score            func(childComplexity int) int
+		SheId            func(childComplexity int) int
+	}
+
 	Mutation struct {
+		CreateProfileActivity func(childComplexity int, typeArg models.ActivityType, targetUserID string) int
 		CreateUser            func(childComplexity int, input model.CreateUserInput) int
 		LoginWithPassword     func(childComplexity int, email string, password string) int
 		RefreshToken          func(childComplexity int) int
 		RequestEmailLoginCode func(childComplexity int, email string) int
+		Swipe                 func(childComplexity int, targetID string, actionType models.SwipeType) int
 		UpdateMe              func(childComplexity int, input model.UpdateUserInput) int
 		VerifyEmailLoginCode  func(childComplexity int, email string, code string) int
 	}
@@ -77,8 +122,51 @@ type ComplexityRoot struct {
 		Value func(childComplexity int) int
 	}
 
+	PostUnlockRating struct {
+		HeRating  func(childComplexity int) int
+		SheRating func(childComplexity int) int
+	}
+
 	Query struct {
-		Me func(childComplexity int) int
+		GetMyConnections  func(childComplexity int) int
+		Me                func(childComplexity int) int
+		MySwipes          func(childComplexity int) int
+		ProfileActivities func(childComplexity int, class *model.ActivityClass) int
+		Recommendations   func(childComplexity int, cursor *string, limit *int32) int
+	}
+
+	RecommendationsResult struct {
+		FetchedAt  func(childComplexity int) int
+		HasMore    func(childComplexity int) int
+		Items      func(childComplexity int) int
+		NextCursor func(childComplexity int) int
+	}
+
+	RecommendedProfile struct {
+		CommonInterests    func(childComplexity int) int
+		CompatibilityScore func(childComplexity int) int
+		DistanceKm         func(childComplexity int) int
+		MatchScore         func(childComplexity int) int
+		Profile            func(childComplexity int) int
+		Reason             func(childComplexity int) int
+	}
+
+	Swipe struct {
+		ActionType func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		Id         func(childComplexity int) int
+		TargetId   func(childComplexity int) int
+		UserId     func(childComplexity int) int
+	}
+
+	SwipeResponse struct {
+		Match func(childComplexity int) int
+		Swipe func(childComplexity int) int
+	}
+
+	SwipedProfile struct {
+		Profile func(childComplexity int) int
+		Swipe   func(childComplexity int) int
 	}
 
 	User struct {
@@ -87,6 +175,7 @@ type ComplexityRoot struct {
 		CreatedAt         func(childComplexity int) int
 		Dob               func(childComplexity int) int
 		Email             func(childComplexity int) int
+		Extra             func(childComplexity int) int
 		FirstName         func(childComplexity int) int
 		Gender            func(childComplexity int) int
 		Hobbies           func(childComplexity int) int
@@ -100,9 +189,39 @@ type ComplexityRoot struct {
 		UpdatedAt         func(childComplexity int) int
 		UserPrompts       func(childComplexity int) int
 	}
+
+	UserProfileActivity struct {
+		Class      func(childComplexity int) int
+		Id         func(childComplexity int) int
+		TargetUser func(childComplexity int) int
+		Type       func(childComplexity int) int
+	}
+
+	UserPublic struct {
+		Bio               func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		Dob               func(childComplexity int) int
+		Extra             func(childComplexity int) int
+		Gender            func(childComplexity int) int
+		Hobbies           func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Interests         func(childComplexity int) int
+		IsOnline          func(childComplexity int) int
+		IsVerified        func(childComplexity int) int
+		Name              func(childComplexity int) int
+		PersonalityTraits func(childComplexity int) int
+		Pfp               func(childComplexity int) int
+		Photos            func(childComplexity int) int
+		UserPrompts       func(childComplexity int) int
+	}
 }
 
+type MatchResolver interface {
+	Score(ctx context.Context, obj *models.Match) (int32, error)
+}
 type MutationResolver interface {
+	CreateProfileActivity(ctx context.Context, typeArg models.ActivityType, targetUserID string) (*models.UserProfileActivity, error)
+	Swipe(ctx context.Context, targetID string, actionType models.SwipeType) (*model.SwipeResponse, error)
 	CreateUser(ctx context.Context, input model.CreateUserInput) (*model.AuthPayload, error)
 	LoginWithPassword(ctx context.Context, email string, password string) (*model.AuthPayload, error)
 	RequestEmailLoginCode(ctx context.Context, email string) (bool, error)
@@ -110,11 +229,23 @@ type MutationResolver interface {
 	UpdateMe(ctx context.Context, input model.UpdateUserInput) (*models.User, error)
 	RefreshToken(ctx context.Context) (*model.AuthPayload, error)
 }
+type PostUnlockRatingResolver interface {
+	SheRating(ctx context.Context, obj *models.PostUnlockRating) (int32, error)
+	HeRating(ctx context.Context, obj *models.PostUnlockRating) (int32, error)
+}
 type QueryResolver interface {
+	GetMyConnections(ctx context.Context) ([]*model.Connection, error)
+	ProfileActivities(ctx context.Context, class *model.ActivityClass) ([]*models.UserProfileActivity, error)
+	Recommendations(ctx context.Context, cursor *string, limit *int32) (*model.RecommendationsResult, error)
+	MySwipes(ctx context.Context) ([]*model.SwipedProfile, error)
 	Me(ctx context.Context) (*models.User, error)
 }
 type UserResolver interface {
 	PersonalityTraits(ctx context.Context, obj *models.User) ([]*model.PersonalityTrait, error)
+}
+type UserProfileActivityResolver interface {
+	TargetUser(ctx context.Context, obj *models.UserProfileActivity) (*model.UserPublic, error)
+	Class(ctx context.Context, obj *models.UserProfileActivity) (model.ActivityClass, error)
 }
 
 var (
@@ -178,6 +309,189 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.AuthPayload.User(childComplexity), true
 
+	case "Chat.created_at":
+		if e.complexity.Chat.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Chat.CreatedAt(childComplexity), true
+	case "Chat.id":
+		if e.complexity.Chat.Id == nil {
+			break
+		}
+
+		return e.complexity.Chat.Id(childComplexity), true
+	case "Chat.match_id":
+		if e.complexity.Chat.MatchId == nil {
+			break
+		}
+
+		return e.complexity.Chat.MatchId(childComplexity), true
+
+	case "Connection.chat":
+		if e.complexity.Connection.Chat == nil {
+			break
+		}
+
+		return e.complexity.Connection.Chat(childComplexity), true
+	case "Connection.connection_profile":
+		if e.complexity.Connection.ConnectionProfile == nil {
+			break
+		}
+
+		return e.complexity.Connection.ConnectionProfile(childComplexity), true
+	case "Connection.last_message":
+		if e.complexity.Connection.LastMessage == nil {
+			break
+		}
+
+		return e.complexity.Connection.LastMessage(childComplexity), true
+	case "Connection.match":
+		if e.complexity.Connection.Match == nil {
+			break
+		}
+
+		return e.complexity.Connection.Match(childComplexity), true
+	case "Connection.percentage_complete":
+		if e.complexity.Connection.PercentageComplete == nil {
+			break
+		}
+
+		return e.complexity.Connection.PercentageComplete(childComplexity), true
+	case "Connection.unread_messages":
+		if e.complexity.Connection.UnreadMessages == nil {
+			break
+		}
+
+		return e.complexity.Connection.UnreadMessages(childComplexity), true
+
+	case "ExtraMetadata.drinking":
+		if e.complexity.ExtraMetadata.Drinking == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.Drinking(childComplexity), true
+	case "ExtraMetadata.ethnicity":
+		if e.complexity.ExtraMetadata.Ethnicity == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.Ethnicity(childComplexity), true
+	case "ExtraMetadata.excercise":
+		if e.complexity.ExtraMetadata.Excercise == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.Excercise(childComplexity), true
+	case "ExtraMetadata.kids":
+		if e.complexity.ExtraMetadata.Kids == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.Kids(childComplexity), true
+	case "ExtraMetadata.languages":
+		if e.complexity.ExtraMetadata.Languages == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.Languages(childComplexity), true
+	case "ExtraMetadata.looking_for":
+		if e.complexity.ExtraMetadata.LookingFor == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.LookingFor(childComplexity), true
+	case "ExtraMetadata.religion":
+		if e.complexity.ExtraMetadata.Religion == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.Religion(childComplexity), true
+	case "ExtraMetadata.school":
+		if e.complexity.ExtraMetadata.School == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.School(childComplexity), true
+	case "ExtraMetadata.sexuality":
+		if e.complexity.ExtraMetadata.Sexuality == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.Sexuality(childComplexity), true
+	case "ExtraMetadata.smoking":
+		if e.complexity.ExtraMetadata.Smoking == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.Smoking(childComplexity), true
+	case "ExtraMetadata.work":
+		if e.complexity.ExtraMetadata.Work == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.Work(childComplexity), true
+	case "ExtraMetadata.zodiac":
+		if e.complexity.ExtraMetadata.Zodiac == nil {
+			break
+		}
+
+		return e.complexity.ExtraMetadata.Zodiac(childComplexity), true
+
+	case "Match.he_id":
+		if e.complexity.Match.HeId == nil {
+			break
+		}
+
+		return e.complexity.Match.HeId(childComplexity), true
+	case "Match.id":
+		if e.complexity.Match.Id == nil {
+			break
+		}
+
+		return e.complexity.Match.Id(childComplexity), true
+	case "Match.is_unlocked":
+		if e.complexity.Match.IsUnlocked == nil {
+			break
+		}
+
+		return e.complexity.Match.IsUnlocked(childComplexity), true
+	case "Match.matched_at":
+		if e.complexity.Match.MatchedAt == nil {
+			break
+		}
+
+		return e.complexity.Match.MatchedAt(childComplexity), true
+	case "Match.post_unlock_rating":
+		if e.complexity.Match.PostUnlockRating == nil {
+			break
+		}
+
+		return e.complexity.Match.PostUnlockRating(childComplexity), true
+	case "Match.score":
+		if e.complexity.Match.Score == nil {
+			break
+		}
+
+		return e.complexity.Match.Score(childComplexity), true
+	case "Match.she_id":
+		if e.complexity.Match.SheId == nil {
+			break
+		}
+
+		return e.complexity.Match.SheId(childComplexity), true
+
+	case "Mutation.createProfileActivity":
+		if e.complexity.Mutation.CreateProfileActivity == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createProfileActivity_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateProfileActivity(childComplexity, args["type"].(models.ActivityType), args["target_user_id"].(string)), true
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
 			break
@@ -217,6 +531,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.RequestEmailLoginCode(childComplexity, args["email"].(string)), true
+	case "Mutation.swipe":
+		if e.complexity.Mutation.Swipe == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_swipe_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Swipe(childComplexity, args["target_id"].(string), args["action_type"].(models.SwipeType)), true
 	case "Mutation.updateMe":
 		if e.complexity.Mutation.UpdateMe == nil {
 			break
@@ -253,12 +578,178 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PersonalityTrait.Value(childComplexity), true
 
+	case "PostUnlockRating.he_rating":
+		if e.complexity.PostUnlockRating.HeRating == nil {
+			break
+		}
+
+		return e.complexity.PostUnlockRating.HeRating(childComplexity), true
+	case "PostUnlockRating.she_rating":
+		if e.complexity.PostUnlockRating.SheRating == nil {
+			break
+		}
+
+		return e.complexity.PostUnlockRating.SheRating(childComplexity), true
+
+	case "Query.getMyConnections":
+		if e.complexity.Query.GetMyConnections == nil {
+			break
+		}
+
+		return e.complexity.Query.GetMyConnections(childComplexity), true
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
 			break
 		}
 
 		return e.complexity.Query.Me(childComplexity), true
+	case "Query.mySwipes":
+		if e.complexity.Query.MySwipes == nil {
+			break
+		}
+
+		return e.complexity.Query.MySwipes(childComplexity), true
+	case "Query.profileActivities":
+		if e.complexity.Query.ProfileActivities == nil {
+			break
+		}
+
+		args, err := ec.field_Query_profileActivities_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ProfileActivities(childComplexity, args["class"].(*model.ActivityClass)), true
+	case "Query.recommendations":
+		if e.complexity.Query.Recommendations == nil {
+			break
+		}
+
+		args, err := ec.field_Query_recommendations_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Recommendations(childComplexity, args["cursor"].(*string), args["limit"].(*int32)), true
+
+	case "RecommendationsResult.fetched_at":
+		if e.complexity.RecommendationsResult.FetchedAt == nil {
+			break
+		}
+
+		return e.complexity.RecommendationsResult.FetchedAt(childComplexity), true
+	case "RecommendationsResult.has_more":
+		if e.complexity.RecommendationsResult.HasMore == nil {
+			break
+		}
+
+		return e.complexity.RecommendationsResult.HasMore(childComplexity), true
+	case "RecommendationsResult.items":
+		if e.complexity.RecommendationsResult.Items == nil {
+			break
+		}
+
+		return e.complexity.RecommendationsResult.Items(childComplexity), true
+	case "RecommendationsResult.next_cursor":
+		if e.complexity.RecommendationsResult.NextCursor == nil {
+			break
+		}
+
+		return e.complexity.RecommendationsResult.NextCursor(childComplexity), true
+
+	case "RecommendedProfile.common_interests":
+		if e.complexity.RecommendedProfile.CommonInterests == nil {
+			break
+		}
+
+		return e.complexity.RecommendedProfile.CommonInterests(childComplexity), true
+	case "RecommendedProfile.compatibility_score":
+		if e.complexity.RecommendedProfile.CompatibilityScore == nil {
+			break
+		}
+
+		return e.complexity.RecommendedProfile.CompatibilityScore(childComplexity), true
+	case "RecommendedProfile.distance_km":
+		if e.complexity.RecommendedProfile.DistanceKm == nil {
+			break
+		}
+
+		return e.complexity.RecommendedProfile.DistanceKm(childComplexity), true
+	case "RecommendedProfile.match_score":
+		if e.complexity.RecommendedProfile.MatchScore == nil {
+			break
+		}
+
+		return e.complexity.RecommendedProfile.MatchScore(childComplexity), true
+	case "RecommendedProfile.profile":
+		if e.complexity.RecommendedProfile.Profile == nil {
+			break
+		}
+
+		return e.complexity.RecommendedProfile.Profile(childComplexity), true
+	case "RecommendedProfile.reason":
+		if e.complexity.RecommendedProfile.Reason == nil {
+			break
+		}
+
+		return e.complexity.RecommendedProfile.Reason(childComplexity), true
+
+	case "Swipe.action_type":
+		if e.complexity.Swipe.ActionType == nil {
+			break
+		}
+
+		return e.complexity.Swipe.ActionType(childComplexity), true
+	case "Swipe.created_at":
+		if e.complexity.Swipe.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Swipe.CreatedAt(childComplexity), true
+	case "Swipe.id":
+		if e.complexity.Swipe.Id == nil {
+			break
+		}
+
+		return e.complexity.Swipe.Id(childComplexity), true
+	case "Swipe.target_id":
+		if e.complexity.Swipe.TargetId == nil {
+			break
+		}
+
+		return e.complexity.Swipe.TargetId(childComplexity), true
+	case "Swipe.user_id":
+		if e.complexity.Swipe.UserId == nil {
+			break
+		}
+
+		return e.complexity.Swipe.UserId(childComplexity), true
+
+	case "SwipeResponse.match":
+		if e.complexity.SwipeResponse.Match == nil {
+			break
+		}
+
+		return e.complexity.SwipeResponse.Match(childComplexity), true
+	case "SwipeResponse.swipe":
+		if e.complexity.SwipeResponse.Swipe == nil {
+			break
+		}
+
+		return e.complexity.SwipeResponse.Swipe(childComplexity), true
+
+	case "SwipedProfile.profile":
+		if e.complexity.SwipedProfile.Profile == nil {
+			break
+		}
+
+		return e.complexity.SwipedProfile.Profile(childComplexity), true
+	case "SwipedProfile.swipe":
+		if e.complexity.SwipedProfile.Swipe == nil {
+			break
+		}
+
+		return e.complexity.SwipedProfile.Swipe(childComplexity), true
 
 	case "User.address":
 		if e.complexity.User.Address == nil {
@@ -290,6 +781,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.User.Email(childComplexity), true
+	case "User.extra":
+		if e.complexity.User.Extra == nil {
+			break
+		}
+
+		return e.complexity.User.Extra(childComplexity), true
 	case "User.first_name":
 		if e.complexity.User.FirstName == nil {
 			break
@@ -362,6 +859,122 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.User.UserPrompts(childComplexity), true
+
+	case "UserProfileActivity.class":
+		if e.complexity.UserProfileActivity.Class == nil {
+			break
+		}
+
+		return e.complexity.UserProfileActivity.Class(childComplexity), true
+	case "UserProfileActivity.id":
+		if e.complexity.UserProfileActivity.Id == nil {
+			break
+		}
+
+		return e.complexity.UserProfileActivity.Id(childComplexity), true
+	case "UserProfileActivity.target_user":
+		if e.complexity.UserProfileActivity.TargetUser == nil {
+			break
+		}
+
+		return e.complexity.UserProfileActivity.TargetUser(childComplexity), true
+	case "UserProfileActivity.type":
+		if e.complexity.UserProfileActivity.Type == nil {
+			break
+		}
+
+		return e.complexity.UserProfileActivity.Type(childComplexity), true
+
+	case "UserPublic.bio":
+		if e.complexity.UserPublic.Bio == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.Bio(childComplexity), true
+	case "UserPublic.created_at":
+		if e.complexity.UserPublic.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.CreatedAt(childComplexity), true
+	case "UserPublic.dob":
+		if e.complexity.UserPublic.Dob == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.Dob(childComplexity), true
+	case "UserPublic.extra":
+		if e.complexity.UserPublic.Extra == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.Extra(childComplexity), true
+	case "UserPublic.gender":
+		if e.complexity.UserPublic.Gender == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.Gender(childComplexity), true
+	case "UserPublic.hobbies":
+		if e.complexity.UserPublic.Hobbies == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.Hobbies(childComplexity), true
+	case "UserPublic.id":
+		if e.complexity.UserPublic.ID == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.ID(childComplexity), true
+	case "UserPublic.interests":
+		if e.complexity.UserPublic.Interests == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.Interests(childComplexity), true
+	case "UserPublic.is_online":
+		if e.complexity.UserPublic.IsOnline == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.IsOnline(childComplexity), true
+	case "UserPublic.is_verified":
+		if e.complexity.UserPublic.IsVerified == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.IsVerified(childComplexity), true
+	case "UserPublic.name":
+		if e.complexity.UserPublic.Name == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.Name(childComplexity), true
+	case "UserPublic.personality_traits":
+		if e.complexity.UserPublic.PersonalityTraits == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.PersonalityTraits(childComplexity), true
+	case "UserPublic.pfp":
+		if e.complexity.UserPublic.Pfp == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.Pfp(childComplexity), true
+	case "UserPublic.photos":
+		if e.complexity.UserPublic.Photos == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.Photos(childComplexity), true
+	case "UserPublic.user_prompts":
+		if e.complexity.UserPublic.UserPrompts == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.UserPrompts(childComplexity), true
 
 	}
 	return 0, false
@@ -471,7 +1084,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "schema.graphqls" "users/users.graphqls"
+//go:embed "chats/chats.graphqls" "profile_activities/profile.activities.graphqls" "schema.graphqls" "swipes/swipes.graphqls" "users/users.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -483,7 +1096,10 @@ func sourceData(filename string) string {
 }
 
 var sources = []*ast.Source{
+	{Name: "chats/chats.graphqls", Input: sourceData("chats/chats.graphqls"), BuiltIn: false},
+	{Name: "profile_activities/profile.activities.graphqls", Input: sourceData("profile_activities/profile.activities.graphqls"), BuiltIn: false},
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
+	{Name: "swipes/swipes.graphqls", Input: sourceData("swipes/swipes.graphqls"), BuiltIn: false},
 	{Name: "users/users.graphqls", Input: sourceData("users/users.graphqls"), BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -491,6 +1107,22 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_createProfileActivity_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "type", ec.unmarshalNActivityType2blindlyᚋinternalᚋmodelsᚐActivityType)
+	if err != nil {
+		return nil, err
+	}
+	args["type"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "target_user_id", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["target_user_id"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -530,6 +1162,22 @@ func (ec *executionContext) field_Mutation_requestEmailLoginCode_args(ctx contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_swipe_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "target_id", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["target_id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "action_type", ec.unmarshalNSwipeType2blindlyᚋinternalᚋmodelsᚐSwipeType)
+	if err != nil {
+		return nil, err
+	}
+	args["action_type"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateMe_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -565,6 +1213,33 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_profileActivities_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "class", ec.unmarshalOActivityClass2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐActivityClass)
+	if err != nil {
+		return nil, err
+	}
+	args["class"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_recommendations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "cursor", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["cursor"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
 	return args, nil
 }
 
@@ -819,6 +1494,8 @@ func (ec *executionContext) fieldContext_AuthPayload_user(_ context.Context, fie
 				return ec.fieldContext_User_is_verified(ctx, field)
 			case "address":
 				return ec.fieldContext_User_address(ctx, field)
+			case "extra":
+				return ec.fieldContext_User_extra(ctx, field)
 			case "created_at":
 				return ec.fieldContext_User_created_at(ctx, field)
 			case "updated_at":
@@ -826,6 +1503,996 @@ func (ec *executionContext) fieldContext_AuthPayload_user(_ context.Context, fie
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Chat_id(ctx context.Context, field graphql.CollectedField, obj *models.Chat) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Chat_id,
+		func(ctx context.Context) (any, error) {
+			return obj.Id, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Chat_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Chat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Chat_match_id(ctx context.Context, field graphql.CollectedField, obj *models.Chat) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Chat_match_id,
+		func(ctx context.Context) (any, error) {
+			return obj.MatchId, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Chat_match_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Chat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Chat_created_at(ctx context.Context, field graphql.CollectedField, obj *models.Chat) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Chat_created_at,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Chat_created_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Chat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Connection_chat(ctx context.Context, field graphql.CollectedField, obj *model.Connection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Connection_chat,
+		func(ctx context.Context) (any, error) {
+			return obj.Chat, nil
+		},
+		nil,
+		ec.marshalNChat2ᚖblindlyᚋinternalᚋmodelsᚐChat,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Connection_chat(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Connection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Chat_id(ctx, field)
+			case "match_id":
+				return ec.fieldContext_Chat_match_id(ctx, field)
+			case "created_at":
+				return ec.fieldContext_Chat_created_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Chat", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Connection_match(ctx context.Context, field graphql.CollectedField, obj *model.Connection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Connection_match,
+		func(ctx context.Context) (any, error) {
+			return obj.Match, nil
+		},
+		nil,
+		ec.marshalNMatch2ᚖblindlyᚋinternalᚋmodelsᚐMatch,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Connection_match(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Connection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Match_id(ctx, field)
+			case "she_id":
+				return ec.fieldContext_Match_she_id(ctx, field)
+			case "he_id":
+				return ec.fieldContext_Match_he_id(ctx, field)
+			case "score":
+				return ec.fieldContext_Match_score(ctx, field)
+			case "post_unlock_rating":
+				return ec.fieldContext_Match_post_unlock_rating(ctx, field)
+			case "is_unlocked":
+				return ec.fieldContext_Match_is_unlocked(ctx, field)
+			case "matched_at":
+				return ec.fieldContext_Match_matched_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Match", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Connection_last_message(ctx context.Context, field graphql.CollectedField, obj *model.Connection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Connection_last_message,
+		func(ctx context.Context) (any, error) {
+			return obj.LastMessage, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Connection_last_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Connection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Connection_unread_messages(ctx context.Context, field graphql.CollectedField, obj *model.Connection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Connection_unread_messages,
+		func(ctx context.Context) (any, error) {
+			return obj.UnreadMessages, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Connection_unread_messages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Connection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Connection_percentage_complete(ctx context.Context, field graphql.CollectedField, obj *model.Connection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Connection_percentage_complete,
+		func(ctx context.Context) (any, error) {
+			return obj.PercentageComplete, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Connection_percentage_complete(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Connection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Connection_connection_profile(ctx context.Context, field graphql.CollectedField, obj *model.Connection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Connection_connection_profile,
+		func(ctx context.Context) (any, error) {
+			return obj.ConnectionProfile, nil
+		},
+		nil,
+		ec.marshalNUserPublic2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐUserPublic,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Connection_connection_profile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Connection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserPublic_id(ctx, field)
+			case "name":
+				return ec.fieldContext_UserPublic_name(ctx, field)
+			case "pfp":
+				return ec.fieldContext_UserPublic_pfp(ctx, field)
+			case "bio":
+				return ec.fieldContext_UserPublic_bio(ctx, field)
+			case "dob":
+				return ec.fieldContext_UserPublic_dob(ctx, field)
+			case "gender":
+				return ec.fieldContext_UserPublic_gender(ctx, field)
+			case "hobbies":
+				return ec.fieldContext_UserPublic_hobbies(ctx, field)
+			case "interests":
+				return ec.fieldContext_UserPublic_interests(ctx, field)
+			case "user_prompts":
+				return ec.fieldContext_UserPublic_user_prompts(ctx, field)
+			case "personality_traits":
+				return ec.fieldContext_UserPublic_personality_traits(ctx, field)
+			case "photos":
+				return ec.fieldContext_UserPublic_photos(ctx, field)
+			case "is_verified":
+				return ec.fieldContext_UserPublic_is_verified(ctx, field)
+			case "extra":
+				return ec.fieldContext_UserPublic_extra(ctx, field)
+			case "created_at":
+				return ec.fieldContext_UserPublic_created_at(ctx, field)
+			case "is_online":
+				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_school(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_school,
+		func(ctx context.Context) (any, error) {
+			return obj.School, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_school(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_work(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_work,
+		func(ctx context.Context) (any, error) {
+			return obj.Work, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_work(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_looking_for(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_looking_for,
+		func(ctx context.Context) (any, error) {
+			return obj.LookingFor, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstring,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_looking_for(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_zodiac(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_zodiac,
+		func(ctx context.Context) (any, error) {
+			return obj.Zodiac, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_zodiac(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_languages(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_languages,
+		func(ctx context.Context) (any, error) {
+			return obj.Languages, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstring,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_languages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_excercise(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_excercise,
+		func(ctx context.Context) (any, error) {
+			return obj.Excercise, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_excercise(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_drinking(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_drinking,
+		func(ctx context.Context) (any, error) {
+			return obj.Drinking, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_drinking(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_smoking(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_smoking,
+		func(ctx context.Context) (any, error) {
+			return obj.Smoking, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_smoking(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_kids(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_kids,
+		func(ctx context.Context) (any, error) {
+			return obj.Kids, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_kids(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_religion(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_religion,
+		func(ctx context.Context) (any, error) {
+			return obj.Religion, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_religion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_ethnicity(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_ethnicity,
+		func(ctx context.Context) (any, error) {
+			return obj.Ethnicity, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_ethnicity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtraMetadata_sexuality(ctx context.Context, field graphql.CollectedField, obj *models.ExtraMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ExtraMetadata_sexuality,
+		func(ctx context.Context) (any, error) {
+			return obj.Sexuality, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ExtraMetadata_sexuality(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtraMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Match_id(ctx context.Context, field graphql.CollectedField, obj *models.Match) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Match_id,
+		func(ctx context.Context) (any, error) {
+			return obj.Id, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Match_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Match",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Match_she_id(ctx context.Context, field graphql.CollectedField, obj *models.Match) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Match_she_id,
+		func(ctx context.Context) (any, error) {
+			return obj.SheId, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Match_she_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Match",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Match_he_id(ctx context.Context, field graphql.CollectedField, obj *models.Match) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Match_he_id,
+		func(ctx context.Context) (any, error) {
+			return obj.HeId, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Match_he_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Match",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Match_score(ctx context.Context, field graphql.CollectedField, obj *models.Match) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Match_score,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Match().Score(ctx, obj)
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Match_score(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Match",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Match_post_unlock_rating(ctx context.Context, field graphql.CollectedField, obj *models.Match) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Match_post_unlock_rating,
+		func(ctx context.Context) (any, error) {
+			return obj.PostUnlockRating, nil
+		},
+		nil,
+		ec.marshalNPostUnlockRating2blindlyᚋinternalᚋmodelsᚐPostUnlockRating,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Match_post_unlock_rating(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Match",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "she_rating":
+				return ec.fieldContext_PostUnlockRating_she_rating(ctx, field)
+			case "he_rating":
+				return ec.fieldContext_PostUnlockRating_he_rating(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PostUnlockRating", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Match_is_unlocked(ctx context.Context, field graphql.CollectedField, obj *models.Match) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Match_is_unlocked,
+		func(ctx context.Context) (any, error) {
+			return obj.IsUnlocked, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Match_is_unlocked(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Match",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Match_matched_at(ctx context.Context, field graphql.CollectedField, obj *models.Match) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Match_matched_at,
+		func(ctx context.Context) (any, error) {
+			return obj.MatchedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Match_matched_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Match",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createProfileActivity(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createProfileActivity,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().CreateProfileActivity(ctx, fc.Args["type"].(models.ActivityType), fc.Args["target_user_id"].(string))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNUserProfileActivity2ᚖblindlyᚋinternalᚋmodelsᚐUserProfileActivity,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createProfileActivity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserProfileActivity_id(ctx, field)
+			case "type":
+				return ec.fieldContext_UserProfileActivity_type(ctx, field)
+			case "target_user":
+				return ec.fieldContext_UserProfileActivity_target_user(ctx, field)
+			case "class":
+				return ec.fieldContext_UserProfileActivity_class(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserProfileActivity", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createProfileActivity_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_swipe(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_swipe,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().Swipe(ctx, fc.Args["target_id"].(string), fc.Args["action_type"].(models.SwipeType))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNSwipeResponse2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐSwipeResponse,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_swipe(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "swipe":
+				return ec.fieldContext_SwipeResponse_swipe(ctx, field)
+			case "match":
+				return ec.fieldContext_SwipeResponse_match(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SwipeResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_swipe_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -1076,6 +2743,8 @@ func (ec *executionContext) fieldContext_Mutation_updateMe(ctx context.Context, 
 				return ec.fieldContext_User_is_verified(ctx, field)
 			case "address":
 				return ec.fieldContext_User_address(ctx, field)
+			case "extra":
+				return ec.fieldContext_User_extra(ctx, field)
 			case "created_at":
 				return ec.fieldContext_User_created_at(ctx, field)
 			case "updated_at":
@@ -1200,6 +2869,280 @@ func (ec *executionContext) fieldContext_PersonalityTrait_value(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _PostUnlockRating_she_rating(ctx context.Context, field graphql.CollectedField, obj *models.PostUnlockRating) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PostUnlockRating_she_rating,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.PostUnlockRating().SheRating(ctx, obj)
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PostUnlockRating_she_rating(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PostUnlockRating",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PostUnlockRating_he_rating(ctx context.Context, field graphql.CollectedField, obj *models.PostUnlockRating) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PostUnlockRating_he_rating,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.PostUnlockRating().HeRating(ctx, obj)
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PostUnlockRating_he_rating(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PostUnlockRating",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getMyConnections(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_getMyConnections,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().GetMyConnections(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNConnection2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_getMyConnections(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "chat":
+				return ec.fieldContext_Connection_chat(ctx, field)
+			case "match":
+				return ec.fieldContext_Connection_match(ctx, field)
+			case "last_message":
+				return ec.fieldContext_Connection_last_message(ctx, field)
+			case "unread_messages":
+				return ec.fieldContext_Connection_unread_messages(ctx, field)
+			case "percentage_complete":
+				return ec.fieldContext_Connection_percentage_complete(ctx, field)
+			case "connection_profile":
+				return ec.fieldContext_Connection_connection_profile(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Connection", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_profileActivities(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_profileActivities,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().ProfileActivities(ctx, fc.Args["class"].(*model.ActivityClass))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNUserProfileActivity2ᚕᚖblindlyᚋinternalᚋmodelsᚐUserProfileActivity,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_profileActivities(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserProfileActivity_id(ctx, field)
+			case "type":
+				return ec.fieldContext_UserProfileActivity_type(ctx, field)
+			case "target_user":
+				return ec.fieldContext_UserProfileActivity_target_user(ctx, field)
+			case "class":
+				return ec.fieldContext_UserProfileActivity_class(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserProfileActivity", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_profileActivities_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_recommendations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_recommendations,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Recommendations(ctx, fc.Args["cursor"].(*string), fc.Args["limit"].(*int32))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNRecommendationsResult2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐRecommendationsResult,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_recommendations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "items":
+				return ec.fieldContext_RecommendationsResult_items(ctx, field)
+			case "next_cursor":
+				return ec.fieldContext_RecommendationsResult_next_cursor(ctx, field)
+			case "has_more":
+				return ec.fieldContext_RecommendationsResult_has_more(ctx, field)
+			case "fetched_at":
+				return ec.fieldContext_RecommendationsResult_fetched_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RecommendationsResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_recommendations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_mySwipes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_mySwipes,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().MySwipes(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNSwipedProfile2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐSwipedProfileᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_mySwipes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "profile":
+				return ec.fieldContext_SwipedProfile_profile(ctx, field)
+			case "swipe":
+				return ec.fieldContext_SwipedProfile_swipe(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SwipedProfile", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1263,6 +3206,8 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 				return ec.fieldContext_User_is_verified(ctx, field)
 			case "address":
 				return ec.fieldContext_User_address(ctx, field)
+			case "extra":
+				return ec.fieldContext_User_extra(ctx, field)
 			case "created_at":
 				return ec.fieldContext_User_created_at(ctx, field)
 			case "updated_at":
@@ -1377,6 +3322,675 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationsResult_items(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationsResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RecommendationsResult_items,
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		ec.marshalNRecommendedProfile2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐRecommendedProfileᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RecommendationsResult_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendationsResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "profile":
+				return ec.fieldContext_RecommendedProfile_profile(ctx, field)
+			case "match_score":
+				return ec.fieldContext_RecommendedProfile_match_score(ctx, field)
+			case "compatibility_score":
+				return ec.fieldContext_RecommendedProfile_compatibility_score(ctx, field)
+			case "common_interests":
+				return ec.fieldContext_RecommendedProfile_common_interests(ctx, field)
+			case "distance_km":
+				return ec.fieldContext_RecommendedProfile_distance_km(ctx, field)
+			case "reason":
+				return ec.fieldContext_RecommendedProfile_reason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RecommendedProfile", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationsResult_next_cursor(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationsResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RecommendationsResult_next_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.NextCursor, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RecommendationsResult_next_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendationsResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationsResult_has_more(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationsResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RecommendationsResult_has_more,
+		func(ctx context.Context) (any, error) {
+			return obj.HasMore, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RecommendationsResult_has_more(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendationsResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationsResult_fetched_at(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationsResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RecommendationsResult_fetched_at,
+		func(ctx context.Context) (any, error) {
+			return obj.FetchedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RecommendationsResult_fetched_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendationsResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendedProfile_profile(ctx context.Context, field graphql.CollectedField, obj *model.RecommendedProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RecommendedProfile_profile,
+		func(ctx context.Context) (any, error) {
+			return obj.Profile, nil
+		},
+		nil,
+		ec.marshalNUserPublic2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐUserPublic,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RecommendedProfile_profile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendedProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserPublic_id(ctx, field)
+			case "name":
+				return ec.fieldContext_UserPublic_name(ctx, field)
+			case "pfp":
+				return ec.fieldContext_UserPublic_pfp(ctx, field)
+			case "bio":
+				return ec.fieldContext_UserPublic_bio(ctx, field)
+			case "dob":
+				return ec.fieldContext_UserPublic_dob(ctx, field)
+			case "gender":
+				return ec.fieldContext_UserPublic_gender(ctx, field)
+			case "hobbies":
+				return ec.fieldContext_UserPublic_hobbies(ctx, field)
+			case "interests":
+				return ec.fieldContext_UserPublic_interests(ctx, field)
+			case "user_prompts":
+				return ec.fieldContext_UserPublic_user_prompts(ctx, field)
+			case "personality_traits":
+				return ec.fieldContext_UserPublic_personality_traits(ctx, field)
+			case "photos":
+				return ec.fieldContext_UserPublic_photos(ctx, field)
+			case "is_verified":
+				return ec.fieldContext_UserPublic_is_verified(ctx, field)
+			case "extra":
+				return ec.fieldContext_UserPublic_extra(ctx, field)
+			case "created_at":
+				return ec.fieldContext_UserPublic_created_at(ctx, field)
+			case "is_online":
+				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendedProfile_match_score(ctx context.Context, field graphql.CollectedField, obj *model.RecommendedProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RecommendedProfile_match_score,
+		func(ctx context.Context) (any, error) {
+			return obj.MatchScore, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RecommendedProfile_match_score(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendedProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendedProfile_compatibility_score(ctx context.Context, field graphql.CollectedField, obj *model.RecommendedProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RecommendedProfile_compatibility_score,
+		func(ctx context.Context) (any, error) {
+			return obj.CompatibilityScore, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RecommendedProfile_compatibility_score(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendedProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendedProfile_common_interests(ctx context.Context, field graphql.CollectedField, obj *model.RecommendedProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RecommendedProfile_common_interests,
+		func(ctx context.Context) (any, error) {
+			return obj.CommonInterests, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RecommendedProfile_common_interests(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendedProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendedProfile_distance_km(ctx context.Context, field graphql.CollectedField, obj *model.RecommendedProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RecommendedProfile_distance_km,
+		func(ctx context.Context) (any, error) {
+			return obj.DistanceKm, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RecommendedProfile_distance_km(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendedProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendedProfile_reason(ctx context.Context, field graphql.CollectedField, obj *model.RecommendedProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RecommendedProfile_reason,
+		func(ctx context.Context) (any, error) {
+			return obj.Reason, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RecommendedProfile_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendedProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Swipe_id(ctx context.Context, field graphql.CollectedField, obj *models.Swipe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Swipe_id,
+		func(ctx context.Context) (any, error) {
+			return obj.Id, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Swipe_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Swipe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Swipe_user_id(ctx context.Context, field graphql.CollectedField, obj *models.Swipe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Swipe_user_id,
+		func(ctx context.Context) (any, error) {
+			return obj.UserId, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Swipe_user_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Swipe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Swipe_target_id(ctx context.Context, field graphql.CollectedField, obj *models.Swipe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Swipe_target_id,
+		func(ctx context.Context) (any, error) {
+			return obj.TargetId, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Swipe_target_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Swipe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Swipe_action_type(ctx context.Context, field graphql.CollectedField, obj *models.Swipe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Swipe_action_type,
+		func(ctx context.Context) (any, error) {
+			return obj.ActionType, nil
+		},
+		nil,
+		ec.marshalNSwipeType2blindlyᚋinternalᚋmodelsᚐSwipeType,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Swipe_action_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Swipe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type SwipeType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Swipe_created_at(ctx context.Context, field graphql.CollectedField, obj *models.Swipe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Swipe_created_at,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Swipe_created_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Swipe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SwipeResponse_swipe(ctx context.Context, field graphql.CollectedField, obj *model.SwipeResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SwipeResponse_swipe,
+		func(ctx context.Context) (any, error) {
+			return obj.Swipe, nil
+		},
+		nil,
+		ec.marshalNSwipe2ᚖblindlyᚋinternalᚋmodelsᚐSwipe,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SwipeResponse_swipe(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SwipeResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Swipe_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_Swipe_user_id(ctx, field)
+			case "target_id":
+				return ec.fieldContext_Swipe_target_id(ctx, field)
+			case "action_type":
+				return ec.fieldContext_Swipe_action_type(ctx, field)
+			case "created_at":
+				return ec.fieldContext_Swipe_created_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Swipe", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SwipeResponse_match(ctx context.Context, field graphql.CollectedField, obj *model.SwipeResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SwipeResponse_match,
+		func(ctx context.Context) (any, error) {
+			return obj.Match, nil
+		},
+		nil,
+		ec.marshalOMatch2ᚖblindlyᚋinternalᚋmodelsᚐMatch,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_SwipeResponse_match(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SwipeResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Match_id(ctx, field)
+			case "she_id":
+				return ec.fieldContext_Match_she_id(ctx, field)
+			case "he_id":
+				return ec.fieldContext_Match_he_id(ctx, field)
+			case "score":
+				return ec.fieldContext_Match_score(ctx, field)
+			case "post_unlock_rating":
+				return ec.fieldContext_Match_post_unlock_rating(ctx, field)
+			case "is_unlocked":
+				return ec.fieldContext_Match_is_unlocked(ctx, field)
+			case "matched_at":
+				return ec.fieldContext_Match_matched_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Match", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SwipedProfile_profile(ctx context.Context, field graphql.CollectedField, obj *model.SwipedProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SwipedProfile_profile,
+		func(ctx context.Context) (any, error) {
+			return obj.Profile, nil
+		},
+		nil,
+		ec.marshalNUserPublic2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐUserPublic,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SwipedProfile_profile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SwipedProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserPublic_id(ctx, field)
+			case "name":
+				return ec.fieldContext_UserPublic_name(ctx, field)
+			case "pfp":
+				return ec.fieldContext_UserPublic_pfp(ctx, field)
+			case "bio":
+				return ec.fieldContext_UserPublic_bio(ctx, field)
+			case "dob":
+				return ec.fieldContext_UserPublic_dob(ctx, field)
+			case "gender":
+				return ec.fieldContext_UserPublic_gender(ctx, field)
+			case "hobbies":
+				return ec.fieldContext_UserPublic_hobbies(ctx, field)
+			case "interests":
+				return ec.fieldContext_UserPublic_interests(ctx, field)
+			case "user_prompts":
+				return ec.fieldContext_UserPublic_user_prompts(ctx, field)
+			case "personality_traits":
+				return ec.fieldContext_UserPublic_personality_traits(ctx, field)
+			case "photos":
+				return ec.fieldContext_UserPublic_photos(ctx, field)
+			case "is_verified":
+				return ec.fieldContext_UserPublic_is_verified(ctx, field)
+			case "extra":
+				return ec.fieldContext_UserPublic_extra(ctx, field)
+			case "created_at":
+				return ec.fieldContext_UserPublic_created_at(ctx, field)
+			case "is_online":
+				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SwipedProfile_swipe(ctx context.Context, field graphql.CollectedField, obj *model.SwipedProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SwipedProfile_swipe,
+		func(ctx context.Context) (any, error) {
+			return obj.Swipe, nil
+		},
+		nil,
+		ec.marshalNSwipe2ᚖblindlyᚋinternalᚋmodelsᚐSwipe,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SwipedProfile_swipe(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SwipedProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Swipe_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_Swipe_user_id(ctx, field)
+			case "target_id":
+				return ec.fieldContext_Swipe_target_id(ctx, field)
+			case "action_type":
+				return ec.fieldContext_Swipe_action_type(ctx, field)
+			case "created_at":
+				return ec.fieldContext_Swipe_created_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Swipe", field.Name)
 		},
 	}
 	return fc, nil
@@ -1833,6 +4447,61 @@ func (ec *executionContext) fieldContext_User_address(_ context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _User_extra(ctx context.Context, field graphql.CollectedField, obj *models.User) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_extra,
+		func(ctx context.Context) (any, error) {
+			return obj.Extra, nil
+		},
+		nil,
+		ec.marshalOExtraMetadata2blindlyᚋinternalᚋmodelsᚐExtraMetadata,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_User_extra(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "school":
+				return ec.fieldContext_ExtraMetadata_school(ctx, field)
+			case "work":
+				return ec.fieldContext_ExtraMetadata_work(ctx, field)
+			case "looking_for":
+				return ec.fieldContext_ExtraMetadata_looking_for(ctx, field)
+			case "zodiac":
+				return ec.fieldContext_ExtraMetadata_zodiac(ctx, field)
+			case "languages":
+				return ec.fieldContext_ExtraMetadata_languages(ctx, field)
+			case "excercise":
+				return ec.fieldContext_ExtraMetadata_excercise(ctx, field)
+			case "drinking":
+				return ec.fieldContext_ExtraMetadata_drinking(ctx, field)
+			case "smoking":
+				return ec.fieldContext_ExtraMetadata_smoking(ctx, field)
+			case "kids":
+				return ec.fieldContext_ExtraMetadata_kids(ctx, field)
+			case "religion":
+				return ec.fieldContext_ExtraMetadata_religion(ctx, field)
+			case "ethnicity":
+				return ec.fieldContext_ExtraMetadata_ethnicity(ctx, field)
+			case "sexuality":
+				return ec.fieldContext_ExtraMetadata_sexuality(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ExtraMetadata", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _User_created_at(ctx context.Context, field graphql.CollectedField, obj *models.User) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1886,6 +4555,615 @@ func (ec *executionContext) fieldContext_User_updated_at(_ context.Context, fiel
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserProfileActivity_id(ctx context.Context, field graphql.CollectedField, obj *models.UserProfileActivity) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserProfileActivity_id,
+		func(ctx context.Context) (any, error) {
+			return obj.Id, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserProfileActivity_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserProfileActivity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserProfileActivity_type(ctx context.Context, field graphql.CollectedField, obj *models.UserProfileActivity) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserProfileActivity_type,
+		func(ctx context.Context) (any, error) {
+			return obj.Type, nil
+		},
+		nil,
+		ec.marshalNActivityType2blindlyᚋinternalᚋmodelsᚐActivityType,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserProfileActivity_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserProfileActivity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ActivityType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserProfileActivity_target_user(ctx context.Context, field graphql.CollectedField, obj *models.UserProfileActivity) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserProfileActivity_target_user,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.UserProfileActivity().TargetUser(ctx, obj)
+		},
+		nil,
+		ec.marshalNUserPublic2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐUserPublic,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserProfileActivity_target_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserProfileActivity",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserPublic_id(ctx, field)
+			case "name":
+				return ec.fieldContext_UserPublic_name(ctx, field)
+			case "pfp":
+				return ec.fieldContext_UserPublic_pfp(ctx, field)
+			case "bio":
+				return ec.fieldContext_UserPublic_bio(ctx, field)
+			case "dob":
+				return ec.fieldContext_UserPublic_dob(ctx, field)
+			case "gender":
+				return ec.fieldContext_UserPublic_gender(ctx, field)
+			case "hobbies":
+				return ec.fieldContext_UserPublic_hobbies(ctx, field)
+			case "interests":
+				return ec.fieldContext_UserPublic_interests(ctx, field)
+			case "user_prompts":
+				return ec.fieldContext_UserPublic_user_prompts(ctx, field)
+			case "personality_traits":
+				return ec.fieldContext_UserPublic_personality_traits(ctx, field)
+			case "photos":
+				return ec.fieldContext_UserPublic_photos(ctx, field)
+			case "is_verified":
+				return ec.fieldContext_UserPublic_is_verified(ctx, field)
+			case "extra":
+				return ec.fieldContext_UserPublic_extra(ctx, field)
+			case "created_at":
+				return ec.fieldContext_UserPublic_created_at(ctx, field)
+			case "is_online":
+				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserProfileActivity_class(ctx context.Context, field graphql.CollectedField, obj *models.UserProfileActivity) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserProfileActivity_class,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.UserProfileActivity().Class(ctx, obj)
+		},
+		nil,
+		ec.marshalNActivityClass2blindlyᚋinternalᚋgraphᚋmodelᚐActivityClass,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserProfileActivity_class(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserProfileActivity",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ActivityClass does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_id(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_name(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_pfp(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_pfp,
+		func(ctx context.Context) (any, error) {
+			return obj.Pfp, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_pfp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_bio(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_bio,
+		func(ctx context.Context) (any, error) {
+			return obj.Bio, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_bio(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_dob(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_dob,
+		func(ctx context.Context) (any, error) {
+			return obj.Dob, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_dob(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_gender(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_gender,
+		func(ctx context.Context) (any, error) {
+			return obj.Gender, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_gender(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_hobbies(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_hobbies,
+		func(ctx context.Context) (any, error) {
+			return obj.Hobbies, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_hobbies(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_interests(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_interests,
+		func(ctx context.Context) (any, error) {
+			return obj.Interests, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_interests(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_user_prompts(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_user_prompts,
+		func(ctx context.Context) (any, error) {
+			return obj.UserPrompts, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_user_prompts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_personality_traits(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_personality_traits,
+		func(ctx context.Context) (any, error) {
+			return obj.PersonalityTraits, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_personality_traits(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_photos(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_photos,
+		func(ctx context.Context) (any, error) {
+			return obj.Photos, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_photos(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_is_verified(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_is_verified,
+		func(ctx context.Context) (any, error) {
+			return obj.IsVerified, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_is_verified(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_extra(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_extra,
+		func(ctx context.Context) (any, error) {
+			return obj.Extra, nil
+		},
+		nil,
+		ec.marshalOExtraMetadata2ᚖblindlyᚋinternalᚋmodelsᚐExtraMetadata,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_extra(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "school":
+				return ec.fieldContext_ExtraMetadata_school(ctx, field)
+			case "work":
+				return ec.fieldContext_ExtraMetadata_work(ctx, field)
+			case "looking_for":
+				return ec.fieldContext_ExtraMetadata_looking_for(ctx, field)
+			case "zodiac":
+				return ec.fieldContext_ExtraMetadata_zodiac(ctx, field)
+			case "languages":
+				return ec.fieldContext_ExtraMetadata_languages(ctx, field)
+			case "excercise":
+				return ec.fieldContext_ExtraMetadata_excercise(ctx, field)
+			case "drinking":
+				return ec.fieldContext_ExtraMetadata_drinking(ctx, field)
+			case "smoking":
+				return ec.fieldContext_ExtraMetadata_smoking(ctx, field)
+			case "kids":
+				return ec.fieldContext_ExtraMetadata_kids(ctx, field)
+			case "religion":
+				return ec.fieldContext_ExtraMetadata_religion(ctx, field)
+			case "ethnicity":
+				return ec.fieldContext_ExtraMetadata_ethnicity(ctx, field)
+			case "sexuality":
+				return ec.fieldContext_ExtraMetadata_sexuality(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ExtraMetadata", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_created_at(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_created_at,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_created_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_is_online(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_is_online,
+		func(ctx context.Context) (any, error) {
+			return obj.IsOnline, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_is_online(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3728,6 +7006,283 @@ func (ec *executionContext) _AuthPayload(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var chatImplementors = []string{"Chat"}
+
+func (ec *executionContext) _Chat(ctx context.Context, sel ast.SelectionSet, obj *models.Chat) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, chatImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Chat")
+		case "id":
+			out.Values[i] = ec._Chat_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "match_id":
+			out.Values[i] = ec._Chat_match_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "created_at":
+			out.Values[i] = ec._Chat_created_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var connectionImplementors = []string{"Connection"}
+
+func (ec *executionContext) _Connection(ctx context.Context, sel ast.SelectionSet, obj *model.Connection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, connectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Connection")
+		case "chat":
+			out.Values[i] = ec._Connection_chat(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "match":
+			out.Values[i] = ec._Connection_match(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "last_message":
+			out.Values[i] = ec._Connection_last_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unread_messages":
+			out.Values[i] = ec._Connection_unread_messages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "percentage_complete":
+			out.Values[i] = ec._Connection_percentage_complete(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "connection_profile":
+			out.Values[i] = ec._Connection_connection_profile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var extraMetadataImplementors = []string{"ExtraMetadata"}
+
+func (ec *executionContext) _ExtraMetadata(ctx context.Context, sel ast.SelectionSet, obj *models.ExtraMetadata) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, extraMetadataImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ExtraMetadata")
+		case "school":
+			out.Values[i] = ec._ExtraMetadata_school(ctx, field, obj)
+		case "work":
+			out.Values[i] = ec._ExtraMetadata_work(ctx, field, obj)
+		case "looking_for":
+			out.Values[i] = ec._ExtraMetadata_looking_for(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "zodiac":
+			out.Values[i] = ec._ExtraMetadata_zodiac(ctx, field, obj)
+		case "languages":
+			out.Values[i] = ec._ExtraMetadata_languages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "excercise":
+			out.Values[i] = ec._ExtraMetadata_excercise(ctx, field, obj)
+		case "drinking":
+			out.Values[i] = ec._ExtraMetadata_drinking(ctx, field, obj)
+		case "smoking":
+			out.Values[i] = ec._ExtraMetadata_smoking(ctx, field, obj)
+		case "kids":
+			out.Values[i] = ec._ExtraMetadata_kids(ctx, field, obj)
+		case "religion":
+			out.Values[i] = ec._ExtraMetadata_religion(ctx, field, obj)
+		case "ethnicity":
+			out.Values[i] = ec._ExtraMetadata_ethnicity(ctx, field, obj)
+		case "sexuality":
+			out.Values[i] = ec._ExtraMetadata_sexuality(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var matchImplementors = []string{"Match"}
+
+func (ec *executionContext) _Match(ctx context.Context, sel ast.SelectionSet, obj *models.Match) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, matchImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Match")
+		case "id":
+			out.Values[i] = ec._Match_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "she_id":
+			out.Values[i] = ec._Match_she_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "he_id":
+			out.Values[i] = ec._Match_he_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "score":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Match_score(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "post_unlock_rating":
+			out.Values[i] = ec._Match_post_unlock_rating(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "is_unlocked":
+			out.Values[i] = ec._Match_is_unlocked(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "matched_at":
+			out.Values[i] = ec._Match_matched_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3747,6 +7302,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createProfileActivity":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createProfileActivity(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "swipe":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_swipe(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createUser":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createUser(ctx, field)
@@ -3856,6 +7425,112 @@ func (ec *executionContext) _PersonalityTrait(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var postUnlockRatingImplementors = []string{"PostUnlockRating"}
+
+func (ec *executionContext) _PostUnlockRating(ctx context.Context, sel ast.SelectionSet, obj *models.PostUnlockRating) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, postUnlockRatingImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PostUnlockRating")
+		case "she_rating":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PostUnlockRating_she_rating(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "he_rating":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PostUnlockRating_he_rating(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3875,6 +7550,94 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "getMyConnections":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getMyConnections(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "profileActivities":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_profileActivities(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "recommendations":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_recommendations(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "mySwipes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_mySwipes(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "me":
 			field := field
 
@@ -3902,6 +7665,259 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var recommendationsResultImplementors = []string{"RecommendationsResult"}
+
+func (ec *executionContext) _RecommendationsResult(ctx context.Context, sel ast.SelectionSet, obj *model.RecommendationsResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, recommendationsResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RecommendationsResult")
+		case "items":
+			out.Values[i] = ec._RecommendationsResult_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "next_cursor":
+			out.Values[i] = ec._RecommendationsResult_next_cursor(ctx, field, obj)
+		case "has_more":
+			out.Values[i] = ec._RecommendationsResult_has_more(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fetched_at":
+			out.Values[i] = ec._RecommendationsResult_fetched_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var recommendedProfileImplementors = []string{"RecommendedProfile"}
+
+func (ec *executionContext) _RecommendedProfile(ctx context.Context, sel ast.SelectionSet, obj *model.RecommendedProfile) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, recommendedProfileImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RecommendedProfile")
+		case "profile":
+			out.Values[i] = ec._RecommendedProfile_profile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "match_score":
+			out.Values[i] = ec._RecommendedProfile_match_score(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "compatibility_score":
+			out.Values[i] = ec._RecommendedProfile_compatibility_score(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "common_interests":
+			out.Values[i] = ec._RecommendedProfile_common_interests(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "distance_km":
+			out.Values[i] = ec._RecommendedProfile_distance_km(ctx, field, obj)
+		case "reason":
+			out.Values[i] = ec._RecommendedProfile_reason(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var swipeImplementors = []string{"Swipe"}
+
+func (ec *executionContext) _Swipe(ctx context.Context, sel ast.SelectionSet, obj *models.Swipe) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, swipeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Swipe")
+		case "id":
+			out.Values[i] = ec._Swipe_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "user_id":
+			out.Values[i] = ec._Swipe_user_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "target_id":
+			out.Values[i] = ec._Swipe_target_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "action_type":
+			out.Values[i] = ec._Swipe_action_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "created_at":
+			out.Values[i] = ec._Swipe_created_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var swipeResponseImplementors = []string{"SwipeResponse"}
+
+func (ec *executionContext) _SwipeResponse(ctx context.Context, sel ast.SelectionSet, obj *model.SwipeResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, swipeResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SwipeResponse")
+		case "swipe":
+			out.Values[i] = ec._SwipeResponse_swipe(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "match":
+			out.Values[i] = ec._SwipeResponse_match(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var swipedProfileImplementors = []string{"SwipedProfile"}
+
+func (ec *executionContext) _SwipedProfile(ctx context.Context, sel ast.SelectionSet, obj *model.SwipedProfile) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, swipedProfileImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SwipedProfile")
+		case "profile":
+			out.Values[i] = ec._SwipedProfile_profile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "swipe":
+			out.Values[i] = ec._SwipedProfile_swipe(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4027,10 +8043,234 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "address":
 			out.Values[i] = ec._User_address(ctx, field, obj)
+		case "extra":
+			out.Values[i] = ec._User_extra(ctx, field, obj)
 		case "created_at":
 			out.Values[i] = ec._User_created_at(ctx, field, obj)
 		case "updated_at":
 			out.Values[i] = ec._User_updated_at(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var userProfileActivityImplementors = []string{"UserProfileActivity"}
+
+func (ec *executionContext) _UserProfileActivity(ctx context.Context, sel ast.SelectionSet, obj *models.UserProfileActivity) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userProfileActivityImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserProfileActivity")
+		case "id":
+			out.Values[i] = ec._UserProfileActivity_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "type":
+			out.Values[i] = ec._UserProfileActivity_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "target_user":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserProfileActivity_target_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "class":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserProfileActivity_class(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var userPublicImplementors = []string{"UserPublic"}
+
+func (ec *executionContext) _UserPublic(ctx context.Context, sel ast.SelectionSet, obj *model.UserPublic) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userPublicImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserPublic")
+		case "id":
+			out.Values[i] = ec._UserPublic_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._UserPublic_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pfp":
+			out.Values[i] = ec._UserPublic_pfp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "bio":
+			out.Values[i] = ec._UserPublic_bio(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "dob":
+			out.Values[i] = ec._UserPublic_dob(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "gender":
+			out.Values[i] = ec._UserPublic_gender(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hobbies":
+			out.Values[i] = ec._UserPublic_hobbies(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "interests":
+			out.Values[i] = ec._UserPublic_interests(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "user_prompts":
+			out.Values[i] = ec._UserPublic_user_prompts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "personality_traits":
+			out.Values[i] = ec._UserPublic_personality_traits(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "photos":
+			out.Values[i] = ec._UserPublic_photos(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "is_verified":
+			out.Values[i] = ec._UserPublic_is_verified(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "extra":
+			out.Values[i] = ec._UserPublic_extra(ctx, field, obj)
+		case "created_at":
+			out.Values[i] = ec._UserPublic_created_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "is_online":
+			out.Values[i] = ec._UserPublic_is_online(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4389,6 +8629,33 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) unmarshalNActivityClass2blindlyᚋinternalᚋgraphᚋmodelᚐActivityClass(ctx context.Context, v any) (model.ActivityClass, error) {
+	var res model.ActivityClass
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNActivityClass2blindlyᚋinternalᚋgraphᚋmodelᚐActivityClass(ctx context.Context, sel ast.SelectionSet, v model.ActivityClass) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNActivityType2blindlyᚋinternalᚋmodelsᚐActivityType(ctx context.Context, v any) (models.ActivityType, error) {
+	tmp, err := graphql.UnmarshalString(v)
+	res := models.ActivityType(tmp)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNActivityType2blindlyᚋinternalᚋmodelsᚐActivityType(ctx context.Context, sel ast.SelectionSet, v models.ActivityType) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalString(string(v))
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNAuthPayload2blindlyᚋinternalᚋgraphᚋmodelᚐAuthPayload(ctx context.Context, sel ast.SelectionSet, v model.AuthPayload) graphql.Marshaler {
 	return ec._AuthPayload(ctx, sel, &v)
 }
@@ -4419,6 +8686,54 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNChat2ᚖblindlyᚋinternalᚋmodelsᚐChat(ctx context.Context, sel ast.SelectionSet, v *models.Chat) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Chat(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNConnection2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v []*model.Connection) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOConnection2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐConnection(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNCreateUserInput2blindlyᚋinternalᚋgraphᚋmodelᚐCreateUserInput(ctx context.Context, v any) (model.CreateUserInput, error) {
 	res, err := ec.unmarshalInputCreateUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4432,6 +8747,22 @@ func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) 
 func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalFloat(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
+	res, err := graphql.UnmarshalID(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalID(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -4454,6 +8785,16 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNMatch2ᚖblindlyᚋinternalᚋmodelsᚐMatch(ctx context.Context, sel ast.SelectionSet, v *models.Match) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Match(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPersonalityTrait2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐPersonalityTraitᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PersonalityTrait) graphql.Marshaler {
@@ -4515,6 +8856,78 @@ func (ec *executionContext) unmarshalNPersonalityTraitInput2ᚖblindlyᚋinterna
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNPostUnlockRating2blindlyᚋinternalᚋmodelsᚐPostUnlockRating(ctx context.Context, sel ast.SelectionSet, v models.PostUnlockRating) graphql.Marshaler {
+	return ec._PostUnlockRating(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRecommendationsResult2blindlyᚋinternalᚋgraphᚋmodelᚐRecommendationsResult(ctx context.Context, sel ast.SelectionSet, v model.RecommendationsResult) graphql.Marshaler {
+	return ec._RecommendationsResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRecommendationsResult2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐRecommendationsResult(ctx context.Context, sel ast.SelectionSet, v *model.RecommendationsResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RecommendationsResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRecommendedProfile2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐRecommendedProfileᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RecommendedProfile) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRecommendedProfile2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐRecommendedProfile(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRecommendedProfile2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐRecommendedProfile(ctx context.Context, sel ast.SelectionSet, v *model.RecommendedProfile) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RecommendedProfile(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4529,6 +8942,30 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstring(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstring(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
@@ -4559,6 +8996,101 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalNSwipe2ᚖblindlyᚋinternalᚋmodelsᚐSwipe(ctx context.Context, sel ast.SelectionSet, v *models.Swipe) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Swipe(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSwipeResponse2blindlyᚋinternalᚋgraphᚋmodelᚐSwipeResponse(ctx context.Context, sel ast.SelectionSet, v model.SwipeResponse) graphql.Marshaler {
+	return ec._SwipeResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSwipeResponse2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐSwipeResponse(ctx context.Context, sel ast.SelectionSet, v *model.SwipeResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SwipeResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNSwipeType2blindlyᚋinternalᚋmodelsᚐSwipeType(ctx context.Context, v any) (models.SwipeType, error) {
+	tmp, err := graphql.UnmarshalString(v)
+	res := models.SwipeType(tmp)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSwipeType2blindlyᚋinternalᚋmodelsᚐSwipeType(ctx context.Context, sel ast.SelectionSet, v models.SwipeType) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalString(string(v))
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNSwipedProfile2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐSwipedProfileᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SwipedProfile) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSwipedProfile2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐSwipedProfile(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSwipedProfile2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐSwipedProfile(ctx context.Context, sel ast.SelectionSet, v *model.SwipedProfile) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SwipedProfile(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {
@@ -4594,6 +9126,72 @@ func (ec *executionContext) marshalNUser2ᚖblindlyᚋinternalᚋmodelsᚐUser(c
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUserProfileActivity2blindlyᚋinternalᚋmodelsᚐUserProfileActivity(ctx context.Context, sel ast.SelectionSet, v models.UserProfileActivity) graphql.Marshaler {
+	return ec._UserProfileActivity(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserProfileActivity2ᚕᚖblindlyᚋinternalᚋmodelsᚐUserProfileActivity(ctx context.Context, sel ast.SelectionSet, v []*models.UserProfileActivity) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOUserProfileActivity2ᚖblindlyᚋinternalᚋmodelsᚐUserProfileActivity(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalNUserProfileActivity2ᚖblindlyᚋinternalᚋmodelsᚐUserProfileActivity(ctx context.Context, sel ast.SelectionSet, v *models.UserProfileActivity) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserProfileActivity(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUserPublic2blindlyᚋinternalᚋgraphᚋmodelᚐUserPublic(ctx context.Context, sel ast.SelectionSet, v model.UserPublic) graphql.Marshaler {
+	return ec._UserPublic(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserPublic2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐUserPublic(ctx context.Context, sel ast.SelectionSet, v *model.UserPublic) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserPublic(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -4849,6 +9447,22 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) unmarshalOActivityClass2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐActivityClass(ctx context.Context, v any) (*model.ActivityClass, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.ActivityClass)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOActivityClass2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐActivityClass(ctx context.Context, sel ast.SelectionSet, v *model.ActivityClass) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) marshalOAddress2blindlyᚋinternalᚋmodelsᚐAddress(ctx context.Context, sel ast.SelectionSet, v models.Address) graphql.Marshaler {
 	return ec._Address(ctx, sel, &v)
 }
@@ -4891,6 +9505,24 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalOConnection2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v *model.Connection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Connection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOExtraMetadata2blindlyᚋinternalᚋmodelsᚐExtraMetadata(ctx context.Context, sel ast.SelectionSet, v models.ExtraMetadata) graphql.Marshaler {
+	return ec._ExtraMetadata(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOExtraMetadata2ᚖblindlyᚋinternalᚋmodelsᚐExtraMetadata(ctx context.Context, sel ast.SelectionSet, v *models.ExtraMetadata) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ExtraMetadata(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOFloat2ᚕfloat64ᚄ(ctx context.Context, v any) ([]float64, error) {
 	if v == nil {
 		return nil, nil
@@ -4925,6 +9557,49 @@ func (ec *executionContext) marshalOFloat2ᚕfloat64ᚄ(ctx context.Context, sel
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalFloat(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalFloat(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint32(ctx context.Context, v any) (*int32, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt32(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint32(ctx context.Context, sel ast.SelectionSet, v *int32) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalInt32(*v)
+	return res
+}
+
+func (ec *executionContext) marshalOMatch2ᚖblindlyᚋinternalᚋmodelsᚐMatch(ctx context.Context, sel ast.SelectionSet, v *models.Match) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Match(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOPersonalityTraitInput2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐPersonalityTraitInputᚄ(ctx context.Context, v any) ([]*model.PersonalityTraitInput, error) {
@@ -5046,6 +9721,13 @@ func (ec *executionContext) marshalOUser2ᚖblindlyᚋinternalᚋmodelsᚐUser(c
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOUserProfileActivity2ᚖblindlyᚋinternalᚋmodelsᚐUserProfileActivity(ctx context.Context, sel ast.SelectionSet, v *models.UserProfileActivity) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UserProfileActivity(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

@@ -26,16 +26,19 @@ type Media struct {
 }
 
 type Reaction struct {
-	Id        int       `json:"id"`
+	Id        string    `json:"id"`
 	SenderId  string    `json:"sender_id"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 type Message struct {
-	Id        int        `json:"id"`
+	Id        string     `json:"id"`
+	Type      string     `json:"type"`
 	Content   string     `json:"content"`
 	SenderId  string     `json:"sender_id"`
+	Received  bool       `json:"received"`
+	Seen      bool       `json:"seen"`
 	Media     []Media    `json:"media" db:"media"`
 	Reactions []Reaction `json:"reactions" db:"reactions"`
 	CreatedAt time.Time  `json:"created_at"`
@@ -56,4 +59,19 @@ type ResponseHTTP struct {
 	Data    any    `json:"data"`
 	Message string `json:"message"`
 	Error   any    `json:"error"`
+}
+
+type ExtraMetadata struct {
+	School     string   `json:"school"`
+	Work       string   `json:"work"`
+	LookingFor []string `json:"looking_for" db:"looking_for"`
+	Zodiac     string   `json:"zodiac"`
+	Languages  []string `json:"languages" db:"languages"`
+	Excercise  string   `json:"excercise"`
+	Drinking   string   `json:"drinking"`
+	Smoking    string   `json:"smoking"`
+	Kids       string   `json:"kids"`
+	Religion   string   `json:"religion"`
+	Ethnicity  string   `json:"ethnicity"`
+	Sexuality  string   `json:"sexuality"`
 }
