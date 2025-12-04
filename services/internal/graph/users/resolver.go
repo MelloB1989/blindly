@@ -64,9 +64,11 @@ func (r *Resolver) UpdateMe(ctx context.Context, input model.UpdateUserInput) (*
 		return nil, fmt.Errorf("unauthorized: %w", err)
 	}
 
-	user := &models.User{
-		Id: claims.UserID,
+	user, err := users.GetUserById(claims.UserID)
+	if err != nil {
+		return nil, err
 	}
+
 	if input.FirstName != nil {
 		user.FirstName = *input.FirstName
 	}
@@ -109,7 +111,7 @@ func (r *Resolver) UpdateMe(ctx context.Context, input model.UpdateUserInput) (*
 		user.PersonalityTraits = pt
 	}
 
-	return user, nil
+	return users.UpdateUser(*user)
 }
 
 func (r *Resolver) RefreshToken(ctx context.Context) (*model.AuthPayload, error) {

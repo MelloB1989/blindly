@@ -25,6 +25,7 @@ const CREATE_USER_MUTATION = gql`
         last_name
         email
         dob
+        gender
         pfp
         bio
         hobbies
@@ -192,6 +193,38 @@ const ME_QUERY = gql`
   }
 `;
 
+const UPDATE_ME_MUTATION = gql`
+  mutation UpdateMe($input: UpdateUserInput!) {
+    updateMe(input: $input) {
+      id
+      first_name
+      last_name
+      email
+      dob
+      pfp
+      gender
+      bio
+      hobbies
+      interests
+      user_prompts
+      personality_traits {
+        key
+        value
+      }
+      photos
+      is_verified
+      address {
+        city
+        state
+        country
+        coordinates
+      }
+      created_at
+      updated_at
+    }
+  }
+`;
+
 // ============= Types =============
 
 export interface CreateUserInput {
@@ -200,12 +233,33 @@ export interface CreateUserInput {
   first_name: string;
   last_name: string;
   dob: string; // ISO date string
+  gender?: string;
   pfp?: string;
   bio?: string;
   hobbies?: string[];
   interests?: string[];
   user_prompts?: string[];
   photos?: string[];
+  address?: {
+    city: string;
+    state: string;
+    country: string;
+  };
+}
+
+export interface UpdateUserInput {
+  first_name?: string;
+  last_name?: string;
+  dob?: string;
+  pfp?: string;
+  bio?: string;
+  gender?: string;
+  hobbies?: string[];
+  interests?: string[];
+  user_prompts?: string[];
+  personality_traits?: { key: string; value: number }[];
+  photos?: string[];
+  is_verified?: boolean;
   address?: {
     city: string;
     state: string;
@@ -501,6 +555,80 @@ class GraphQLAuthService {
     } catch (error) {
       return handleError(error);
     }
+  }
+
+  /**
+   * Update the current user's profile
+   */
+  async updateMe(input: UpdateUserInput): Promise<AuthResult> {
+    try {
+      const result = await graphqlClient
+        .mutation(UPDATE_ME_MUTATION, { input })
+        .toPromise();
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      const user: GraphQLUser = result.data.updateMe;
+
+      // Update stored user
+      await storeUser(user);
+
+      return {
+        success: true,
+        user,
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Check what onboarding steps are needed based on user profile
+   */
+  getOnboardingStatus(user: GraphQLUser): {
+    needsHobbies: boolean;
+    needsInterests: boolean;
+    needsPersonality: boolean;
+    needsPhotos: boolean;
+    needsPrompts: boolean;
+    isComplete: boolean;
+    nextScreen: string | null;
+  } {
+    const needsHobbies = !user.hobbies || user.hobbies.length === 0;
+    const needsInterests = !user.interests || user.interests.length === 0;
+    const needsPersonality =
+      !user.personality_traits || user.personality_traits.length === 0;
+    const needsPhotos = !user.photos || user.photos.length === 0;
+    const needsPrompts = !user.user_prompts || user.user_prompts.length === 0;
+
+    const isComplete =
+      !needsHobbies &&
+      !needsInterests &&
+      !needsPersonality &&
+      !needsPhotos &&
+      !needsPrompts;
+
+    // Determine next screen based on what's missing
+    let nextScreen: string | null = null;
+    if (needsHobbies) {
+      nextScreen = "/(auth)/hobbies";
+    } else if (needsPersonality) {
+      nextScreen = "/(auth)/personality";
+    } else if (needsPhotos) {
+      nextScreen = "/(auth)/photos";
+    }
+
+    return {
+      needsHobbies,
+      needsInterests,
+      needsPersonality,
+      needsPhotos,
+      needsPrompts,
+      isComplete,
+      nextScreen,
+    };
   }
 
   /**

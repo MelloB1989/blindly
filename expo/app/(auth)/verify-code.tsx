@@ -85,9 +85,10 @@ export default function VerifyCodeScreen() {
 
                 login(userProfile, result.accessToken);
 
-                // Check if user needs onboarding
-                if (!result.user.hobbies || result.user.hobbies.length === 0) {
-                    router.replace("/(auth)/hobbies" as Href);
+                // Check onboarding status and navigate accordingly
+                const status = graphqlAuthService.getOnboardingStatus(result.user);
+                if (status.nextScreen) {
+                    router.replace(status.nextScreen as Href);
                 } else {
                     router.replace("/(tabs)/swipe" as Href);
                 }
@@ -152,10 +153,10 @@ export default function VerifyCodeScreen() {
                 <View
                     key={i}
                     className={`w-12 h-14 rounded-xl items-center justify-center mx-1 ${isFocused
-                            ? "bg-primary/20 border-2 border-primary"
-                            : digit
-                                ? "bg-surface-elevated border-2 border-success"
-                                : "bg-surface-elevated border border-border"
+                        ? "bg-primary/20 border-2 border-primary"
+                        : digit
+                            ? "bg-surface-elevated border-2 border-success"
+                            : "bg-surface-elevated border border-border"
                         }`}
                 >
                     <Typography variant="h2" className="text-2xl">

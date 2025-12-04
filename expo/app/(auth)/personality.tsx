@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import { View, SafeAreaView, ScrollView, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import { View, SafeAreaView, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
 import { LikertScale } from "../../components/ui/LikertScale";
 import { ONBOARDING_QUESTIONS } from "../../constants/mockData";
 import { useStore } from "../../store/useStore";
 import { ChevronLeft } from "lucide-react-native";
-import { Href } from "expo-router";
+import { graphqlAuthService } from "../../services/graphql-auth";
 
 export default function PersonalityScreen() {
   const router = useRouter();
@@ -23,19 +23,20 @@ export default function PersonalityScreen() {
   const [answers, setAnswers] = useState<Record<number, number>>(
     onboardingData.personalityTraits
       ? Object.entries(onboardingData.personalityTraits).reduce(
-          (acc, [key, value]) => {
-            const questionIndex = ONBOARDING_QUESTIONS.findIndex(
-              (q) => q.question === key,
-            );
-            if (questionIndex !== -1) {
-              acc[ONBOARDING_QUESTIONS[questionIndex].id] = value;
-            }
-            return acc;
-          },
-          {} as Record<number, number>,
-        )
+        (acc, [key, value]) => {
+          const questionIndex = ONBOARDING_QUESTIONS.findIndex(
+            (q) => q.question === key,
+          );
+          if (questionIndex !== -1) {
+            acc[ONBOARDING_QUESTIONS[questionIndex].id] = value;
+          }
+          return acc;
+        },
+        {} as Record<number, number>,
+      )
       : {},
   );
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAnswerChange = (questionId: number, value: number) => {
     setAnswers((prev) => ({
@@ -65,38 +66,71 @@ export default function PersonalityScreen() {
     router.back();
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!isComplete) {
       Alert.alert("Almost there", "Please answer all questions to continue.");
       return;
     }
 
-    // Convert answers to personality traits
-    const traits = ONBOARDING_QUESTIONS.reduce(
-      (acc, q) => {
-        acc[q.question] = answers[q.id];
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
+    setIsLoading(true);
+    try {
+      // Convert answers to personality traits format for API
+      const traitsForApi = ONBOARDING_QUESTIONS.map((q) => ({
+        key: q.question,
+        value: answers[q.id],
+      }));
 
-    // Save to onboarding data
-    updateOnboardingData({ personalityTraits: traits });
+      // Convert to local traits format
+      const traits = ONBOARDING_QUESTIONS.reduce(
+        (acc, q) => {
+          acc[q.question] = answers[q.id];
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
 
-    // Update user profile with onboarding data
-    if (user) {
-      setUser({
-        ...user,
-        hobbies: onboardingData.hobbies || [],
-        personalityTraits: traits,
+      // Save to backend
+      const result = await graphqlAuthService.updateMe({
+        personality_traits: traitsForApi,
       });
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to save personality traits");
+      }
+
+      // Save to onboarding data
+      updateOnboardingData({ personalityTraits: traits });
+
+      // Update user profile with onboarding data
+      if (user && result.user) {
+        setUser({
+          ...user,
+          hobbies: onboardingData.hobbies || [],
+          personalityTraits: traits,
+        });
+      }
+
+      // Check what's next in onboarding
+      if (result.user) {
+        const status = graphqlAuthService.getOnboardingStatus(result.user);
+        if (status.needsPhotos) {
+          router.replace("/(auth)/photos" as Href);
+        } else if (status.isComplete) {
+          completeOnboarding();
+          router.replace("/(tabs)/swipe" as Href);
+        } else {
+          router.replace("/(tabs)/swipe" as Href);
+        }
+      }
+    } catch (error) {
+      console.error("Save personality error:", error);
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to save. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
     }
-
-    // Mark onboarding as complete
-    completeOnboarding();
-
-    // Navigate to main app
-    router.replace("/(tabs)/swipe" as Href);
   };
 
   const handleSkip = () => {

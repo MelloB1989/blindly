@@ -75,7 +75,7 @@ func StoreUserFile(c *fiber.Ctx) error {
 	}
 
 	// Initialize file handler once
-	kf := files.NewKarmaFile(fmt.Sprintf("lyzn/user_files/%s", uid), files.S3)
+	kf := files.NewKarmaFile(fmt.Sprintf("blindly/user_files/%s", uid), files.S3)
 
 	// Process files in parallel with controlled concurrency
 	var wg sync.WaitGroup

@@ -60,9 +60,10 @@ export default function LoginScreen() {
 
                 login(userProfile, result.accessToken);
 
-                // Check if user needs onboarding (e.g., no hobbies selected)
-                if (!result.user.hobbies || result.user.hobbies.length === 0) {
-                    router.replace("/(auth)/hobbies" as Href);
+                // Check onboarding status and navigate accordingly
+                const status = graphqlAuthService.getOnboardingStatus(result.user);
+                if (status.nextScreen) {
+                    router.replace(status.nextScreen as Href);
                 } else {
                     router.replace("/(tabs)/swipe" as Href);
                 }

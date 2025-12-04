@@ -23,6 +23,7 @@ export default function AuthLayout() {
         <Stack.Screen name="verify-code" />
         <Stack.Screen name="hobbies" />
         <Stack.Screen name="personality" />
+        <Stack.Screen name="photos" />
       </Stack>
     </View>
   );

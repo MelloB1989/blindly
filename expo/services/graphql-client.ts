@@ -10,9 +10,6 @@ import { config } from "@/constants/config";
 // API Configuration
 const GRAPHQL_URL = config.api_host + "/query";
 
-// Storage keys
-const ACCESS_TOKEN_KEY = "blindly_access_token";
-
 // Token refresh threshold (refresh if token expires within this many seconds)
 const TOKEN_REFRESH_THRESHOLD_SECONDS = 300; // 5 minutes
 
@@ -59,9 +56,9 @@ function isTokenExpiringSoon(token: string): boolean {
  */
 async function getAccessToken(): Promise<string | null> {
   if (Platform.OS === "web") {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
+    return localStorage.getItem(config.ACCESS_TOKEN_KEY);
   }
-  return await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+  return await SecureStore.getItemAsync(config.ACCESS_TOKEN_KEY);
 }
 
 /**
@@ -70,15 +67,15 @@ async function getAccessToken(): Promise<string | null> {
 export async function setAccessToken(token: string | null): Promise<void> {
   if (Platform.OS === "web") {
     if (token) {
-      localStorage.setItem(ACCESS_TOKEN_KEY, token);
+      localStorage.setItem(config.ACCESS_TOKEN_KEY, token);
     } else {
-      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(config.ACCESS_TOKEN_KEY);
     }
   } else {
     if (token) {
-      await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, token);
+      await SecureStore.setItemAsync(config.ACCESS_TOKEN_KEY, token);
     } else {
-      await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
+      await SecureStore.deleteItemAsync(config.ACCESS_TOKEN_KEY);
     }
   }
 }
@@ -88,16 +85,18 @@ export async function setAccessToken(token: string | null): Promise<void> {
  */
 export async function clearAuthTokens(): Promise<void> {
   if (Platform.OS === "web") {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(config.ACCESS_TOKEN_KEY);
   } else {
-    await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
+    await SecureStore.deleteItemAsync(config.ACCESS_TOKEN_KEY);
   }
 }
 
 /**
  * Refresh the access token using current token
  */
-async function refreshAccessToken(currentToken: string): Promise<string | null> {
+async function refreshAccessToken(
+  currentToken: string,
+): Promise<string | null> {
   try {
     const response = await fetch(GRAPHQL_URL, {
       method: "POST",

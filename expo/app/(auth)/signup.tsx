@@ -35,8 +35,15 @@ export default function SignupScreen() {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [dob, setDob] = useState(""); // Format: YYYY-MM-DD
+    const [gender, setGender] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+
+    const genderOptions = [
+        { value: "male", label: "Male" },
+        { value: "female", label: "Female" },
+        { value: "other", label: "Other" },
+    ];
 
     const validateForm = (): string | null => {
         if (!firstName.trim()) return "First name is required";
@@ -46,6 +53,7 @@ export default function SignupScreen() {
         if (password.length < 8) return "Password must be at least 8 characters";
         if (password !== confirmPassword) return "Passwords do not match";
         if (!dob) return "Date of birth is required";
+        if (!gender) return "Please select your gender";
 
         // Validate date format
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -75,6 +83,7 @@ export default function SignupScreen() {
                 email: email.trim().toLowerCase(),
                 password: password,
                 dob: new Date(dob).toISOString(),
+                gender: gender || undefined,
             };
 
             const result = await graphqlAuthService.createUser(input);
@@ -100,8 +109,13 @@ export default function SignupScreen() {
 
                 login(userProfile, result.accessToken);
 
-                // Navigate to onboarding
-                router.replace("/(auth)/hobbies" as Href);
+                // Check onboarding status and navigate accordingly
+                const status = graphqlAuthService.getOnboardingStatus(result.user);
+                if (status.nextScreen) {
+                    router.replace(status.nextScreen as Href);
+                } else {
+                    router.replace("/(tabs)/swipe" as Href);
+                }
             } else {
                 Alert.alert(
                     "Signup Failed",
@@ -232,6 +246,32 @@ export default function SignupScreen() {
                                 <Typography variant="caption" color="muted" className="mt-1">
                                     You must be 18 or older to use Blindly
                                 </Typography>
+                            </View>
+
+                            {/* Gender Selection */}
+                            <View className="mb-4">
+                                <Typography variant="label" className="mb-2">
+                                    Gender
+                                </Typography>
+                                <View className="flex-row gap-3">
+                                    {genderOptions.map((option) => (
+                                        <TouchableOpacity
+                                            key={option.value}
+                                            onPress={() => setGender(option.value)}
+                                            className={`flex-1 py-3 rounded-xl items-center justify-center border ${gender === option.value
+                                                ? "bg-primary/20 border-primary"
+                                                : "bg-surface-elevated border-transparent"
+                                                }`}
+                                        >
+                                            <Typography
+                                                variant="label"
+                                                color={gender === option.value ? "primary" : "muted"}
+                                            >
+                                                {option.label}
+                                            </Typography>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
                             </View>
 
                             {/* Password Input */}

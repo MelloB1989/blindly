@@ -1,22 +1,24 @@
 import React, { useState } from "react";
-import { View, SafeAreaView, ScrollView } from "react-native";
-import { useRouter } from "expo-router";
+import { View, SafeAreaView, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
 import { Chip } from "../../components/ui/Chip";
 import { HOBBIES } from "../../constants/mockData";
 import { useStore } from "../../store/useStore";
 import { ChevronLeft } from "lucide-react-native";
+import { graphqlAuthService } from "../../services/graphql-auth";
 
 export default function HobbiesScreen() {
   const router = useRouter();
-  const { updateOnboardingData, onboardingData, setOnboardingStep } =
+  const { updateOnboardingData, onboardingData, setOnboardingStep, user, setUser } =
     useStore();
 
   // Initialize from store if available
   const [selectedHobbies, setSelectedHobbies] = useState<string[]>(
     onboardingData.hobbies || [],
   );
+  const [isLoading, setIsLoading] = useState(false);
 
   const toggleHobby = (hobbyLabel: string) => {
     if (selectedHobbies.includes(hobbyLabel)) {
@@ -28,13 +30,40 @@ export default function HobbiesScreen() {
     }
   };
 
-  const handleContinue = () => {
-    // Save hobbies to store
-    updateOnboardingData({ hobbies: selectedHobbies });
-    setOnboardingStep(2);
+  const handleContinue = async () => {
+    setIsLoading(true);
+    try {
+      // Save hobbies to backend
+      const result = await graphqlAuthService.updateMe({
+        hobbies: selectedHobbies,
+      });
 
-    // Navigate to personality questionnaire
-    router.push("/(auth)/personality");
+      if (!result.success) {
+        throw new Error(result.error || "Failed to save hobbies");
+      }
+
+      // Update local state
+      updateOnboardingData({ hobbies: selectedHobbies });
+      setOnboardingStep(2);
+
+      if (user && result.user) {
+        setUser({
+          ...user,
+          hobbies: result.user.hobbies,
+        });
+      }
+
+      // Navigate to personality questionnaire
+      router.push("/(auth)/personality" as Href);
+    } catch (error) {
+      console.error("Save hobbies error:", error);
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to save. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -111,10 +140,14 @@ export default function HobbiesScreen() {
             variant="primary"
             size="lg"
             onPress={handleContinue}
-            disabled={selectedHobbies.length === 0}
+            disabled={selectedHobbies.length === 0 || isLoading}
             className="w-full"
           >
-            Continue
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              "Continue"
+            )}
           </Button>
         </View>
       </View>

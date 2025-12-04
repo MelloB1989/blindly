@@ -105,18 +105,32 @@ function RootLayoutNav() {
       // Redirect to auth if not authenticated
       router.replace("/(auth)/welcome");
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect based on onboarding status
-      if (isOnboardingComplete) {
-        router.replace("/(tabs)/swipe" as Href);
-      } else {
-        // Continue with onboarding - they might be on hobbies/personality
-        const currentScreen = segments[1];
-        if (!currentScreen || currentScreen === "welcome") {
-          router.replace("/(auth)/hobbies");
+      // Check actual user data for onboarding status
+      const checkAndNavigate = async () => {
+        const storedUser = await graphqlAuthService.getStoredUser();
+        if (storedUser) {
+          const status = graphqlAuthService.getOnboardingStatus(storedUser);
+          if (status.nextScreen) {
+            // Only redirect if not already on an onboarding screen
+            const currentScreen = segments[1];
+            if (currentScreen === "welcome" || currentScreen === "login" ||
+              currentScreen === "signup" || currentScreen === "verify-code" ||
+              currentScreen === "email-login") {
+              router.replace(status.nextScreen as Href);
+            }
+          } else {
+            // Onboarding complete, go to main app
+            router.replace("/(tabs)/swipe" as Href);
+          }
+        } else {
+          // No user data, go to hobbies as fallback
+          router.replace("/(auth)/hobbies" as Href);
         }
-      }
+      };
+
+      checkAndNavigate();
     }
-  }, [isAuthenticated, isLoading, segments, isOnboardingComplete, router]);
+  }, [isAuthenticated, isLoading, segments, router]);
 
   // Show loading screen while checking auth
   if (isLoading) {
