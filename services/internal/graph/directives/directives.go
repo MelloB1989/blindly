@@ -17,8 +17,6 @@ import (
 type contextKey string
 
 const ClaimsContextKey = contextKey("authClaims")
-const AdminContextKey = contextKey("adminKey")
-const AdminContextBool = contextKey("isAdmin")
 const AnalyticsContextKey = contextKey("analytics")
 
 func AuthDirective(ctx context.Context, obj any, next graphql.Resolver) (any, error) {
@@ -63,4 +61,17 @@ func AuthDirective(ctx context.Context, obj any, next graphql.Resolver) (any, er
 	ctx = context.WithValue(ctx, ClaimsContextKey, claims)
 	ctx = context.WithValue(ctx, AnalyticsContextKey, analyticsClient)
 	return next(ctx)
+}
+
+func GetAuthClaims(ctx context.Context) (*models.Claims, *analytics.AnalyticsEngine, error) {
+	claims, ok := ctx.Value(ClaimsContextKey).(*models.Claims)
+	if !ok {
+		return nil, nil, errors.New("unauthenticated")
+	}
+	analyticsClient, ok := ctx.Value(AnalyticsContextKey).(*analytics.AnalyticsEngine)
+	if !ok {
+		return nil, nil, errors.New("analytics client not found")
+	}
+
+	return claims, analyticsClient, nil
 }

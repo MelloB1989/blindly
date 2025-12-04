@@ -4,7 +4,7 @@ import "time"
 
 type User struct {
 	TableName         string         `karma_table:"users" json:"-"`
-	Id                string         `json:"id"`
+	Id                string         `json:"id" karma:"primary"`
 	FirstName         string         `json:"first_name"`
 	LastName          string         `json:"last_name"`
 	Email             string         `json:"email"`

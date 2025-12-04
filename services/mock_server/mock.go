@@ -1,6 +1,7 @@
 package mockserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -1112,7 +1113,7 @@ func min(a, b int) int {
 	return b
 }
 
-func StartMockServer() {
+func StartMockServer(ctx context.Context) error {
 	rand.Seed(time.Now().UnixNano())
 
 	// User endpoints
@@ -1158,30 +1159,41 @@ func StartMockServer() {
 	http.HandleFunc("/api/ai/recommendations", handleAIRecommendations)
 	http.HandleFunc("/api/ai/chat", handleAIChat)
 
-	fmt.Println("🚀 Blindly Mock API server running on :8080")
-	fmt.Println("")
-	fmt.Println("Available endpoints:")
-	fmt.Println("  GET    /api/users/me           - Get current user")
-	fmt.Println("  PUT    /api/users/me           - Update profile")
-	fmt.Println("  GET    /api/feed               - Get discovery feed")
-	fmt.Println("  POST   /api/swipe              - Swipe on a profile")
-	fmt.Println("  POST   /api/poke               - Poke a user")
-	fmt.Println("  GET    /api/matches            - Get all matches")
-	fmt.Println("  POST   /api/matches/rate       - Rate a match")
-	fmt.Println("  POST   /api/matches/unlock     - Request photo unlock")
-	fmt.Println("  GET    /api/chats              - Get all chats")
-	fmt.Println("  GET    /api/chats/:id/messages - Get chat messages")
-	fmt.Println("  POST   /api/chats/:id/messages - Send a message")
-	fmt.Println("  GET    /api/posts              - Get social feed")
-	fmt.Println("  POST   /api/posts              - Create a post")
-	fmt.Println("  POST   /api/posts/:id/like     - Like/unlike a post")
-	fmt.Println("  POST   /api/posts/:id/comments - Comment on a post")
-	fmt.Println("  POST   /api/posts/:id/repost   - Repost a post")
-	fmt.Println("  POST   /api/ai/generate-bio    - Generate AI bio")
-	fmt.Println("  POST   /api/ai/suggest-reply   - Get AI reply suggestion")
-	fmt.Println("  POST   /api/ai/recommendations - Get AI recommendations")
-	fmt.Println("  POST   /api/ai/chat            - Chat with AI companion")
-	fmt.Println("")
+	// fmt.Println("🚀 Blindly Mock API server running on :8080")
+	// fmt.Println("")
+	// fmt.Println("Available endpoints:")
+	// fmt.Println("  GET    /api/users/me           - Get current user")
+	// fmt.Println("  PUT    /api/users/me           - Update profile")
+	// fmt.Println("  GET    /api/feed               - Get discovery feed")
+	// fmt.Println("  POST   /api/swipe              - Swipe on a profile")
+	// fmt.Println("  POST   /api/poke               - Poke a user")
+	// fmt.Println("  GET    /api/matches            - Get all matches")
+	// fmt.Println("  POST   /api/matches/rate       - Rate a match")
+	// fmt.Println("  POST   /api/matches/unlock     - Request photo unlock")
+	// fmt.Println("  GET    /api/chats              - Get all chats")
+	// fmt.Println("  GET    /api/chats/:id/messages - Get chat messages")
+	// fmt.Println("  POST   /api/chats/:id/messages - Send a message")
+	// fmt.Println("  GET    /api/posts              - Get social feed")
+	// fmt.Println("  POST   /api/posts              - Create a post")
+	// fmt.Println("  POST   /api/posts/:id/like     - Like/unlike a post")
+	// fmt.Println("  POST   /api/posts/:id/comments - Comment on a post")
+	// fmt.Println("  POST   /api/posts/:id/repost   - Repost a post")
+	// fmt.Println("  POST   /api/ai/generate-bio    - Generate AI bio")
+	// fmt.Println("  POST   /api/ai/suggest-reply   - Get AI reply suggestion")
+	// fmt.Println("  POST   /api/ai/recommendations - Get AI recommendations")
+	// fmt.Println("  POST   /api/ai/chat            - Chat with AI companion")
+	// fmt.Println("")
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	server := &http.Server{Addr: ":8080"}
+
+	go func() {
+		<-ctx.Done()
+		log.Println("Mock server shutting down...")
+		server.Shutdown(context.Background())
+	}()
+
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		return err
+	}
+	return nil
 }

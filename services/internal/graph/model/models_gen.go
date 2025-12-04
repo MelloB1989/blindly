@@ -15,10 +15,8 @@ type AddressInput struct {
 
 // Return value after successful auth
 type AuthPayload struct {
-	AccessToken  string       `json:"access_token"`
-	RefreshToken *string      `json:"refresh_token,omitempty"`
-	ExpiresAt    *time.Time   `json:"expires_at,omitempty"`
-	User         *models.User `json:"user"`
+	AccessToken string       `json:"access_token"`
+	User        *models.User `json:"user"`
 }
 
 type CreateUserInput struct {

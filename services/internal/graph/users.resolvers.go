@@ -37,18 +37,13 @@ func (r *mutationResolver) UpdateMe(ctx context.Context, input model.UpdateUserI
 }
 
 // RefreshToken is the resolver for the refreshToken field.
-func (r *mutationResolver) RefreshToken(ctx context.Context, refreshToken string) (*model.AuthPayload, error) {
-	return r.UserResolver.RefreshToken(ctx, refreshToken)
+func (r *mutationResolver) RefreshToken(ctx context.Context) (*model.AuthPayload, error) {
+	return r.UserResolver.RefreshToken(ctx)
 }
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*models.User, error) {
 	return r.UserResolver.Me(ctx)
-}
-
-// User is the resolver for the user field.
-func (r *queryResolver) User(ctx context.Context, id string) (*models.User, error) {
-	return r.UserResolver.User(ctx, id)
 }
 
 // PersonalityTraits is the resolver for the personality_traits field.
@@ -77,10 +72,7 @@ type userResolver struct{ *Resolver }
 //    it when you're done.
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
 /*
-	func (r *userResolver) CreatedAt(ctx context.Context, obj *models.User) (*time.Time, error) {
-	panic(fmt.Errorf("not implemented: CreatedAt - created_at"))
-}
-func (r *userResolver) UpdatedAt(ctx context.Context, obj *models.User) (*time.Time, error) {
-	panic(fmt.Errorf("not implemented: UpdatedAt - updated_at"))
+	func (r *queryResolver) User(ctx context.Context, id string) (*models.User, error) {
+	return r.UserResolver.User(ctx, id)
 }
 */

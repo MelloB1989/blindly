@@ -39,8 +39,6 @@ Return value after successful auth
 """
 type AuthPayload {
     access_token: String!
-    refresh_token: String
-    expires_at: Time
     user: User!
 }
 
@@ -90,7 +88,6 @@ input UpdateUserInput {
 
 extend type Query {
     me: User
-    user(id: String!): User
 }
 
 extend type Mutation {
@@ -99,5 +96,5 @@ extend type Mutation {
     requestEmailLoginCode(email: String!): Boolean!
     verifyEmailLoginCode(email: String!, code: String!): AuthPayload!
     updateMe(input: UpdateUserInput!): User!
-    refreshToken(refreshToken: String!): AuthPayload!
+    refreshToken: AuthPayload!
 }

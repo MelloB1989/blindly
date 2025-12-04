@@ -4,7 +4,7 @@
   "scripts": {
     "db:generate": "cd db && npx drizzle-kit generate",
     "db:migrate": "cd db && npx drizzle-kit migrate",
-    "gqlgen": "cd services && go run github.com/99designs/gqlgen generate",
+    "gqlgen": "cd services && go run github.com/99designs/gqlgen@v0.17.84 generate",
     "start:backend": "cd services && go run main.go",
     "start:app": "cd expo && bunx expo start",
     "build:backend": "cd services && go build -o backend"
