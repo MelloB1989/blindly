@@ -3,7 +3,6 @@ package main
 import (
 	"blindly/internal/cmd"
 	"blindly/internal/logger"
-	mockserver "blindly/mock_server"
 	"context"
 	"os"
 	"os/signal"
@@ -17,7 +16,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go mockserver.StartMockServer(ctx)
 	go cmd.StartGraphql(ctx)
 	go cmd.StartGoFiber(ctx)
 	go cmd.StartProxyServer(ctx)

@@ -20,5 +20,4 @@ ________  ___       ___  ________   ________  ___           ___    ___
 	color.Green("Server started on 9000")
 	color.Green("Graphql running on port 7777")
 	color.Green("GoFiber running on port 8080")
-	color.Green("Mock server running on port 8081")
 }
