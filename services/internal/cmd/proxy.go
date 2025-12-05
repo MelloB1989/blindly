@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -147,8 +148,11 @@ func handleWebSocketProxy(w http.ResponseWriter, r *http.Request, targetHost str
 }
 
 func handleWebSocketProxyRaw(w http.ResponseWriter, r *http.Request, targetHost string) {
+	log.Printf("[Proxy] WebSocket connection request: %s -> %s", r.URL.Path, targetHost)
+
 	hijacker, ok := w.(http.Hijacker)
 	if !ok {
+		log.Printf("[Proxy] Failed to hijack connection")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -158,10 +162,22 @@ func handleWebSocketProxyRaw(w http.ResponseWriter, r *http.Request, targetHost 
 		targetURL += "?" + r.URL.RawQuery
 	}
 
-	backendConn, err := net.DialTimeout("tcp", targetHost, 10*time.Second)
+	// Use a dialer with TCP keep-alive enabled
+	dialer := &net.Dialer{
+		Timeout:   10 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+
+	backendConn, err := dialer.Dial("tcp", targetHost)
 	if err != nil {
+		log.Printf("[Proxy] Failed to dial backend: %v", err)
 		w.WriteHeader(http.StatusBadGateway)
 		return
+	}
+
+	if tcpConn, ok := backendConn.(*net.TCPConn); ok {
+		tcpConn.SetKeepAlive(true)
+		tcpConn.SetKeepAlivePeriod(30 * time.Second)
 	}
 
 	r.URL, _ = url.Parse(targetURL)
@@ -178,20 +194,39 @@ func handleWebSocketProxyRaw(w http.ResponseWriter, r *http.Request, targetHost 
 		return
 	}
 
+	if tcpConn, ok := clientConn.(*net.TCPConn); ok {
+		tcpConn.SetKeepAlive(true)
+		tcpConn.SetKeepAlivePeriod(30 * time.Second)
+	}
+
+	log.Printf("[Proxy] WebSocket proxy established: %s", r.URL.Path)
+
+	// Use a done channel to coordinate shutdown
+	done := make(chan struct{})
+
+	// Backend -> Client
 	go func() {
+		defer close(done)
 		defer backendConn.Close()
 		defer clientConn.Close()
-		io.Copy(clientConn, backendConn)
+		n, err := io.Copy(clientConn, backendConn)
+		log.Printf("[Proxy] Backend->Client closed: bytes=%d, err=%v", n, err)
 	}()
 
+	// Client -> Backend
 	go func() {
 		defer backendConn.Close()
 		defer clientConn.Close()
 		if clientBuf.Reader.Buffered() > 0 {
 			io.CopyN(backendConn, clientBuf, int64(clientBuf.Reader.Buffered()))
 		}
-		io.Copy(backendConn, clientConn)
+		n, err := io.Copy(backendConn, clientConn)
+		log.Printf("[Proxy] Client->Backend closed: bytes=%d, err=%v", n, err)
 	}()
+
+	// Wait for one direction to close
+	<-done
+	log.Printf("[Proxy] WebSocket proxy closed: %s", r.URL.Path)
 }
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {

@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import {
   View,
   ScrollView,
-  SafeAreaView,
   Switch,
   Pressable,
   Alert,
   Modal,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Avatar } from "../../components/ui/Avatar";

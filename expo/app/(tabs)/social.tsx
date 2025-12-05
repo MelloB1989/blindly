@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   FlatList,
-  SafeAreaView,
   StatusBar,
   Pressable,
   TextInput,
@@ -12,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography } from "../../components/ui/Typography";
 import { Avatar } from "../../components/ui/Avatar";
 import { Button } from "../../components/ui/Button";

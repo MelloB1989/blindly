@@ -144,6 +144,7 @@ func (s *Store) SendMessage(msg *models.Message) error {
 	if msg.CreatedAt.IsZero() {
 		msg.CreatedAt = time.Now()
 	}
+	msg.UpdatedAt = msg.CreatedAt
 
 	msgJSON, err := json.Marshal(msg)
 	if err != nil {
@@ -317,7 +318,7 @@ func (s *Store) MarkMessagesSeen(messageIds []string, userId string) error {
 	s.ensureRedis()
 
 	for _, msgId := range messageIds {
-		s.updateMessageInBuffer(msgId, &models.Message{Seen: true})
+		s.updateMessageInBuffer(msgId, &models.Message{Seen: true, Received: true})
 	}
 
 	event := PubSubEvent{

@@ -1,7 +1,6 @@
 import React, { useCallback, useState, useEffect } from "react";
 import {
   View,
-  SafeAreaView,
   StatusBar,
   Pressable,
   Dimensions,
@@ -11,6 +10,7 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Href } from "expo-router";
 import Animated, { FadeOut, BounceIn } from "react-native-reanimated";
 import { Typography } from "../../components/ui/Typography";
@@ -18,8 +18,7 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Chip } from "../../components/ui/Chip";
 import { SwipeCard, SwipeCardProfile } from "../../components/ui/SwipeCard";
-import { useStore } from "../../store/useStore";
-import { swipeService, RecommendedProfile } from "../../services/swipe-service";
+import { useSwipeStore, SwipeType } from "../../store/useSwipeStore";
 import {
   X,
   Heart,
@@ -51,47 +50,8 @@ const DISTANCE_OPTIONS = [
   { label: "50+ km", value: 50 },
 ];
 
-// Convert API profile to SwipeCardProfile
-const toSwipeCardProfile = (rec: RecommendedProfile): SwipeCardProfile => {
-  // Calculate age from DOB
-  const dob = new Date(rec.profile.dob);
-  const age = Math.floor(
-    (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000),
-  );
-
-  return {
-    id: rec.profile.id,
-    firstName: rec.profile.name.split(" ")[0],
-    age,
-    bio: rec.profile.bio,
-    hobbies: rec.profile.hobbies,
-    traits: rec.profile.personality_traits.map((t) => t.key),
-    photos: rec.profile.photos,
-    isRevealed: false, // Photos are blurred by default
-    isVerified: rec.profile.is_verified,
-    matchScore: Math.round(rec.match_score),
-    distance: rec.distance_km
-      ? rec.distance_km < 1
-        ? "< 1 km"
-        : `${Math.round(rec.distance_km)} km`
-      : "Nearby",
-    area: undefined, // Not in API
-    languages: rec.profile.extra?.languages,
-    zodiac: rec.profile.extra?.zodiac,
-    lastActive: rec.profile.is_online ? "Online" : undefined,
-    prompts: rec.profile.user_prompts.length > 0
-      ? rec.profile.user_prompts.map((p, i) => ({
-        question: `Prompt ${i + 1}`,
-        answer: p,
-      }))
-      : undefined,
-  };
-};
-
 export default function SwipeScreen() {
   const router = useRouter();
-  const { profiles, currentIndex, swipeProfile, setProfiles, addProfiles } =
-    useStore();
   const [showFilters, setShowFilters] = useState(false);
   const [lastAction, setLastAction] = useState<{
     profile: SwipeCardProfile;
@@ -103,55 +63,25 @@ export default function SwipeScreen() {
     text: string;
   } | null>(null);
 
-  // Loading and error states
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
+  // Use Zustand store
+  const {
+    profiles,
+    currentIndex,
+    isLoading,
+    isLoadingMore,
+    isRefreshing,
+    error,
+    hasMore,
+    fetchRecommendations,
+    refresh,
+    swipe,
+    loadMore,
+  } = useSwipeStore();
 
   // Filter states
   const [selectedAgeRange, setSelectedAgeRange] = useState<number | null>(null);
   const [selectedDistance, setSelectedDistance] = useState<number>(25);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
-
-  // Fetch recommendations from API
-  const fetchRecommendations = useCallback(
-    async (cursor?: string, append: boolean = false) => {
-      if (append) {
-        setIsLoadingMore(true);
-      } else {
-        setIsLoading(true);
-        setError(null);
-      }
-
-      try {
-        const result = await swipeService.getRecommendations(cursor, 20);
-
-        if (result.success && result.data) {
-          const swipeProfiles = result.data.items.map(toSwipeCardProfile);
-
-          if (append) {
-            addProfiles(swipeProfiles);
-          } else {
-            setProfiles(swipeProfiles);
-          }
-
-          setNextCursor(result.data.next_cursor);
-          setHasMore(result.data.has_more);
-        } else {
-          setError(result.error || "Failed to load profiles");
-        }
-      } catch (err) {
-        setError("Something went wrong. Please try again.");
-        console.error("Fetch recommendations error:", err);
-      } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-      }
-    },
-    [setProfiles, addProfiles],
-  );
 
   // Initial load
   useEffect(() => {
@@ -162,18 +92,8 @@ export default function SwipeScreen() {
 
   // Load more when running low on profiles
   useEffect(() => {
-    const remainingProfiles = profiles.length - currentIndex;
-    if (remainingProfiles <= 3 && hasMore && !isLoadingMore && nextCursor) {
-      fetchRecommendations(nextCursor, true);
-    }
-  }, [
-    currentIndex,
-    profiles.length,
-    hasMore,
-    isLoadingMore,
-    nextCursor,
-    fetchRecommendations,
-  ]);
+    loadMore();
+  }, [currentIndex, profiles.length, loadMore]);
 
   const handleSwipeLeft = useCallback(
     async (profile: SwipeCardProfile) => {
@@ -181,16 +101,13 @@ export default function SwipeScreen() {
       setFeedback({ type: "pass", text: "NOPE" });
       setTimeout(() => setFeedback(null), 800);
 
-      // Update local state immediately
-      swipeProfile("pass");
-
-      // Submit to API
-      const result = await swipeService.dislike(profile.id);
+      // Submit to API via store
+      const result = await swipe(profile.id, "DISLIKE");
       if (!result.success) {
         console.error("Failed to submit swipe:", result.error);
       }
     },
-    [swipeProfile],
+    [swipe]
   );
 
   const handleSwipeRight = useCallback(
@@ -199,11 +116,8 @@ export default function SwipeScreen() {
       setFeedback({ type: "like", text: "LIKE" });
       setTimeout(() => setFeedback(null), 800);
 
-      // Update local state immediately
-      swipeProfile("like");
-
-      // Submit to API
-      const result = await swipeService.like(profile.id);
+      // Submit to API via store
+      const result = await swipe(profile.id, "LIKE");
       if (result.success && result.isMatch) {
         Alert.alert(
           "It's a Match! 🎉",
@@ -214,13 +128,13 @@ export default function SwipeScreen() {
               onPress: () => router.push("/(tabs)/chat" as Href),
             },
             { text: "Keep Swiping" },
-          ],
+          ]
         );
       } else if (!result.success) {
         console.error("Failed to submit swipe:", result.error);
       }
     },
-    [swipeProfile, router],
+    [swipe, router]
   );
 
   const handleSwipeUp = useCallback(
@@ -229,11 +143,8 @@ export default function SwipeScreen() {
       setFeedback({ type: "superlike", text: "SUPER LIKE" });
       setTimeout(() => setFeedback(null), 800);
 
-      // Update local state immediately
-      swipeProfile("superlike");
-
-      // Submit to API
-      const result = await swipeService.superlike(profile.id);
+      // Submit to API via store
+      const result = await swipe(profile.id, "SUPERLIKE");
       if (result.success && result.isMatch) {
         Alert.alert(
           "Super Like Match! ⭐",
@@ -244,18 +155,18 @@ export default function SwipeScreen() {
               onPress: () => router.push("/(tabs)/chat" as Href),
             },
             { text: "Keep Swiping" },
-          ],
+          ]
         );
       } else if (result.success) {
         Alert.alert(
           "Super Like Sent! ⭐",
-          `${profile.firstName} will be notified that you super liked them!`,
+          `${profile.firstName} will be notified that you super liked them!`
         );
       } else {
         console.error("Failed to submit swipe:", result.error);
       }
     },
-    [swipeProfile, router],
+    [swipe, router]
   );
 
   const handleShare = useCallback((profile: SwipeCardProfile) => {
@@ -269,11 +180,11 @@ export default function SwipeScreen() {
           onPress: () => {
             Alert.alert(
               "Shared!",
-              `You've shared ${profile.firstName}'s profile link.`,
+              `You've shared ${profile.firstName}'s profile link.`
             );
           },
         },
-      ],
+      ]
     );
   }, []);
 
@@ -282,7 +193,7 @@ export default function SwipeScreen() {
       Alert.alert(
         "Report Received",
         "Thank you for keeping our community safe. We will review this profile shortly.",
-        [{ text: "OK" }],
+        [{ text: "OK" }]
       );
     };
 
@@ -303,7 +214,7 @@ export default function SwipeScreen() {
           text: "Harassment",
           onPress: confirmReport,
         },
-      ],
+      ]
     );
   }, []);
 
@@ -311,7 +222,7 @@ export default function SwipeScreen() {
     (profile: SwipeCardProfile) => {
       router.push(`/(tabs)/maytri?profileName=${profile.firstName}` as Href);
     },
-    [router],
+    [router]
   );
 
   const handleButtonSwipe = (direction: "left" | "right" | "up") => {
@@ -342,7 +253,7 @@ export default function SwipeScreen() {
               setLastAction(null);
             },
           },
-        ],
+        ]
       );
     } else {
       Alert.alert("Nothing to Undo", "You haven't swiped on anyone yet!");
@@ -350,10 +261,7 @@ export default function SwipeScreen() {
   };
 
   const handleRefresh = () => {
-    setProfiles([]);
-    setNextCursor(null);
-    setHasMore(true);
-    fetchRecommendations();
+    refresh();
   };
 
   const applyFilters = () => {
@@ -405,7 +313,10 @@ export default function SwipeScreen() {
           {error}
         </Typography>
         <Button variant="primary" onPress={handleRefresh}>
-          Try Again
+          <View className="flex-row items-center gap-2">
+            <RefreshCw size={18} color="#FFFFFF" />
+            <Typography className="text-white">Try Again</Typography>
+          </View>
         </Button>
       </SafeAreaView>
     );
@@ -452,19 +363,19 @@ export default function SwipeScreen() {
               entering={BounceIn.duration(500)}
               exiting={FadeOut.duration(300)}
               className={`px-10 py-6 border-8 rounded-3xl transform -rotate-12 ${feedback.type === "like"
-                ? "border-success bg-success/20"
-                : feedback.type === "pass"
-                  ? "border-danger bg-danger/20"
-                  : "border-primary bg-primary/20"
+                  ? "border-success bg-success/20"
+                  : feedback.type === "pass"
+                    ? "border-danger bg-danger/20"
+                    : "border-primary bg-primary/20"
                 }`}
             >
               <Typography
                 variant="h1"
                 className={`text-6xl font-black uppercase tracking-widest ${feedback.type === "like"
-                  ? "text-success"
-                  : feedback.type === "pass"
-                    ? "text-danger"
-                    : "text-primary"
+                    ? "text-success"
+                    : feedback.type === "pass"
+                      ? "text-danger"
+                      : "text-primary"
                   }`}
               >
                 {feedback.text}
@@ -600,7 +511,7 @@ export default function SwipeScreen() {
                     selected={selectedAgeRange === index}
                     onPress={() =>
                       setSelectedAgeRange(
-                        selectedAgeRange === index ? null : index,
+                        selectedAgeRange === index ? null : index
                       )
                     }
                   />
@@ -654,8 +565,8 @@ export default function SwipeScreen() {
                   </View>
                   <View
                     className={`w-6 h-6 rounded-md items-center justify-center ${showVerifiedOnly
-                      ? "bg-primary"
-                      : "bg-surface border border-muted/30"
+                        ? "bg-primary"
+                        : "bg-surface border border-muted/30"
                       }`}
                   >
                     {showVerifiedOnly && <Check size={16} color="#FFFFFF" />}

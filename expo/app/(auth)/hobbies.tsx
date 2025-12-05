@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, SafeAreaView, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { View, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
@@ -11,8 +12,13 @@ import { graphqlAuthService } from "../../services/graphql-auth";
 
 export default function HobbiesScreen() {
   const router = useRouter();
-  const { updateOnboardingData, onboardingData, setOnboardingStep, user, setUser } =
-    useStore();
+  const {
+    updateOnboardingData,
+    onboardingData,
+    setOnboardingStep,
+    user,
+    setUser,
+  } = useStore();
 
   // Initialize from store if available
   const [selectedHobbies, setSelectedHobbies] = useState<string[]>(
@@ -59,7 +65,9 @@ export default function HobbiesScreen() {
       console.error("Save hobbies error:", error);
       Alert.alert(
         "Error",
-        error instanceof Error ? error.message : "Failed to save. Please try again.",
+        error instanceof Error
+          ? error.message
+          : "Failed to save. Please try again.",
       );
     } finally {
       setIsLoading(false);

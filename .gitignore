@@ -5,3 +5,4 @@ node_modules
 .env.stage
 .env.test
 llm-docs
+services/tools/chat_tester

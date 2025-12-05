@@ -1,12 +1,6 @@
 import React from "react";
-import {
-  View,
-  FlatList,
-  SafeAreaView,
-  StatusBar,
-  Pressable,
-  Alert,
-} from "react-native";
+import { View, FlatList, StatusBar, Pressable, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Typography } from "../components/ui/Typography";
 import { useStore, MaytriSession } from "../store/useStore";

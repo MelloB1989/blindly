@@ -1,9 +1,6 @@
-import React, { useState } from "react";
-import {
-  View,
-  SafeAreaView,
-  Image,
-} from "react-native";
+import React from "react";
+import { View, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";

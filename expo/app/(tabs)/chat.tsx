@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   FlatList,
   Pressable,
-  SafeAreaView,
   StatusBar,
   LayoutAnimation,
   Platform,
@@ -12,16 +11,15 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Avatar } from "../../components/ui/Avatar";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
-import { chatService, Connection } from "../../services/chat-service";
-import {
-  activityService,
-  UserProfileActivity,
-} from "../../services/activity-service";
+import { useConnectionsStore } from "../../store/useConnectionsStore";
+import { useActivitiesStore, UserProfileActivity } from "../../store/useActivitiesStore";
+import { Connection } from "../../services/chat-service";
 import {
   Lock,
   Unlock,
@@ -30,6 +28,8 @@ import {
   MessageCircle,
   ArrowUpRight,
   ArrowDownLeft,
+  RefreshCw,
+  X,
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 
@@ -48,57 +48,45 @@ export default function ChatScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("messages");
   const [pokeFilter, setPokeFilter] = useState<"received" | "sent">("received");
   const [viewFilter, setViewFilter] = useState<"viewed_you" | "you_viewed">(
-    "viewed_you",
+    "viewed_you"
   );
 
-  // Data states
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [receivedActivities, setReceivedActivities] = useState<
-    UserProfileActivity[]
-  >([]);
-  const [sentActivities, setSentActivities] = useState<UserProfileActivity[]>(
-    [],
-  );
+  // Use Zustand stores
+  const {
+    connections,
+    isLoading: isLoadingConnections,
+    isRefreshing: isRefreshingConnections,
+    error: connectionsError,
+    fetchConnections,
+    refresh: refreshConnections,
+  } = useConnectionsStore();
 
-  // Loading states
-  const [isLoadingConnections, setIsLoadingConnections] = useState(true);
-  const [isLoadingActivities, setIsLoadingActivities] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const {
+    receivedActivities,
+    sentActivities,
+    isLoading: isLoadingActivities,
+    isRefreshing: isRefreshingActivities,
+    error: activitiesError,
+    fetchActivities,
+    refresh: refreshActivities,
+    getReceivedPokes,
+    getSentPokes,
+    getViewedYou,
+    getYouViewed,
+  } = useActivitiesStore();
 
-  // Fetch data
-  const fetchConnections = useCallback(async () => {
-    const result = await chatService.getMyConnections();
-    if (result.success && result.connections) {
-      setConnections(result.connections);
-    }
-    setIsLoadingConnections(false);
-  }, []);
-
-  const fetchActivities = useCallback(async () => {
-    const [received, sent] = await Promise.all([
-      activityService.getReceivedActivities(),
-      activityService.getSentActivities(),
-    ]);
-
-    if (received.success && received.activities) {
-      setReceivedActivities(received.activities);
-    }
-    if (sent.success && sent.activities) {
-      setSentActivities(sent.activities);
-    }
-    setIsLoadingActivities(false);
-  }, []);
-
+  // Initial fetch
   useEffect(() => {
     fetchConnections();
     fetchActivities();
   }, [fetchConnections, fetchActivities]);
 
+  // Handle refresh for all data
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await Promise.all([fetchConnections(), fetchActivities()]);
-    setIsRefreshing(false);
+    await Promise.all([refreshConnections(), refreshActivities()]);
   };
+
+  const isRefreshing = isRefreshingConnections || isRefreshingActivities;
 
   const handleTabChange = (tab: TabType) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -113,20 +101,17 @@ export default function ChatScreen() {
     router.push(`/user/${userId}` as Href);
   };
 
-  // Get filtered activities
-  const receivedPokes = activityService.filterByType(receivedActivities, "POKE");
-  const sentPokes = activityService.filterByType(sentActivities, "POKE");
-  const viewedYou = activityService.filterByType(
-    receivedActivities,
-    "PROFILE_VIEW",
-  );
-  const youViewed = activityService.filterByType(sentActivities, "PROFILE_VIEW");
+  // Get filtered activities using store selectors
+  const receivedPokes = getReceivedPokes();
+  const sentPokes = getSentPokes();
+  const viewedYou = getViewedYou();
+  const youViewed = getYouViewed();
 
   // --- Render Components ---
 
   const renderMessageItem = ({ item }: { item: Connection }) => {
     const profile = item.connection_profile;
-    const progressPercent = Math.round(item.percentage_complete * 100);
+    const progressPercent = item.percentage_complete;
 
     return (
       <Pressable
@@ -150,7 +135,7 @@ export default function ChatScreen() {
               <Typography variant="h3" className="text-base">
                 {profile.name}
               </Typography>
-              {item.percentage_complete >= 1 && !item.match.is_unlocked && (
+              {item.percentage_complete >= 99 && !item.match.is_unlocked && (
                 <Badge
                   label="Can Unlock"
                   variant="ai"
@@ -202,7 +187,9 @@ export default function ChatScreen() {
               </View>
               <View className="h-1.5 bg-surface rounded-full overflow-hidden">
                 <View
-                  className={`h-full rounded-full ${item.percentage_complete >= 1 ? "bg-primary" : "bg-primary/50"
+                  className={`h-full rounded-full ${item.percentage_complete >= 1
+                      ? "bg-primary"
+                      : "bg-primary/50"
                     }`}
                   style={{ width: `${Math.min(progressPercent, 100)}%` }}
                 />
@@ -315,6 +302,27 @@ export default function ChatScreen() {
     </View>
   );
 
+  // Error component
+  const ErrorView = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+    <View className="flex-1 items-center justify-center px-8 py-16">
+      <View className="w-20 h-20 rounded-full bg-surface-elevated items-center justify-center mb-4">
+        <X size={40} color="#EF4444" />
+      </View>
+      <Typography variant="h2" className="text-center mb-2">
+        Something went wrong
+      </Typography>
+      <Typography variant="body" color="muted" className="text-center mb-6">
+        {message}
+      </Typography>
+      <Button variant="primary" onPress={onRetry}>
+        <View className="flex-row items-center gap-2">
+          <RefreshCw size={18} color="#FFFFFF" />
+          <Typography className="text-white">Try Again</Typography>
+        </View>
+      </Button>
+    </View>
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <StatusBar barStyle="light-content" />
@@ -407,8 +415,10 @@ export default function ChatScreen() {
 
       {/* Content Area */}
       <View className="flex-1">
-        {activeTab === "messages" &&
-          (isLoadingConnections ? (
+        {activeTab === "messages" && (
+          connectionsError && connections.length === 0 ? (
+            <ErrorView message={connectionsError} onRetry={fetchConnections} />
+          ) : isLoadingConnections && connections.length === 0 ? (
             <LoadingView />
           ) : connections.length > 0 ? (
             <FlatList
@@ -433,10 +443,13 @@ export default function ChatScreen() {
               action={() => router.push("/(tabs)/swipe" as Href)}
               actionLabel="Start Swiping"
             />
-          ))}
+          )
+        )}
 
-        {activeTab === "pokes" &&
-          (isLoadingActivities ? (
+        {activeTab === "pokes" && (
+          activitiesError && receivedActivities.length === 0 && sentActivities.length === 0 ? (
+            <ErrorView message={activitiesError} onRetry={fetchActivities} />
+          ) : isLoadingActivities ? (
             <LoadingView />
           ) : (
             <FlatList
@@ -445,7 +458,8 @@ export default function ChatScreen() {
                 renderInteractionItem({
                   item,
                   type: "poke",
-                  direction: pokeFilter === "received" ? "incoming" : "outgoing",
+                  direction:
+                    pokeFilter === "received" ? "incoming" : "outgoing",
                 })
               }
               keyExtractor={(item) => `poke-${item.id}`}
@@ -474,10 +488,13 @@ export default function ChatScreen() {
                 />
               }
             />
-          ))}
+          )
+        )}
 
-        {activeTab === "views" &&
-          (isLoadingActivities ? (
+        {activeTab === "views" && (
+          activitiesError && receivedActivities.length === 0 && sentActivities.length === 0 ? (
+            <ErrorView message={activitiesError} onRetry={fetchActivities} />
+          ) : isLoadingActivities ? (
             <LoadingView />
           ) : (
             <FlatList
@@ -516,7 +533,8 @@ export default function ChatScreen() {
                 />
               }
             />
-          ))}
+          )
+        )}
       </View>
     </SafeAreaView>
   );

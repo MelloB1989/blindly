@@ -2,13 +2,13 @@ import React from "react";
 import {
   View,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   Image,
   Pressable,
   Dimensions,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";

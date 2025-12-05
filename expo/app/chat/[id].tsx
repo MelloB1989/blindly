@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
-  SafeAreaView,
   FlatList,
   TextInput,
   Pressable,
@@ -11,10 +10,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
 import { Avatar } from "../../components/ui/Avatar";
-import { Badge } from "../../components/ui/Badge";
 import {
   ChevronLeft,
   Send,
@@ -25,22 +24,24 @@ import {
   X,
 } from "lucide-react-native";
 import { AI_RIZZ_SUGGESTIONS } from "../../constants/mockData";
-import { useStore } from "../../store/useStore";
 import {
   chatService,
   ChatWebSocket,
   Message,
   Connection,
 } from "../../services/chat-service";
+import { getCurrentUserId } from "../../utils/jwt";
+import * as ChatDB from "../../services/chat-db";
+
+type MessageType = "TEXT" | "IMAGE" | "VIDEO" | "AUDIO" | "FILE";
 
 export default function ChatDetailScreen() {
   const { id: chatId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
-  const { user } = useStore();
   const wsRef = useRef<ChatWebSocket | null>(null);
 
-  // State
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [connection, setConnection] = useState<Connection | null>(null);
   const [inputText, setInputText] = useState("");
@@ -51,10 +52,22 @@ export default function ChatDetailScreen() {
   const [isConnected, setIsConnected] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [cacheLoaded, setCacheLoaded] = useState(false);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
+  const seenSentRef = useRef(false);
 
-  // Fetch connection info
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const uid = await getCurrentUserId();
+      setCurrentUserId(uid);
+    };
+    fetchUserId();
+  }, []);
+
   useEffect(() => {
     const fetchConnection = async () => {
       const result = await chatService.getMyConnections();
@@ -68,7 +81,45 @@ export default function ChatDetailScreen() {
     fetchConnection();
   }, [chatId]);
 
-  // WebSocket connection
+  useEffect(() => {
+    if (!chatId || Platform.OS === "web") {
+      setCacheLoaded(true);
+      return;
+    }
+
+    const loadCache = async () => {
+      const cached = await ChatDB.getMessages(chatId, 50);
+      if (cached.length > 0) {
+        setMessages(cached);
+      }
+      setCacheLoaded(true);
+    };
+    loadCache();
+  }, [chatId]);
+
+  const isValidMessage = (message: Message): boolean => {
+    const hasContent = message.content && message.content.trim().length > 0;
+    const hasMedia = message.media && message.media.length > 0;
+    return hasContent || hasMedia;
+  };
+
+  const sendSeenEvent = useCallback((msgs: Message[], userId: string) => {
+    if (!wsRef.current || seenSentRef.current) return;
+
+    const unseenFromOther = msgs
+      .filter((m) => !m.id.startsWith("temp-") && m.sender_id !== userId && !m.seen)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    if (unseenFromOther.length > 0) {
+      wsRef.current.markMessagesSeen([unseenFromOther[0].id]);
+      seenSentRef.current = true;
+
+      if (chatId && Platform.OS !== "web") {
+        ChatDB.markAllSeenBefore(chatId, unseenFromOther[0].id);
+      }
+    }
+  }, [chatId]);
+
   useEffect(() => {
     if (!chatId) return;
 
@@ -78,7 +129,6 @@ export default function ChatDetailScreen() {
     ws.onConnected = () => {
       setIsConnecting(false);
       setIsConnected(true);
-      // Query initial messages
       ws.queryMessages(50);
     };
 
@@ -86,21 +136,72 @@ export default function ChatDetailScreen() {
       setIsConnected(false);
     };
 
-    ws.onMessage = (message) => {
+    ws.onMessage = (message: Message) => {
       setMessages((prev) => {
-        // Check if message already exists
-        const exists = prev.some((m) => m.id === message.id);
-        if (exists) {
-          // Update existing message
-          return prev.map((m) => (m.id === message.id ? message : m));
+        const existingIndex = prev.findIndex((m) => m.id === message.id);
+        if (existingIndex !== -1) {
+          const updated = [...prev];
+          updated[existingIndex] = message;
+          return updated;
         }
-        // Add new message
+
+        if (!isValidMessage(message)) {
+          return prev;
+        }
+
+        const tempIndex = prev.findIndex(
+          (m) => m.id.startsWith("temp-") &&
+            m.content === message.content &&
+            m.sender_id === message.sender_id
+        );
+        if (tempIndex !== -1) {
+          const updated = [...prev];
+          updated[tempIndex] = message;
+          if (chatId && Platform.OS !== "web") {
+            ChatDB.saveMessage(chatId, message);
+          }
+          return updated;
+        }
+
+        if (chatId && Platform.OS !== "web") {
+          ChatDB.saveMessage(chatId, message);
+        }
         return [...prev, message];
       });
     };
 
-    ws.onMessagesLoaded = (loadedMessages) => {
-      setMessages(loadedMessages.reverse()); // API returns newest first
+    ws.onMessagesLoaded = (loadedMessages: Message[]) => {
+      const validMessages = loadedMessages.filter(isValidMessage);
+      const uniqueMessages = new Map<string, Message>();
+
+      for (const msg of validMessages) {
+        uniqueMessages.set(msg.id, msg);
+      }
+
+      const sortedMessages = Array.from(uniqueMessages.values()).sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+
+      setMessages((prev) => {
+        const merged = new Map<string, Message>();
+        for (const msg of prev) {
+          if (!msg.id.startsWith("temp-")) {
+            merged.set(msg.id, msg);
+          }
+        }
+        for (const msg of sortedMessages) {
+          merged.set(msg.id, msg);
+        }
+        return Array.from(merged.values()).sort(
+          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
+
+      if (chatId && Platform.OS !== "web" && sortedMessages.length > 0) {
+        ChatDB.saveMessages(chatId, sortedMessages);
+      }
+
+      setHasMoreMessages(sortedMessages.length >= 50);
     };
 
     ws.onTypingStarted = () => {
@@ -111,59 +212,58 @@ export default function ChatDetailScreen() {
       setOtherUserTyping(false);
     };
 
-    ws.onError = (error) => {
-      console.error("WebSocket error:", error);
+    ws.onError = () => {
       setIsConnecting(false);
     };
 
     ws.connect();
 
     return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
       ws.disconnect();
     };
   }, [chatId]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  }, [messages]);
-
-  // Mark messages as seen when viewing
-  useEffect(() => {
-    if (!wsRef.current || !isConnected || !user) return;
-
-    const unseenMessages = messages
-      .filter((m) => m.sender_id !== user.id && !m.seen)
-      .map((m) => m.id);
-
-    if (unseenMessages.length > 0) {
-      wsRef.current.markMessagesSeen(unseenMessages);
-    }
-  }, [messages, isConnected, user]);
+    if (!isConnected || !currentUserId || messages.length === 0) return;
+    sendSeenEvent(messages, currentUserId);
+  }, [isConnected, currentUserId, messages, sendSeenEvent]);
 
   const handleBack = () => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    if (isTypingRef.current && wsRef.current) {
+      wsRef.current.stopTyping();
+    }
     router.back();
   };
 
   const handleInputChange = (text: string) => {
     setInputText(text);
 
-    // Handle typing indicator
-    if (text && !isTyping) {
-      setIsTyping(true);
-      wsRef.current?.startTyping();
-    }
-
-    // Clear previous timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Set timeout to stop typing indicator
+    if (text && !isTypingRef.current) {
+      isTypingRef.current = true;
+      setIsTyping(true);
+      wsRef.current?.startTyping();
+    }
+
+    if (!text && isTypingRef.current) {
+      isTypingRef.current = false;
+      setIsTyping(false);
+      wsRef.current?.stopTyping();
+      return;
+    }
+
     typingTimeoutRef.current = setTimeout(() => {
-      if (isTyping) {
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
         setIsTyping(false);
         wsRef.current?.stopTyping();
       }
@@ -171,45 +271,66 @@ export default function ChatDetailScreen() {
   };
 
   const handleSend = () => {
-    if (!inputText.trim() || !wsRef.current || !isConnected) return;
+    if (!inputText.trim() || !wsRef.current || !isConnected || !currentUserId) return;
 
-    // Stop typing indicator
-    if (isTyping) {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    if (isTypingRef.current) {
+      isTypingRef.current = false;
       setIsTyping(false);
       wsRef.current.stopTyping();
     }
 
-    // Generate temporary ID for optimistic update
+    const createdAt = new Date().toISOString();
     const tempId = `temp-${Date.now()}`;
     const newMessage: Message = {
       id: tempId,
-      type: "text",
+      type: "TEXT",
       content: inputText.trim(),
-      sender_id: user?.id || "me",
+      sender_id: currentUserId,
       received: false,
       seen: false,
       media: [],
       reactions: [],
-      created_at: new Date().toISOString(),
+      created_at: createdAt,
     };
 
-    // Optimistic update
     setMessages((prev) => [...prev, newMessage]);
     setInputText("");
     setShowAiSuggestions(false);
 
-    // Send via WebSocket
     wsRef.current.sendMessage({
-      type: "text",
+      type: "TEXT",
       content: newMessage.content,
+      created_at: createdAt,
     });
+  };
+
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMoreMessages || !wsRef.current || messages.length === 0) return;
+
+    setIsLoadingMore(true);
+    const oldestMessage = messages[0];
+
+    if (Platform.OS !== "web" && chatId) {
+      const olderCached = await ChatDB.getMessages(chatId, 50, oldestMessage.id);
+      if (olderCached.length > 0) {
+        setMessages((prev) => [...olderCached, ...prev]);
+        setIsLoadingMore(false);
+        setHasMoreMessages(olderCached.length >= 50);
+        return;
+      }
+    }
+
+    wsRef.current.queryMessages(50, oldestMessage.id);
+    setIsLoadingMore(false);
   };
 
   const handleAiSuggest = () => {
     setShowAiSuggestions(true);
     setIsLoadingAi(true);
 
-    // Simulate AI loading
     setTimeout(() => {
       const shuffled = [...AI_RIZZ_SUGGESTIONS].sort(() => 0.5 - Math.random());
       setAiSuggestions(shuffled.slice(0, 3));
@@ -228,7 +349,7 @@ export default function ChatDetailScreen() {
     if (connection.percentage_complete < 1) {
       Alert.alert(
         "Not Yet!",
-        `Keep chatting to unlock photos. You're ${Math.round(connection.percentage_complete * 100)}% there!`,
+        `Keep chatting to unlock photos. You're ${Math.round(connection.percentage_complete * 100)}% there!`
       );
       return;
     }
@@ -241,15 +362,18 @@ export default function ChatDetailScreen() {
         {
           text: "Send Request",
           onPress: () => {
-            Alert.alert("Request Sent!", "You'll be notified when they respond.");
+            Alert.alert(
+              "Request Sent!",
+              "You'll be notified when they respond."
+            );
           },
         },
-      ],
+      ]
     );
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
-    const isMe = item.sender_id === user?.id;
+    const isMe = item.sender_id === currentUserId;
 
     return (
       <View className={`mb-3 ${isMe ? "items-end" : "items-start"} px-4`}>
@@ -285,8 +409,7 @@ export default function ChatDetailScreen() {
     );
   };
 
-  // Loading state
-  if (isConnecting && !connection) {
+  if ((isConnecting && !connection) || !cacheLoaded) {
     return (
       <SafeAreaView className="flex-1 bg-background items-center justify-center">
         <ActivityIndicator size="large" color="#7C3AED" />
@@ -297,7 +420,6 @@ export default function ChatDetailScreen() {
     );
   }
 
-  // Not found state
   if (!connection) {
     return (
       <SafeAreaView className="flex-1 bg-background items-center justify-center">
@@ -311,7 +433,7 @@ export default function ChatDetailScreen() {
 
   const profile = connection.connection_profile;
   const isUnlocked = connection.match.is_unlocked;
-  const progressPercent = Math.round(connection.percentage_complete * 100);
+  const progressPercent = connection.percentage_complete;
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -319,7 +441,6 @@ export default function ChatDetailScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        {/* Header */}
         <View className="flex-row items-center px-4 py-3 border-b border-surface-elevated">
           <Pressable onPress={handleBack} className="mr-3 p-1">
             <ChevronLeft size={28} color="#E6E6F0" />
@@ -346,7 +467,11 @@ export default function ChatDetailScreen() {
                 {isUnlocked ? (
                   <View className="flex-row items-center">
                     <Unlock size={12} color="#16A34A" />
-                    <Typography variant="caption" color="success" className="ml-1">
+                    <Typography
+                      variant="caption"
+                      color="success"
+                      className="ml-1"
+                    >
                       Photos Unlocked
                     </Typography>
                   </View>
@@ -357,7 +482,11 @@ export default function ChatDetailScreen() {
                 ) : (
                   <View className="flex-row items-center">
                     <Lock size={12} color="#A6A6B2" />
-                    <Typography variant="caption" color="muted" className="ml-1">
+                    <Typography
+                      variant="caption"
+                      color="muted"
+                      className="ml-1"
+                    >
                       {progressPercent}% to unlock
                     </Typography>
                   </View>
@@ -390,16 +519,18 @@ export default function ChatDetailScreen() {
           </Pressable>
         </View>
 
-        {/* Connection Status Banner */}
         {!isConnected && !isConnecting && (
           <View className="bg-error/20 px-4 py-2">
-            <Typography variant="caption" color="danger" className="text-center">
+            <Typography
+              variant="caption"
+              color="danger"
+              className="text-center"
+            >
               Connection lost. Reconnecting...
             </Typography>
           </View>
         )}
 
-        {/* Progress Bar (only show if not unlocked) */}
         {!isUnlocked && (
           <View className="px-4 py-2 bg-surface">
             <View className="flex-row items-center justify-between mb-1">
@@ -421,16 +552,26 @@ export default function ChatDetailScreen() {
           </View>
         )}
 
-        {/* Messages */}
         <FlatList
           ref={flatListRef}
-          data={messages}
+          data={[...messages].reverse()}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingVertical: 16, flexGrow: 1 }}
+          contentContainerStyle={{ paddingVertical: 16 }}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() =>
-            flatListRef.current?.scrollToEnd({ animated: false })
+          inverted
+          removeClippedSubviews={Platform.OS !== "web"}
+          initialNumToRender={20}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            isLoadingMore ? (
+              <View className="py-4">
+                <ActivityIndicator size="small" color="#7C3AED" />
+              </View>
+            ) : null
           }
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center py-16">
@@ -441,7 +582,6 @@ export default function ChatDetailScreen() {
           }
         />
 
-        {/* Typing Indicator */}
         {otherUserTyping && (
           <View className="px-4 pb-2">
             <View className="flex-row items-center">
@@ -454,7 +594,6 @@ export default function ChatDetailScreen() {
           </View>
         )}
 
-        {/* AI Suggestions */}
         {showAiSuggestions && (
           <View className="px-4 pb-2">
             <View className="flex-row items-center justify-between mb-2">
@@ -491,10 +630,8 @@ export default function ChatDetailScreen() {
           </View>
         )}
 
-        {/* Input Area */}
         <View className="px-4 py-3 border-t border-surface-elevated bg-surface">
           <View className="flex-row items-center gap-2">
-            {/* AI Suggest Button */}
             <Pressable
               onPress={handleAiSuggest}
               className="w-10 h-10 rounded-full bg-ai/20 items-center justify-center active:bg-ai/30"
@@ -502,7 +639,6 @@ export default function ChatDetailScreen() {
               <Sparkles size={20} color="#FFD166" />
             </Pressable>
 
-            {/* Text Input */}
             <View className="flex-1 flex-row items-center bg-surface-elevated rounded-full px-4 py-2">
               <TextInput
                 value={inputText}
@@ -516,7 +652,6 @@ export default function ChatDetailScreen() {
               />
             </View>
 
-            {/* Send Button */}
             <Pressable
               onPress={handleSend}
               disabled={!inputText.trim() || !isConnected}

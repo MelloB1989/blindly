@@ -126,7 +126,16 @@ func (s *Store) updateMessageInBuffer(messageId string, updates *models.Message)
 				-- Update fields from the updates JSON
 				local updates = cjson.decode(ARGV[2])
 				for k, v in pairs(updates) do
-					if v ~= nil and k ~= 'id' and k ~= 'created_at' then
+					-- Skip nil values, id, and created_at
+					if k == 'id' or k == 'created_at' then
+						-- never update these
+					elseif type(v) == 'string' and v == '' then
+						-- skip empty strings
+					elseif type(v) == 'boolean' then
+						-- always update booleans (received, seen)
+						msg[k] = v
+					elseif v ~= nil and v ~= cjson.null then
+						-- update non-nil, non-null values
 						msg[k] = v
 					end
 				end

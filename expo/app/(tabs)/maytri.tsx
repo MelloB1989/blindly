@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
-  SafeAreaView,
   StatusBar,
   FlatList,
   TextInput,
@@ -11,6 +10,7 @@ import {
   Image,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Card } from "../../components/ui/Card";

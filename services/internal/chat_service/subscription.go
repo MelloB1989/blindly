@@ -3,6 +3,7 @@ package chatservice
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -16,9 +17,15 @@ type Subscription struct {
 func (s *Store) Subscribe() *Subscription {
 	s.ensureRedis()
 	pubsub := s.rc.Subscribe(ctx, chatPubKey(s.chatId))
+
+	channel := pubsub.Channel(
+		redis.WithChannelHealthCheckInterval(30*time.Second),
+		redis.WithChannelSendTimeout(10*time.Second),
+	)
+
 	return &Subscription{
 		pubsub:  pubsub,
-		channel: pubsub.Channel(),
+		channel: channel,
 		chatId:  s.chatId,
 	}
 }

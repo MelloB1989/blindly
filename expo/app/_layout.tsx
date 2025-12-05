@@ -28,14 +28,8 @@ const BlindlyDarkTheme = {
 function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
-  const {
-    isAuthenticated,
-    isLoading,
-    isOnboardingComplete,
-    setAuthLoading,
-    login,
-    accessToken,
-  } = useStore();
+  const { isAuthenticated, isLoading, setAuthLoading, login, accessToken } =
+    useStore();
 
   // Memoized login handler
   const handleLogin = useCallback(
@@ -61,8 +55,8 @@ function RootLayoutNav() {
             hobbies: result.user.hobbies || [],
             personalityTraits: result.user.personality_traits
               ? Object.fromEntries(
-                result.user.personality_traits.map((t) => [t.key, t.value]),
-              )
+                  result.user.personality_traits.map((t) => [t.key, t.value]),
+                )
               : {},
             photos: result.user.photos || [],
             isVerified: result.user.is_verified,
@@ -113,9 +107,13 @@ function RootLayoutNav() {
           if (status.nextScreen) {
             // Only redirect if not already on an onboarding screen
             const currentScreen = segments[1];
-            if (currentScreen === "welcome" || currentScreen === "login" ||
-              currentScreen === "signup" || currentScreen === "verify-code" ||
-              currentScreen === "email-login") {
+            if (
+              currentScreen === "welcome" ||
+              currentScreen === "login" ||
+              currentScreen === "signup" ||
+              currentScreen === "verify-code" ||
+              currentScreen === "email-login"
+            ) {
               router.replace(status.nextScreen as Href);
             }
           } else {

@@ -117,6 +117,13 @@ type outgoing struct {
 	Error    string           `json:"error"`
 }
 
+const (
+	pingInterval   = 30 * time.Second
+	pongWait       = 90 * time.Second
+	writeWait      = 30 * time.Second
+	maxPingRetries = 3
+)
+
 func WSHandler(c *websocket.Conn) {
 	chatId := c.Params("chatId")
 	if chatId == "" {
@@ -129,6 +136,28 @@ func WSHandler(c *websocket.Conn) {
 		c.Close()
 		return
 	}
+
+	var writeMu sync.Mutex
+	writeJSON := func(v any) error {
+		writeMu.Lock()
+		defer writeMu.Unlock()
+		c.SetWriteDeadline(time.Now().Add(writeWait))
+		err := c.WriteJSON(v)
+		c.SetWriteDeadline(time.Time{}) // Clear deadline after write
+		return err
+	}
+
+	c.SetPongHandler(func(string) error {
+		log.Printf("[%s] Received pong from client", chatId)
+		c.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
+	c.SetPingHandler(func(appData string) error {
+		log.Printf("[%s] Received ping from client", chatId)
+		c.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
 
 	store, err := chatservice.NewStore(chatId, userId)
 	if err != nil {
@@ -151,6 +180,41 @@ func WSHandler(c *websocket.Conn) {
 	sub := store.Subscribe()
 	defer sub.Close()
 
+	done := make(chan struct{})
+	defer close(done)
+
+	go func() {
+		ticker := time.NewTicker(pingInterval)
+		defer ticker.Stop()
+		pingFailures := 0
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				writeMu.Lock()
+				c.SetWriteDeadline(time.Now().Add(writeWait))
+				err := c.WriteMessage(websocket.PingMessage, nil)
+				// Clear write deadline after write attempt
+				c.SetWriteDeadline(time.Time{})
+				writeMu.Unlock()
+				if err != nil {
+					pingFailures++
+					log.Printf("[%s] ping failed (attempt %d/%d): %v", chatId, pingFailures, maxPingRetries, err)
+					if pingFailures >= maxPingRetries {
+						log.Printf("[%s] max ping failures reached, closing connection", chatId)
+						c.Close()
+						return
+					}
+					// Continue and try again on next tick
+					continue
+				}
+				// Reset failure count on successful ping
+				pingFailures = 0
+			}
+		}
+	}()
+
 	go func() {
 		for {
 			event, err := sub.ReceiveEvent()
@@ -162,7 +226,7 @@ func WSHandler(c *websocket.Conn) {
 				if event.Message == nil || event.Message.SenderId == userId {
 					continue
 				}
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Messages: []models.Message{
 						*event.Message,
 					},
@@ -171,33 +235,33 @@ func WSHandler(c *websocket.Conn) {
 
 			case chatservice.MessageEventTyping:
 				if event.Data == nil {
-					return
+					continue
 				}
 				var typingData chatservice.TypingEvent
 				err := json.Unmarshal(event.Data, &typingData)
 				if err != nil {
-					log.Printf("failed to unmarshal seen data: %v", err)
-					return
+					log.Printf("failed to unmarshal typing data: %v", err)
+					continue
 				}
 				if typingData.UserId == userId {
 					continue
 				}
 				if typingData.IsTyping {
-					c.WriteJSON(outgoing{
+					writeJSON(outgoing{
 						Event: typingStarted,
 					})
 				} else {
-					c.WriteJSON(outgoing{
+					writeJSON(outgoing{
 						Event: typingStopped,
 					})
 				}
 
 			case chatservice.MessageEventUpdate:
 				if event.Message == nil || event.Message.SenderId == userId {
-					return
+					continue
 				}
 				if event.Message.CreatedAt != event.Message.UpdatedAt {
-					c.WriteJSON(outgoing{
+					writeJSON(outgoing{
 						Event: messageUpdated,
 						Messages: []models.Message{
 							*event.Message,
@@ -205,14 +269,14 @@ func WSHandler(c *websocket.Conn) {
 					})
 				} else {
 					if event.Message.Received {
-						c.WriteJSON(outgoing{
+						writeJSON(outgoing{
 							Event: messageReceived,
 							Messages: []models.Message{
 								*event.Message,
 							},
 						})
 					} else if event.Message.Seen {
-						c.WriteJSON(outgoing{
+						writeJSON(outgoing{
 							Event: messageSeen,
 							Messages: []models.Message{
 								*event.Message,
@@ -222,14 +286,18 @@ func WSHandler(c *websocket.Conn) {
 				}
 
 			case chatservice.MessageEventSeen:
-				if event.Message == nil || event.Data == nil {
-					return
+				if event.Data == nil {
+					continue
 				}
 
 				seenData := make(map[string]any)
 				if err := json.Unmarshal(event.Data, &seenData); err != nil {
 					log.Printf("failed to unmarshal seen data: %v", err)
-					return
+					continue
+				}
+
+				if seenUserId, ok := seenData["user_id"].(string); ok && seenUserId == userId {
+					continue
 				}
 
 				idsAny, ok := seenData["message_ids"].([]any)
@@ -241,7 +309,7 @@ func WSHandler(c *websocket.Conn) {
 						}
 					} else {
 						log.Printf("failed to get message ids from seen data, got type %T", seenData["message_ids"])
-						return
+						continue
 					}
 				}
 
@@ -278,7 +346,7 @@ func WSHandler(c *websocket.Conn) {
 					}
 				}
 
-				if err := c.WriteJSON(outgoing{
+				if err := writeJSON(outgoing{
 					Event:    messageSeen,
 					Messages: mgsSeen,
 				}); err != nil {
@@ -288,15 +356,19 @@ func WSHandler(c *websocket.Conn) {
 		}
 	}()
 
+	log.Printf("[%s] Setting initial read deadline: %v", chatId, pongWait)
+	c.SetReadDeadline(time.Now().Add(pongWait))
+
 	for {
 		_, msgBytes, err := c.ReadMessage()
 		if err != nil {
-			log.Printf("connection closed %s: %v", chatId, err)
+			log.Printf("[%s] connection closed: %v", chatId, err)
 			c.Close()
 			return
 		}
+		c.SetReadDeadline(time.Now().Add(pongWait))
 		if err := json.Unmarshal(msgBytes, &incoming); err != nil {
-			c.WriteJSON(outgoing{
+			writeJSON(outgoing{
 				Event: errorEvent,
 				Error: err.Error(),
 			})
@@ -306,7 +378,7 @@ func WSHandler(c *websocket.Conn) {
 		switch incoming.Event {
 		case messageSent:
 			if incoming.Message == nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: "message is required",
 				})
@@ -331,14 +403,14 @@ func WSHandler(c *websocket.Conn) {
 				}
 			}
 			if err := store.SendMessage(userMgs); err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
 			}
 		case messageUpdated:
 			if incoming.Message == nil || incoming.Message.Id == nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: "message is required",
 				})
@@ -361,28 +433,28 @@ func WSHandler(c *websocket.Conn) {
 				}
 			}
 			if _, err := store.UpdateMessage(*incoming.Message.Id, userMgs); err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
 			}
 		case typingStarted:
 			if err := store.SendTypingEvent(userId); err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
 			}
 		case typingStopped:
 			if err := store.StopTypingEvent(userId); err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
 			}
 		case reactionAdded:
 			if incoming.Reaction == nil || incoming.Reaction.MessageId == "" || incoming.Reaction.Reaction == "" {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: "reaction is required",
 				})
@@ -390,7 +462,7 @@ func WSHandler(c *websocket.Conn) {
 			}
 			mgs, err := store.GetMessageById(incoming.Reaction.MessageId)
 			if err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
@@ -404,14 +476,14 @@ func WSHandler(c *websocket.Conn) {
 			}
 			mgs.Reactions = append(mgs.Reactions, reaction)
 			if _, err := store.UpdateMessage(mgs.Id, mgs); err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
 			}
 		case reactionRemoved:
 			if incoming.Reaction.MessageId == "" {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: "message id is required",
 				})
@@ -419,7 +491,7 @@ func WSHandler(c *websocket.Conn) {
 			}
 			mgs, err := store.GetMessageById(incoming.Reaction.MessageId)
 			if err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
@@ -429,7 +501,7 @@ func WSHandler(c *websocket.Conn) {
 				if r.SenderId == userId {
 					mgs.Reactions = append(mgs.Reactions[:i], mgs.Reactions[i+1:]...)
 					if _, err := store.UpdateMessage(mgs.Id, mgs); err != nil {
-						c.WriteJSON(outgoing{
+						writeJSON(outgoing{
 							Event: errorEvent,
 							Error: err.Error(),
 						})
@@ -439,41 +511,41 @@ func WSHandler(c *websocket.Conn) {
 			}
 		case messageReceived:
 			if incoming.Message == nil || incoming.Message.Id == nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: "message id is required",
 				})
 			}
 			mgs, err := store.GetMessageById(*incoming.Message.Id)
 			if err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
 			}
 			mgs.Received = true
 			if _, err := store.UpdateMessage(mgs.Id, mgs); err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
 			}
 		case messageSeen:
 			if len(incoming.MarkSeen) == 0 {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: "mark_seen array is required",
 				})
 			}
 			if err := store.MarkMessagesSeen(incoming.MarkSeen, userId); err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
 			}
 		case queryMessages:
 			if incoming.MessageQuery == nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: "message query is required",
 				})
@@ -484,12 +556,12 @@ func WSHandler(c *websocket.Conn) {
 			}
 			mgs, err := store.GetMessages(incoming.MessageQuery.Limit, incoming.MessageQuery.BeforeId)
 			if err != nil {
-				c.WriteJSON(outgoing{
+				writeJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
 			}
-			c.WriteJSON(outgoing{
+			writeJSON(outgoing{
 				Event:    messagesQuerySuccess,
 				Messages: mgs,
 			})

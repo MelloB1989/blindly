@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 
 	"github.com/MelloB1989/karma/database"
 )
@@ -46,24 +47,31 @@ func (r *Resolver) GetMyConnections(ctx context.Context) ([]*model.Connection, e
 	defer db.Close()
 
 	query := `
-SELECT
+	SELECT
   row_to_json(c) AS chat,
   row_to_json(m) AS match,
+
   CASE
     WHEN c.messages IS NULL OR jsonb_array_length(c.messages::jsonb) = 0 THEN NULL
-    ELSE (c.messages::jsonb -> (jsonb_array_length(c.messages::jsonb) - 1)) ->> 'body'
+    ELSE (c.messages::jsonb -> (jsonb_array_length(c.messages::jsonb) - 1)) ->> 'content'
   END AS last_message,
+
   (
     SELECT COUNT(*)::bigint
     FROM jsonb_array_elements(c.messages::jsonb) elem
-    WHERE NOT ( (elem->'read_by') ? $1 )
+    WHERE NOT (
+      (elem ? 'read_by') AND
+      ((elem->'read_by') ? $1)
+    )
   ) AS unread_messages,
+
   (
     LEAST(
       (COALESCE(jsonb_array_length(c.messages::jsonb), 0)::float / 500.0) * 100.0,
       100.0
     )
   ) AS percentage_complete,
+
   row_to_json(u) AS connection_profile
 FROM matches m
 LEFT JOIN chats c ON c.match_id = m.id::text
@@ -139,6 +147,8 @@ ORDER BY m.matched_at DESC;
 		if rrow.PercentageComplete.Valid {
 			pct = rrow.PercentageComplete.Float64
 		}
+		// Round percentage to 2 decimal places
+		pct = math.Round(pct*100) / 100
 
 		conn := &model.Connection{
 			Chat:               nil,

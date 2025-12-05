@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, SafeAreaView, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { View, ScrollView, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
@@ -23,17 +24,17 @@ export default function PersonalityScreen() {
   const [answers, setAnswers] = useState<Record<number, number>>(
     onboardingData.personalityTraits
       ? Object.entries(onboardingData.personalityTraits).reduce(
-        (acc, [key, value]) => {
-          const questionIndex = ONBOARDING_QUESTIONS.findIndex(
-            (q) => q.question === key,
-          );
-          if (questionIndex !== -1) {
-            acc[ONBOARDING_QUESTIONS[questionIndex].id] = value;
-          }
-          return acc;
-        },
-        {} as Record<number, number>,
-      )
+          (acc, [key, value]) => {
+            const questionIndex = ONBOARDING_QUESTIONS.findIndex(
+              (q) => q.question === key,
+            );
+            if (questionIndex !== -1) {
+              acc[ONBOARDING_QUESTIONS[questionIndex].id] = value;
+            }
+            return acc;
+          },
+          {} as Record<number, number>,
+        )
       : {},
   );
   const [isLoading, setIsLoading] = useState(false);
@@ -126,7 +127,9 @@ export default function PersonalityScreen() {
       console.error("Save personality error:", error);
       Alert.alert(
         "Error",
-        error instanceof Error ? error.message : "Failed to save. Please try again.",
+        error instanceof Error
+          ? error.message
+          : "Failed to save. Please try again.",
       );
     } finally {
       setIsLoading(false);
