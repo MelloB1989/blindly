@@ -22,11 +22,28 @@ const GET_PROFILE_ACTIVITIES = gql`
         hobbies
         interests
         user_prompts
-        personality_traits
+        personality_traits {
+          key
+          value
+        }
         photos
         is_verified
         created_at
         is_online
+        extra {
+          school
+          work
+          looking_for
+          zodiac
+          languages
+          excercise
+          drinking
+          smoking
+          kids
+          religion
+          ethnicity
+          sexuality
+        }
       }
       class
     }
@@ -48,11 +65,28 @@ const CREATE_PROFILE_ACTIVITY = gql`
         hobbies
         interests
         user_prompts
-        personality_traits
+        personality_traits {
+          key
+          value
+        }
         photos
         is_verified
         created_at
         is_online
+        extra {
+          school
+          work
+          looking_for
+          zodiac
+          languages
+          excercise
+          drinking
+          smoking
+          kids
+          religion
+          ethnicity
+          sexuality
+        }
       }
       class
     }

@@ -27,7 +27,7 @@ func Routes() *fiber.App {
 
 	chatserviceRoutes := v1.Group("/chat")
 	chatserviceRoutes.Post("/flush", chat.FlushHandler)
-	chatserviceRoutes.Get("/ws/:chatId", websocket.New(chat.WSHandler))
+	chatserviceRoutes.Get("/ws/:chatId", middlewares.IsWebsocketVerified, websocket.New(chat.WSHandler))
 
 	return app
 }

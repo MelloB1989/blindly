@@ -4979,7 +4979,7 @@ func (ec *executionContext) _UserPublic_personality_traits(ctx context.Context, 
 			return obj.PersonalityTraits, nil
 		},
 		nil,
-		ec.marshalNString2ᚕstringᚄ,
+		ec.marshalNPersonalityTrait2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐPersonalityTraitᚄ,
 		true,
 		true,
 	)
@@ -4992,7 +4992,13 @@ func (ec *executionContext) fieldContext_UserPublic_personality_traits(_ context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_PersonalityTrait_key(ctx, field)
+			case "value":
+				return ec.fieldContext_PersonalityTrait_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PersonalityTrait", field.Name)
 		},
 	}
 	return fc, nil

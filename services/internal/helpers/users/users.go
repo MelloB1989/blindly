@@ -1,6 +1,7 @@
 package users
 
 import (
+	"blindly/internal/graph/model"
 	"blindly/internal/models"
 	"fmt"
 	"time"
@@ -46,6 +47,15 @@ func GetUserById(id string) (*models.User, error) {
 	user := u[0]
 
 	return &user, nil
+}
+
+func GetUserPublicById(id string) (*model.UserPublic, error) {
+	user, err := GetUserById(id)
+	if err != nil || user == nil {
+		return nil, err
+	}
+
+	return ToUserPublic(*user), nil
 }
 
 func UpdateUser(user models.User) (*models.User, error) {

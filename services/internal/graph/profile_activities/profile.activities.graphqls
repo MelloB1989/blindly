@@ -12,6 +12,7 @@ enum ActivityType {
 enum ActivityClass {
     RECEIVED
     SENT
+    ALL
 }
 
 type UserProfileActivity {

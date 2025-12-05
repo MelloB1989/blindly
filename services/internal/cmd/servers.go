@@ -5,8 +5,6 @@ import (
 	"blindly/internal/graph"
 	"blindly/routes"
 	"context"
-	"io"
-	"log"
 	"net/http"
 	"slices"
 	"strings"
@@ -126,9 +124,6 @@ func StartGraphql(ctx context.Context) error {
 		Addr:    ":" + port,
 		Handler: mux,
 	}
-
-	// Silence default logger
-	log.SetOutput(io.Discard)
 
 	go func() {
 		<-ctx.Done()

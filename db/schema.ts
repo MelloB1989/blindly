@@ -35,7 +35,7 @@ export const users = pgTable("users", {
 });
 
 export const matches = pgTable("matches", {
-  id: serial("id").primaryKey().notNull(),
+  id: varchar("id").primaryKey().notNull(),
   she_id: varchar("she_id").notNull(),
   he_id: varchar("he_id").notNull(),
   score: integer("score").notNull(),
@@ -45,14 +45,14 @@ export const matches = pgTable("matches", {
 });
 
 export const chats = pgTable("chats", {
-  id: serial("id").primaryKey().notNull(),
+  id: varchar("id").primaryKey().notNull(),
   match_id: varchar("match_id").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   messages: json("messages").default([]),
 });
 
 export const posts = pgTable("posts", {
-  id: serial("id").primaryKey().notNull(),
+  id: varchar("id").primaryKey().notNull(),
   user_id: varchar("user_id").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   content: text("content").notNull(),
@@ -61,7 +61,7 @@ export const posts = pgTable("posts", {
 });
 
 export const comments = pgTable("comments", {
-  id: serial("id").primaryKey().notNull(),
+  id: varchar("id").primaryKey().notNull(),
   post_id: varchar("post_id").notNull(),
   reply_to_id: varchar("reply_to_id").notNull(),
   user_id: varchar("user_id").notNull(),

@@ -65,7 +65,7 @@ const toSwipeCardProfile = (rec: RecommendedProfile): SwipeCardProfile => {
     age,
     bio: rec.profile.bio,
     hobbies: rec.profile.hobbies,
-    traits: rec.profile.personality_traits,
+    traits: rec.profile.personality_traits.map((t) => t.key),
     photos: rec.profile.photos,
     isRevealed: false, // Photos are blurred by default
     isVerified: rec.profile.is_verified,
@@ -76,8 +76,8 @@ const toSwipeCardProfile = (rec: RecommendedProfile): SwipeCardProfile => {
         : `${Math.round(rec.distance_km)} km`
       : "Nearby",
     area: undefined, // Not in API
-    languages: undefined, // Not in API
-    zodiac: undefined, // Not in API
+    languages: rec.profile.extra?.languages,
+    zodiac: rec.profile.extra?.zodiac,
     lastActive: rec.profile.is_online ? "Online" : undefined,
     prompts: rec.profile.user_prompts.length > 0
       ? rec.profile.user_prompts.map((p, i) => ({

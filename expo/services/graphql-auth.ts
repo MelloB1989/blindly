@@ -43,6 +43,20 @@ const CREATE_USER_MUTATION = gql`
           country
           coordinates
         }
+        extra {
+          school
+          work
+          looking_for
+          zodiac
+          languages
+          excercise
+          drinking
+          smoking
+          kids
+          religion
+          ethnicity
+          sexuality
+        }
         created_at
         updated_at
       }
@@ -77,6 +91,20 @@ const LOGIN_WITH_PASSWORD_MUTATION = gql`
           state
           country
           coordinates
+        }
+        extra {
+          school
+          work
+          looking_for
+          zodiac
+          languages
+          excercise
+          drinking
+          smoking
+          kids
+          religion
+          ethnicity
+          sexuality
         }
         created_at
         updated_at
@@ -119,6 +147,20 @@ const VERIFY_EMAIL_LOGIN_CODE_MUTATION = gql`
           country
           coordinates
         }
+        extra {
+          school
+          work
+          looking_for
+          zodiac
+          languages
+          excercise
+          drinking
+          smoking
+          kids
+          religion
+          ethnicity
+          sexuality
+        }
         created_at
         updated_at
       }
@@ -154,6 +196,20 @@ const REFRESH_TOKEN_MUTATION = gql`
           country
           coordinates
         }
+        extra {
+          school
+          work
+          looking_for
+          zodiac
+          languages
+          excercise
+          drinking
+          smoking
+          kids
+          religion
+          ethnicity
+          sexuality
+        }
         created_at
         updated_at
       }
@@ -187,6 +243,20 @@ const ME_QUERY = gql`
         country
         coordinates
       }
+      extra {
+        school
+        work
+        looking_for
+        zodiac
+        languages
+        excercise
+        drinking
+        smoking
+        kids
+        religion
+        ethnicity
+        sexuality
+      }
       created_at
       updated_at
     }
@@ -218,6 +288,20 @@ const UPDATE_ME_MUTATION = gql`
         state
         country
         coordinates
+      }
+      extra {
+        school
+        work
+        looking_for
+        zodiac
+        languages
+        excercise
+        drinking
+        smoking
+        kids
+        religion
+        ethnicity
+        sexuality
       }
       created_at
       updated_at
@@ -287,6 +371,20 @@ export interface GraphQLUser {
     state?: string;
     country?: string;
     coordinates?: number[];
+  };
+  extra?: {
+    school?: string;
+    work?: string;
+    looking_for: string[];
+    zodiac?: string;
+    languages: string[];
+    excercise?: string;
+    drinking?: string;
+    smoking?: string;
+    kids?: string;
+    religion?: string;
+    ethnicity?: string;
+    sexuality?: string;
   };
   created_at?: string;
   updated_at?: string;

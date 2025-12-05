@@ -4,6 +4,7 @@ import (
 	"blindly/internal/anal"
 	"blindly/internal/graph/directives"
 	"blindly/internal/graph/model"
+	"blindly/internal/graph/shared"
 	"blindly/internal/models"
 	"context"
 	"database/sql"
@@ -11,7 +12,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/MelloB1989/karma/v2/orm"
+	"github.com/MelloB1989/karma/database"
 )
 
 type Resolver struct {
@@ -22,12 +23,12 @@ func NewResolver() *Resolver {
 }
 
 type connRow struct {
-	ChatJSON           json.RawMessage `json:"chat"`
-	MatchJSON          json.RawMessage `json:"match"`
-	LastMessage        sql.NullString  `json:"last_message"`
-	UnreadMessages     sql.NullInt64   `json:"unread_messages"`
-	PercentageComplete sql.NullFloat64 `json:"percentage_complete"`
-	ProfileJSON        json.RawMessage `json:"connection_profile"`
+	ChatJSON           json.RawMessage
+	MatchJSON          json.RawMessage
+	LastMessage        sql.NullString
+	UnreadMessages     sql.NullInt64
+	PercentageComplete sql.NullFloat64
+	ProfileJSON        json.RawMessage
 }
 
 func (r *Resolver) GetMyConnections(ctx context.Context) ([]*model.Connection, error) {
@@ -37,8 +38,12 @@ func (r *Resolver) GetMyConnections(ctx context.Context) ([]*model.Connection, e
 		return nil, fmt.Errorf("unauthorized: %w", err)
 	}
 
-	connORM := orm.Load(&models.Chat{})
-	defer connORM.Close()
+	db, err := database.PostgresConn()
+	if err != nil {
+		log.Printf("[ERROR] Failed to connect to database: %v", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer db.Close()
 
 	query := `
 SELECT
@@ -67,36 +72,57 @@ WHERE m.she_id = $1 OR m.he_id = $1
 ORDER BY m.matched_at DESC;
 `
 
-	qr := connORM.QueryRaw(query, claims.UserID)
+	dbRows, err := db.Query(query, claims.UserID)
+	if err != nil {
+		log.Printf("[ERROR] Query error: %v", err)
+		return nil, fmt.Errorf("query error: %w", err)
+	}
+	defer dbRows.Close()
+
 	var rows []connRow
-	if err := qr.Scan(&rows); err != nil {
-		return nil, fmt.Errorf("query scan error: %w", err)
+	for dbRows.Next() {
+		var row connRow
+		if err := dbRows.Scan(&row.ChatJSON, &row.MatchJSON, &row.LastMessage, &row.UnreadMessages, &row.PercentageComplete, &row.ProfileJSON); err != nil {
+			log.Printf("[ERROR] Row scan error: %v", err)
+			return nil, fmt.Errorf("row scan error: %w", err)
+		}
+		rows = append(rows, row)
+	}
+	if err := dbRows.Err(); err != nil {
+		log.Printf("[ERROR] Rows iteration error: %v", err)
+		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
 	conns := make([]*model.Connection, 0, len(rows))
 	for _, rrow := range rows {
 		var chat models.Chat
 		if len(rrow.ChatJSON) > 0 {
-			if err := json.Unmarshal(rrow.ChatJSON, &chat); err != nil {
+			var dbChat shared.DBChat
+			if err := json.Unmarshal(rrow.ChatJSON, &dbChat); err != nil {
 				log.Printf("unmarshal chat json error: %v", err)
 				return nil, fmt.Errorf("unmarshal chat json error: %w", err)
 			}
+			chat = dbChat.ToChat()
 		}
 
 		var match models.Match
 		if len(rrow.MatchJSON) > 0 {
-			if err := json.Unmarshal(rrow.MatchJSON, &match); err != nil {
+			var dbMatch shared.DBMatch
+			if err := json.Unmarshal(rrow.MatchJSON, &dbMatch); err != nil {
 				log.Printf("unmarshal match json error: %v", err)
 				return nil, fmt.Errorf("unmarshal match json error: %w", err)
 			}
+			match = dbMatch.ToMatch()
 		}
 
-		var profile model.UserPublic
+		var profile *model.UserPublic
 		if len(rrow.ProfileJSON) > 0 {
-			if err := json.Unmarshal(rrow.ProfileJSON, &profile); err != nil {
+			var dbProfile shared.DBUserProfile
+			if err := json.Unmarshal(rrow.ProfileJSON, &dbProfile); err != nil {
 				log.Printf("unmarshal profile json error: %v", err)
 				return nil, fmt.Errorf("unmarshal profile json error: %w", err)
 			}
+			profile = dbProfile.ToUserPublic()
 		}
 
 		lastMsg := ""
@@ -120,7 +146,7 @@ ORDER BY m.matched_at DESC;
 			LastMessage:        lastMsg,
 			UnreadMessages:     unread,
 			PercentageComplete: pct,
-			ConnectionProfile:  nil,
+			ConnectionProfile:  profile,
 		}
 		if chat.Id != "" {
 			conn.Chat = &chat
@@ -128,7 +154,6 @@ ORDER BY m.matched_at DESC;
 		if match.Id != "" {
 			conn.Match = &match
 		}
-		conn.ConnectionProfile = &profile
 
 		conns = append(conns, conn)
 	}

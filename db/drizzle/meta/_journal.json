@@ -43,6 +43,13 @@
       "when": 1764884322977,
       "tag": "0005_mean_toro",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1764930572944,
+      "tag": "0006_typical_blackheart",
+      "breakpoints": true
     }
   ]
 }

@@ -265,7 +265,7 @@ func publishQStashFlush(bearer string, chatId string, delay time.Duration, token
 
 	req.Header.Set("Authorization", "Bearer "+bearer)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Upstash-Deduplication-Id", fmt.Sprintf("chat:%s:flush:%s", chatId, token))
+	req.Header.Set("Upstash-Deduplication-Id", fmt.Sprintf("chat--%s--flush--%s", chatId, token))
 
 	if delay > 0 {
 		req.Header.Set("Upstash-Delay", fmt.Sprintf("%ds", int(delay.Seconds())))

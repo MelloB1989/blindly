@@ -12,31 +12,41 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// JWTMiddleware is the middleware function to verify JWT tokens
-func IsUserVerified(c *fiber.Ctx) error {
+func IsWebsocketVerified(c *fiber.Ctx) error {
 	authHeader := c.Get("Authorization")
-	if authHeader == "" {
+	var tokenStr string
+
+	if authHeader != "" {
+		trimmed := strings.TrimSpace(authHeader)
+		if strings.HasPrefix(strings.ToLower(trimmed), "bearer ") {
+			tokenStr = strings.TrimSpace(trimmed[7:])
+		} else {
+			tokenStr = trimmed
+		}
+	}
+
+	if tokenStr == "" {
+		qToken := strings.TrimSpace(c.Query("token", ""))
+		if qToken != "" {
+			if strings.HasPrefix(strings.ToLower(qToken), "bearer ") {
+				tokenStr = strings.TrimSpace(qToken[7:])
+			} else {
+				tokenStr = qToken
+			}
+		}
+	}
+
+	if tokenStr == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Unauthorized1",
 			"error":   errors.New("You are unauthorized for this."),
 		})
 	}
 
-	// Extract the token from the Bearer string
-	tokenStr := strings.TrimSpace(strings.Replace(authHeader, "Bearer", "", 1))
-	if tokenStr == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Unauthorized2",
-			"error":   errors.New("You are unauthorized for this."),
-		})
-	}
-
-	// Parse the JWT token
 	token, err := jwt.ParseWithClaims(
 		tokenStr,
 		&models.Claims{},
 		func(token *jwt.Token) (any, error) {
-			// Make sure the token's algorithm is what you expect:
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fiber.NewError(fiber.StatusUnauthorized, "Unexpected signing method")
 			}
@@ -51,8 +61,6 @@ func IsUserVerified(c *fiber.Ctx) error {
 	}
 
 	if claims, ok := token.Claims.(*models.Claims); ok && token.Valid {
-		// Store the claims in the context's locals
-		// fmt.Println(claims.UserID)
 		c.Locals("uid", claims.UserID)
 		c.Locals("email", claims.Email)
 		c.Locals("gender", claims.Gender)
@@ -70,7 +78,6 @@ func IsUserVerified(c *fiber.Ctx) error {
 
 		c.Locals("analytics", analyticsClient)
 
-		// Continue with the next handler
 		return c.Next()
 	}
 

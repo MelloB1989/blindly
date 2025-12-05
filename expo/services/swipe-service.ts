@@ -21,11 +21,28 @@ const GET_RECOMMENDATIONS = gql`
           hobbies
           interests
           user_prompts
-          personality_traits
+          personality_traits {
+            key
+            value
+          }
           photos
           is_verified
           created_at
           is_online
+          extra {
+            school
+            work
+            looking_for
+            zodiac
+            languages
+            excercise
+            drinking
+            smoking
+            kids
+            religion
+            ethnicity
+            sexuality
+          }
         }
         match_score
         compatibility_score
@@ -53,11 +70,28 @@ const GET_MY_SWIPES = gql`
         hobbies
         interests
         user_prompts
-        personality_traits
+        personality_traits {
+          key
+          value
+        }
         photos
         is_verified
         created_at
         is_online
+        extra {
+          school
+          work
+          looking_for
+          zodiac
+          languages
+          excercise
+          drinking
+          smoking
+          kids
+          religion
+          ethnicity
+          sexuality
+        }
       }
       swipe {
         id

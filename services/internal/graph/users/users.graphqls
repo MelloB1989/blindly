@@ -61,7 +61,7 @@ type UserPublic {
     hobbies: [String!]!
     interests: [String!]!
     user_prompts: [String!]!
-    personality_traits: [String!]!
+    personality_traits: [PersonalityTrait!]!
     photos: [String!]! # Blur is applied dynamically
     is_verified: Boolean!
     extra: ExtraMetadata

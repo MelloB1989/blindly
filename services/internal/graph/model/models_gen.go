@@ -116,7 +116,7 @@ type UserPublic struct {
 	Hobbies           []string              `json:"hobbies"`
 	Interests         []string              `json:"interests"`
 	UserPrompts       []string              `json:"user_prompts"`
-	PersonalityTraits []string              `json:"personality_traits"`
+	PersonalityTraits []*PersonalityTrait   `json:"personality_traits"`
 	Photos            []string              `json:"photos"`
 	IsVerified        bool                  `json:"is_verified"`
 	Extra             *models.ExtraMetadata `json:"extra,omitempty"`
@@ -129,16 +129,18 @@ type ActivityClass string
 const (
 	ActivityClassReceived ActivityClass = "RECEIVED"
 	ActivityClassSent     ActivityClass = "SENT"
+	ActivityClassAll      ActivityClass = "ALL"
 )
 
 var AllActivityClass = []ActivityClass{
 	ActivityClassReceived,
 	ActivityClassSent,
+	ActivityClassAll,
 }
 
 func (e ActivityClass) IsValid() bool {
 	switch e {
-	case ActivityClassReceived, ActivityClassSent:
+	case ActivityClassReceived, ActivityClassSent, ActivityClassAll:
 		return true
 	}
 	return false
