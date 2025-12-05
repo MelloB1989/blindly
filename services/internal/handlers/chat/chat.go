@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/MelloB1989/karma/config"
@@ -92,17 +94,30 @@ type messageQuery struct {
 	BeforeId string `json:"before_id"`
 }
 
+type incomingMedia struct {
+	Type      string    `json:"type"`
+	Url       string    `json:"url"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type incomingMessage struct {
+	Id        *string            `json:"id"` //For updating
+	Type      models.MessageType `json:"type"`
+	Content   string             `json:"content"`
+	Media     []incomingMedia    `json:"media"`
+	CreatedAt time.Time          `json:"created_at"`
+}
+
 var incoming struct {
-	Message      *models.Message `json:"message"`
-	Reaction     *reaction       `json:"reaction"`
-	Event        events          `json:"event"`
-	MarkSeen     []string        `json:"mark_seen"`
-	MessageQuery *messageQuery   `json:"message_query"`
+	Message      *incomingMessage `json:"message"`
+	Reaction     *reaction        `json:"reaction"`
+	Event        events           `json:"event"`
+	MarkSeen     []string         `json:"mark_seen"`
+	MessageQuery *messageQuery    `json:"message_query"`
 }
 
 type outgoing struct {
 	Messages []models.Message `json:"message"`
-	Data     any              `json:"data"`
 	Event    events           `json:"event"`
 	Error    string           `json:"error"`
 }
@@ -145,17 +160,143 @@ func WSHandler(c *websocket.Conn) {
 		for {
 			event, err := sub.ReceiveEvent()
 			if err != nil {
-				break
+				return // Close the connection
 			}
-			eventJSON, _ := json.Marshal(event)
-			c.WriteJSON(eventJSON)
+			switch event.Type {
+			case chatservice.MessageEventMessage:
+				if event.Message == nil || event.Message.SenderId == userId {
+					continue
+				}
+				c.WriteJSON(outgoing{
+					Messages: []models.Message{
+						*event.Message,
+					},
+					Event: messageSent,
+				})
+
+			case chatservice.MessageEventTyping:
+				if event.Data == nil {
+					return
+				}
+				var typingData chatservice.TypingEvent
+				err := json.Unmarshal(event.Data, &typingData)
+				if err != nil {
+					log.Printf("failed to unmarshal seen data: %v", err)
+					return
+				}
+				if typingData.UserId == userId {
+					continue
+				}
+				if typingData.IsTyping {
+					c.WriteJSON(outgoing{
+						Event: typingStarted,
+					})
+				} else {
+					c.WriteJSON(outgoing{
+						Event: typingStopped,
+					})
+				}
+
+			case chatservice.MessageEventUpdate:
+				if event.Message == nil || event.Message.SenderId == userId {
+					return
+				}
+				if event.Message.CreatedAt != event.Message.UpdatedAt {
+					c.WriteJSON(outgoing{
+						Event: messageUpdated,
+						Messages: []models.Message{
+							*event.Message,
+						},
+					})
+				} else {
+					if event.Message.Received {
+						c.WriteJSON(outgoing{
+							Event: messageReceived,
+							Messages: []models.Message{
+								*event.Message,
+							},
+						})
+					} else if event.Message.Seen {
+						c.WriteJSON(outgoing{
+							Event: messageSeen,
+							Messages: []models.Message{
+								*event.Message,
+							},
+						})
+					}
+				}
+
+			case chatservice.MessageEventSeen:
+				if event.Message == nil || event.Data == nil {
+					return
+				}
+
+				seenData := make(map[string]any)
+				if err := json.Unmarshal(event.Data, &seenData); err != nil {
+					log.Printf("failed to unmarshal seen data: %v", err)
+					return
+				}
+
+				idsAny, ok := seenData["message_ids"].([]any)
+				if !ok {
+					if sids, ok2 := seenData["message_ids"].([]string); ok2 {
+						idsAny = make([]any, len(sids))
+						for i, v := range sids {
+							idsAny[i] = v
+						}
+					} else {
+						log.Printf("failed to get message ids from seen data, got type %T", seenData["message_ids"])
+						return
+					}
+				}
+
+				mgsSeenPtr := make([]*models.Message, len(idsAny))
+				var wg sync.WaitGroup
+				for i, raw := range idsAny {
+					mid, ok := raw.(string)
+					if !ok {
+						continue
+					}
+
+					wg.Add(1)
+					go func(idx int, msgID string) {
+						defer wg.Done()
+						m, err := store.GetMessageById(msgID)
+						if err != nil {
+							log.Printf("failed to get message by id %s: %v", msgID, err)
+							return
+						}
+						if m == nil {
+							log.Printf("store.GetMessageById returned nil for id %s", msgID)
+							return
+						}
+						mgsSeenPtr[idx] = m
+					}(i, mid)
+				}
+				wg.Wait()
+
+				var mgsSeen []models.Message
+				mgsSeen = make([]models.Message, 0, len(mgsSeenPtr))
+				for _, mp := range mgsSeenPtr {
+					if mp != nil {
+						mgsSeen = append(mgsSeen, *mp)
+					}
+				}
+
+				if err := c.WriteJSON(outgoing{
+					Event:    messageSeen,
+					Messages: mgsSeen,
+				}); err != nil {
+					log.Printf("failed to write message seen JSON to client: %v", err)
+				}
+			}
 		}
 	}()
 
 	for {
 		_, msgBytes, err := c.ReadMessage()
 		if err != nil {
-			log.Printf("failed to read message from chat %s: %v", chatId, err)
+			log.Printf("connection closed %s: %v", chatId, err)
 			c.Close()
 			return
 		}
@@ -176,21 +317,55 @@ func WSHandler(c *websocket.Conn) {
 				})
 				continue
 			}
-			if err := store.SendMessage(incoming.Message); err != nil {
+			userMgs := &models.Message{
+				Id:        strings.ToUpper(utils.GenerateID(20)),
+				SenderId:  userId,
+				Content:   incoming.Message.Content,
+				CreatedAt: incoming.Message.CreatedAt,
+				UpdatedAt: incoming.Message.CreatedAt,
+				Type:      incoming.Message.Type,
+			}
+			if len(incoming.Message.Media) > 0 {
+				for _, media := range incoming.Message.Media {
+					userMgs.Media = append(userMgs.Media, models.Media{
+						Id:        strings.ToUpper(utils.GenerateID(20)),
+						Type:      media.Type,
+						Url:       media.Url,
+						CreatedAt: media.CreatedAt,
+					})
+				}
+			}
+			if err := store.SendMessage(userMgs); err != nil {
 				c.WriteJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
 				})
 			}
 		case messageUpdated:
-			if incoming.Message == nil {
+			if incoming.Message == nil || incoming.Message.Id == nil {
 				c.WriteJSON(outgoing{
 					Event: errorEvent,
 					Error: "message is required",
 				})
 				continue
 			}
-			if _, err := store.UpdateMessage(incoming.Message.Id, incoming.Message); err != nil {
+			userMgs := &models.Message{
+				Id:        *incoming.Message.Id,
+				SenderId:  userId,
+				Content:   incoming.Message.Content,
+				UpdatedAt: time.Now(),
+			}
+			if len(incoming.Message.Media) > 0 {
+				for _, media := range incoming.Message.Media {
+					userMgs.Media = append(userMgs.Media, models.Media{
+						Id:        strings.ToUpper(utils.GenerateID(20)),
+						Type:      media.Type,
+						Url:       media.Url,
+						CreatedAt: media.CreatedAt,
+					})
+				}
+			}
+			if _, err := store.UpdateMessage(*incoming.Message.Id, userMgs); err != nil {
 				c.WriteJSON(outgoing{
 					Event: errorEvent,
 					Error: err.Error(),
@@ -268,13 +443,13 @@ func WSHandler(c *websocket.Conn) {
 				}
 			}
 		case messageReceived:
-			if incoming.Message == nil || incoming.Message.Id == "" {
+			if incoming.Message == nil || incoming.Message.Id == nil {
 				c.WriteJSON(outgoing{
 					Event: errorEvent,
 					Error: "message id is required",
 				})
 			}
-			mgs, err := store.GetMessageById(incoming.Message.Id)
+			mgs, err := store.GetMessageById(*incoming.Message.Id)
 			if err != nil {
 				c.WriteJSON(outgoing{
 					Event: errorEvent,

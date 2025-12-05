@@ -15,3 +15,13 @@ const (
 	SUPERRLIKE SwipeType = "SUPERLIKE"
 	DISLIKE    SwipeType = "DISLIKE"
 )
+
+type MessageType string
+
+const (
+	TEXT  MessageType = "TEXT"
+	IMAGE MessageType = "IMAGE"
+	VIDEO MessageType = "VIDEO"
+	AUDIO MessageType = "AUDIO"
+	FILE  MessageType = "FILE"
+)

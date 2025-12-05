@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blindly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blindly
+  template:
+    metadata:
+      labels:
+        app: blindly
+    spec:
+      containers:
+        - name: blindly
+          image: registry.prod.lyzn.in/blindly
+          ports:
+            - containerPort: 9000
+      imagePullSecrets:
+        - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blindly
+spec:
+  selector:
+    app: blindly
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blindly-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "900m"
+spec:
+  tls:
+    - hosts:
+        - blindly.apps.mellob.in
+      secretName: apps-mellob-in
+  rules:
+    - host: blindly.apps.mellob.in
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: blindly
+                port:
+                  number: 80

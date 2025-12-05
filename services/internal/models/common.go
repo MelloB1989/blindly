@@ -19,7 +19,7 @@ type PostUnlockRating struct {
 }
 
 type Media struct {
-	Id        int       `json:"id"`
+	Id        string    `json:"id"`
 	Type      string    `json:"type"`
 	Url       string    `json:"url"`
 	CreatedAt time.Time `json:"created_at"`
@@ -33,15 +33,16 @@ type Reaction struct {
 }
 
 type Message struct {
-	Id        string     `json:"id"`
-	Type      string     `json:"type"`
-	Content   string     `json:"content"`
-	SenderId  string     `json:"sender_id"`
-	Received  bool       `json:"received"`
-	Seen      bool       `json:"seen"`
-	Media     []Media    `json:"media" db:"media"`
-	Reactions []Reaction `json:"reactions" db:"reactions"`
-	CreatedAt time.Time  `json:"created_at"`
+	Id        string      `json:"id"`
+	Type      MessageType `json:"type"`
+	Content   string      `json:"content"`
+	SenderId  string      `json:"sender_id"`
+	Received  bool        `json:"received"`
+	Seen      bool        `json:"seen"`
+	Media     []Media     `json:"media" db:"media"`
+	Reactions []Reaction  `json:"reactions" db:"reactions"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
 }
 
 type Claims struct {
