@@ -22,6 +22,7 @@ import (
 func FlushHandler(c *fiber.Ctx) error {
 	signature := c.Get("Upstash-Signature")
 	if signature == "" {
+		log.Println("Missing Upstash-Signature header")
 		return fiber.ErrUnauthorized
 	}
 
@@ -32,19 +33,23 @@ func FlushHandler(c *fiber.Ctx) error {
 			mac.Write(c.Body())
 			expectedSig := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 			if !hmac.Equal([]byte(signature), []byte(expectedSig)) {
+				log.Println("Invalid Upstash-Signature header")
 				return fiber.ErrBadRequest
 			}
 		} else {
+			log.Println("Invalid Upstash-Signature header")
 			return fiber.ErrBadRequest
 		}
 	}
 
 	req := new(chatservice.FlushRequest)
 	if err := c.BodyParser(req); err != nil {
+		log.Println("Failed to parse request body")
 		return fiber.ErrBadRequest
 	}
 
 	if req.ChatId == "" {
+		log.Println("Missing chat ID")
 		return fiber.ErrBadRequest
 	}
 
