@@ -3,9 +3,6 @@ package chatservice
 import (
 	"blindly/internal/models"
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,6 +14,7 @@ import (
 	"github.com/MelloB1989/karma/utils"
 	"github.com/MelloB1989/karma/v2/orm"
 	"github.com/redis/go-redis/v9"
+	"github.com/upstash/qstash-go"
 )
 
 type FlushRequest struct {
@@ -203,18 +201,21 @@ func (s *Store) pushMessagesBack(messages []models.Message) error {
 	return err
 }
 
-func VerifyQStashSignature(signature string, body []byte) bool {
-	signingKey := config.GetEnvRaw("QSTASH_CURRENT_SIGNING_KEY")
-	if signingKey == "" {
-		log.Println("QSTASH_CURRENT_SIGNING_KEY not set")
-		return false
+func VerifyQStashSignature(signature string, body []byte, url string) error {
+	currentSigningKey := config.GetEnvRaw("QSTASH_CURRENT_SIGNING_KEY")
+	nextSigningKey := config.GetEnvRaw("QSTASH_NEXT_SIGNING_KEY")
+
+	if currentSigningKey == "" {
+		return fmt.Errorf("QSTASH_CURRENT_SIGNING_KEY not set")
 	}
 
-	mac := hmac.New(sha256.New, []byte(signingKey))
-	mac.Write(body)
-	expectedSig := base64.StdEncoding.EncodeToString(mac.Sum(nil))
+	receiver := qstash.NewReceiver(currentSigningKey, nextSigningKey)
 
-	return hmac.Equal([]byte(signature), []byte(expectedSig))
+	return receiver.Verify(qstash.VerifyOptions{
+		Signature: signature,
+		Body:      string(body),
+		Url:       url,
+	})
 }
 
 func (s *Store) scheduleFlush() error {

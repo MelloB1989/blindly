@@ -3,10 +3,8 @@ package chat
 import (
 	chatservice "blindly/internal/chat_service"
 	"blindly/internal/models"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -26,20 +24,12 @@ func FlushHandler(c *fiber.Ctx) error {
 		return fiber.ErrUnauthorized
 	}
 
-	if !chatservice.VerifyQStashSignature(signature, c.Body()) {
-		nextKey := config.GetEnvRaw("QSTASH_NEXT_SIGNING_KEY")
-		if nextKey != "" {
-			mac := hmac.New(sha256.New, []byte(nextKey))
-			mac.Write(c.Body())
-			expectedSig := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-			if !hmac.Equal([]byte(signature), []byte(expectedSig)) {
-				log.Println("Invalid Upstash-Signature header")
-				return fiber.ErrBadRequest
-			}
-		} else {
-			log.Println("Invalid Upstash-Signature header")
-			return fiber.ErrBadRequest
-		}
+	backendURL := config.GetEnvRaw("BACKEND_URL")
+	flushURL := fmt.Sprintf("%s/v1/chat/flush", backendURL)
+
+	if err := chatservice.VerifyQStashSignature(signature, c.Body(), flushURL); err != nil {
+		log.Printf("Invalid Upstash-Signature header: %v", err)
+		return fiber.ErrUnauthorized
 	}
 
 	req := new(chatservice.FlushRequest)
