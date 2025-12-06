@@ -69,6 +69,14 @@ models:
   SwipeType:
     model: blindly/internal/models.SwipeType
 
+  # Community models
+  Media:
+    model: blindly/internal/models.Media
+  Post:
+    model: blindly/internal/models.Post
+  Comment:
+    model: blindly/internal/models.Comment
+
 directives:
   auth:
     implementation: "directives.AuthDirective"

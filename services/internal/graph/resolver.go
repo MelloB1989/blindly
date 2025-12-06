@@ -2,6 +2,7 @@ package graph
 
 import (
 	"blindly/internal/graph/chats"
+	"blindly/internal/graph/community"
 	profileactivities "blindly/internal/graph/profile_activities"
 	"blindly/internal/graph/swipes"
 	"blindly/internal/graph/users"
@@ -12,6 +13,7 @@ type Resolver struct {
 	ProfileActivityResolver *profileactivities.Resolver
 	ChatsResolver           *chats.Resolver
 	SwipesResolver          *swipes.Resolver
+	CommunityResolver       *community.Resolver
 }
 
 func NewResolver() *Resolver {
@@ -20,5 +22,6 @@ func NewResolver() *Resolver {
 		ProfileActivityResolver: profileactivities.NewResolver(),
 		ChatsResolver:           chats.NewResolver(),
 		SwipesResolver:          swipes.NewResolver(),
+		CommunityResolver:       community.NewResolver(),
 	}
 }

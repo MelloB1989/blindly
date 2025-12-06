@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
 	TableName         string         `karma_table:"users" json:"-"`
@@ -49,8 +51,11 @@ type Post struct {
 	UserId    string    `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 	Content   string    `json:"content"`
+	Media     []Media   `json:"media" db:"media"`
 	Likes     int       `json:"likes"`
+	IsLiked   bool      `json:"is_liked" karma:"ignore"` // Not stored in DB
 	Comments  int       `json:"comments"`
+	Views     int       `json:"views"`
 }
 
 type Comment struct {
@@ -61,6 +66,8 @@ type Comment struct {
 	UserId    string    `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 	Content   string    `json:"content"`
+	Likes     int       `json:"likes"`
+	IsLiked   bool      `json:"is_liked" karma:"ignore"` // Not stored in DB
 }
 
 type UserFiles struct {

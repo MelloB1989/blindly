@@ -6,6 +6,11 @@ const (
 	POKE         ActivityType = "POKE"
 	PROFILE_VIEW ActivityType = "PROFILE_VIEW"
 	SUPERLIKE    ActivityType = "SUPERLIKE"
+	LIKEE        ActivityType = "LIKE"
+	POSTLOVE     ActivityType = "POSTLOVE"
+	POSTCOMMENT  ActivityType = "POSTCOMMENT"
+	POSTVIEW     ActivityType = "POSTVIEW"
+	COMMENTLOVE  ActivityType = "COMMENTLOVE"
 )
 
 type SwipeType string

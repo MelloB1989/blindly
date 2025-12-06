@@ -6,7 +6,7 @@ toolchain go1.24.11
 
 require (
 	github.com/99designs/gqlgen v0.17.84
-	github.com/MelloB1989/karma v1.16.43
+	github.com/MelloB1989/karma v1.16.45
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/color v1.18.0
 	github.com/gofiber/fiber/v2 v2.52.10

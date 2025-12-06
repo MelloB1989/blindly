@@ -23,6 +23,23 @@ type AuthPayload struct {
 	User        *models.User `json:"user"`
 }
 
+type CommentFilterInput struct {
+	PostID        *string    `json:"post_id,omitempty"`
+	UserID        *string    `json:"user_id,omitempty"`
+	ReplyToID     *string    `json:"reply_to_id,omitempty"`
+	ParentOnly    *bool      `json:"parent_only,omitempty"`
+	SearchContent *string    `json:"search_content,omitempty"`
+	CreatedAfter  *time.Time `json:"created_after,omitempty"`
+	CreatedBefore *time.Time `json:"created_before,omitempty"`
+	MinLikes      *int32     `json:"min_likes,omitempty"`
+}
+
+type CommentsConnection struct {
+	Comments   []*models.Comment `json:"comments"`
+	PageInfo   *PageInfo         `json:"page_info"`
+	TotalCount int32             `json:"total_count"`
+}
+
 type Connection struct {
 	Chat               *models.Chat  `json:"chat"`
 	Match              *models.Match `json:"match"`
@@ -30,6 +47,17 @@ type Connection struct {
 	UnreadMessages     int32         `json:"unread_messages"`
 	PercentageComplete float64       `json:"percentage_complete"`
 	ConnectionProfile  *UserPublic   `json:"connection_profile"`
+}
+
+type CreateCommentInput struct {
+	PostID    string  `json:"post_id"`
+	ReplyToID *string `json:"reply_to_id,omitempty"`
+	Content   string  `json:"content"`
+}
+
+type CreatePostInput struct {
+	Content string        `json:"content"`
+	Media   []*MediaInput `json:"media,omitempty"`
 }
 
 type CreateUserInput struct {
@@ -48,7 +76,21 @@ type CreateUserInput struct {
 	Address     *AddressInput `json:"address,omitempty"`
 }
 
+type MediaInput struct {
+	ID        string    `json:"id"`
+	URL       string    `json:"url"`
+	Type      MediaType `json:"type"`
+	CreatedAt string    `json:"created_at"`
+}
+
 type Mutation struct {
+}
+
+type PageInfo struct {
+	HasNextPage     bool    `json:"has_next_page"`
+	NextCursor      *string `json:"next_cursor,omitempty"`
+	HasPreviousPage bool    `json:"has_previous_page"`
+	PreviousCursor  *string `json:"previous_cursor,omitempty"`
 }
 
 type PersonalityTrait struct {
@@ -59,6 +101,23 @@ type PersonalityTrait struct {
 type PersonalityTraitInput struct {
 	Key   string `json:"key"`
 	Value int32  `json:"value"`
+}
+
+type PostFilterInput struct {
+	UserID        *string    `json:"user_id,omitempty"`
+	SearchContent *string    `json:"search_content,omitempty"`
+	CreatedAfter  *time.Time `json:"created_after,omitempty"`
+	CreatedBefore *time.Time `json:"created_before,omitempty"`
+	MinLikes      *int32     `json:"min_likes,omitempty"`
+	MinComments   *int32     `json:"min_comments,omitempty"`
+	MinViews      *int32     `json:"min_views,omitempty"`
+	HasMedia      *bool      `json:"has_media,omitempty"`
+}
+
+type PostsConnection struct {
+	Posts      []*models.Post `json:"posts"`
+	PageInfo   *PageInfo      `json:"page_info"`
+	TotalCount int32          `json:"total_count"`
 }
 
 type Query struct {
@@ -80,6 +139,11 @@ type RecommendedProfile struct {
 	Reason             *string     `json:"reason,omitempty"`
 }
 
+type SortInput struct {
+	Field string    `json:"field"`
+	Order SortOrder `json:"order"`
+}
+
 type SwipeResponse struct {
 	Swipe *models.Swipe `json:"swipe"`
 	Match *models.Match `json:"match,omitempty"`
@@ -88,6 +152,17 @@ type SwipeResponse struct {
 type SwipedProfile struct {
 	Profile *UserPublic   `json:"profile"`
 	Swipe   *models.Swipe `json:"swipe"`
+}
+
+type UpdateCommentInput struct {
+	CommentID string `json:"comment_id"`
+	Content   string `json:"content"`
+}
+
+type UpdatePostInput struct {
+	PostID  string        `json:"post_id"`
+	Content *string       `json:"content,omitempty"`
+	Media   []*MediaInput `json:"media,omitempty"`
 }
 
 type UpdateUserInput struct {
@@ -176,6 +251,234 @@ func (e *ActivityClass) UnmarshalJSON(b []byte) error {
 }
 
 func (e ActivityClass) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type CommentSortField string
+
+const (
+	CommentSortFieldCreatedAt CommentSortField = "CREATED_AT"
+	CommentSortFieldLikes     CommentSortField = "LIKES"
+)
+
+var AllCommentSortField = []CommentSortField{
+	CommentSortFieldCreatedAt,
+	CommentSortFieldLikes,
+}
+
+func (e CommentSortField) IsValid() bool {
+	switch e {
+	case CommentSortFieldCreatedAt, CommentSortFieldLikes:
+		return true
+	}
+	return false
+}
+
+func (e CommentSortField) String() string {
+	return string(e)
+}
+
+func (e *CommentSortField) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CommentSortField(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CommentSortField", str)
+	}
+	return nil
+}
+
+func (e CommentSortField) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *CommentSortField) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e CommentSortField) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MediaType string
+
+const (
+	MediaTypeImage MediaType = "IMAGE"
+	MediaTypeVideo MediaType = "VIDEO"
+	MediaTypeAudio MediaType = "AUDIO"
+	MediaTypeFile  MediaType = "FILE"
+)
+
+var AllMediaType = []MediaType{
+	MediaTypeImage,
+	MediaTypeVideo,
+	MediaTypeAudio,
+	MediaTypeFile,
+}
+
+func (e MediaType) IsValid() bool {
+	switch e {
+	case MediaTypeImage, MediaTypeVideo, MediaTypeAudio, MediaTypeFile:
+		return true
+	}
+	return false
+}
+
+func (e MediaType) String() string {
+	return string(e)
+}
+
+func (e *MediaType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MediaType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MediaType", str)
+	}
+	return nil
+}
+
+func (e MediaType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MediaType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MediaType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type PostSortField string
+
+const (
+	PostSortFieldCreatedAt PostSortField = "CREATED_AT"
+	PostSortFieldLikes     PostSortField = "LIKES"
+	PostSortFieldComments  PostSortField = "COMMENTS"
+	PostSortFieldViews     PostSortField = "VIEWS"
+)
+
+var AllPostSortField = []PostSortField{
+	PostSortFieldCreatedAt,
+	PostSortFieldLikes,
+	PostSortFieldComments,
+	PostSortFieldViews,
+}
+
+func (e PostSortField) IsValid() bool {
+	switch e {
+	case PostSortFieldCreatedAt, PostSortFieldLikes, PostSortFieldComments, PostSortFieldViews:
+		return true
+	}
+	return false
+}
+
+func (e PostSortField) String() string {
+	return string(e)
+}
+
+func (e *PostSortField) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PostSortField(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PostSortField", str)
+	}
+	return nil
+}
+
+func (e PostSortField) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *PostSortField) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e PostSortField) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type SortOrder string
+
+const (
+	SortOrderAsc  SortOrder = "ASC"
+	SortOrderDesc SortOrder = "DESC"
+)
+
+var AllSortOrder = []SortOrder{
+	SortOrderAsc,
+	SortOrderDesc,
+}
+
+func (e SortOrder) IsValid() bool {
+	switch e {
+	case SortOrderAsc, SortOrderDesc:
+		return true
+	}
+	return false
+}
+
+func (e SortOrder) String() string {
+	return string(e)
+}
+
+func (e *SortOrder) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SortOrder(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SortOrder", str)
+	}
+	return nil
+}
+
+func (e SortOrder) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *SortOrder) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e SortOrder) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

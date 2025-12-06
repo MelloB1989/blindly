@@ -69,3 +69,27 @@ func UpdateUser(user models.User) (*models.User, error) {
 
 	return &user, nil
 }
+
+func GetUserActivities(userId string, activityType ...models.ActivityType) ([]models.UserProfileActivity, error) {
+	activitiesORM := orm.Load(&models.UserProfileActivity{})
+	defer activitiesORM.Close()
+
+	var activities []models.UserProfileActivity
+	if err := activitiesORM.GetByFieldEquals("UserId", userId).Scan(&activities); err != nil {
+		return nil, err
+	}
+
+	if len(activityType) > 0 {
+		filteredActivities := make([]models.UserProfileActivity, 0)
+		for _, activity := range activities {
+			for _, t := range activityType {
+				if activity.Type == t {
+					filteredActivities = append(filteredActivities, activity)
+				}
+			}
+		}
+		activities = filteredActivities
+	}
+
+	return activities, nil
+}
