@@ -112,6 +112,19 @@ export interface SwipeCardProfile {
     zodiac?: string;
     lastActive?: string;
     prompts?: { question: string; answer: string }[];
+    // Extra profile details
+    extra?: {
+        school?: string;
+        work?: string;
+        lookingFor?: string[];
+        exercise?: string;
+        drinking?: string;
+        smoking?: string;
+        kids?: string;
+        religion?: string;
+        ethnicity?: string;
+        sexuality?: string;
+    };
 }
 
 export interface Match {
@@ -142,6 +155,20 @@ const toSwipeCardProfile = (rec: RecommendedProfile): SwipeCardProfile => {
         (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
     );
 
+    // Map extra fields, filtering out empty values
+    const extra = rec.profile.extra ? {
+        school: rec.profile.extra.school || undefined,
+        work: rec.profile.extra.work || undefined,
+        lookingFor: rec.profile.extra.looking_for?.length ? rec.profile.extra.looking_for : undefined,
+        exercise: rec.profile.extra.excercise || undefined,
+        drinking: rec.profile.extra.drinking || undefined,
+        smoking: rec.profile.extra.smoking || undefined,
+        kids: rec.profile.extra.kids || undefined,
+        religion: rec.profile.extra.religion || undefined,
+        ethnicity: rec.profile.extra.ethnicity || undefined,
+        sexuality: rec.profile.extra.sexuality || undefined,
+    } : undefined;
+
     return {
         id: rec.profile.id,
         firstName: rec.profile.name.split(" ")[0],
@@ -169,6 +196,7 @@ const toSwipeCardProfile = (rec: RecommendedProfile): SwipeCardProfile => {
                     answer: p,
                 }))
                 : undefined,
+        extra,
     };
 };
 

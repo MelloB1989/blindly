@@ -27,7 +27,6 @@ type connRow struct {
 	ChatJSON           json.RawMessage
 	MatchJSON          json.RawMessage
 	LastMessage        sql.NullString
-	UnreadMessages     sql.NullInt64
 	PercentageComplete sql.NullFloat64
 	ProfileJSON        json.RawMessage
 }
@@ -57,15 +56,6 @@ func (r *Resolver) GetMyConnections(ctx context.Context) ([]*model.Connection, e
   END AS last_message,
 
   (
-    SELECT COUNT(*)::bigint
-    FROM jsonb_array_elements(c.messages::jsonb) elem
-    WHERE NOT (
-      (elem ? 'read_by') AND
-      ((elem->'read_by') ? $1)
-    )
-  ) AS unread_messages,
-
-  (
     LEAST(
       (COALESCE(jsonb_array_length(c.messages::jsonb), 0)::float / 500.0) * 100.0,
       100.0
@@ -90,7 +80,7 @@ ORDER BY m.matched_at DESC;
 	var rows []connRow
 	for dbRows.Next() {
 		var row connRow
-		if err := dbRows.Scan(&row.ChatJSON, &row.MatchJSON, &row.LastMessage, &row.UnreadMessages, &row.PercentageComplete, &row.ProfileJSON); err != nil {
+		if err := dbRows.Scan(&row.ChatJSON, &row.MatchJSON, &row.LastMessage, &row.PercentageComplete, &row.ProfileJSON); err != nil {
 			log.Printf("[ERROR] Row scan error: %v", err)
 			return nil, fmt.Errorf("row scan error: %w", err)
 		}
@@ -139,8 +129,14 @@ ORDER BY m.matched_at DESC;
 		}
 
 		var unread int32 = 0
-		if rrow.UnreadMessages.Valid {
-			unread = int32(rrow.UnreadMessages.Int64)
+		if len(chat.Messages) > 0 {
+			for i := len(chat.Messages) - 1; i >= 0; i-- {
+				if chat.Messages[i].SenderId != claims.UserID && !chat.Messages[i].Seen {
+					unread++
+				} else {
+					break
+				}
+			}
 		}
 
 		var pct float64 = 0

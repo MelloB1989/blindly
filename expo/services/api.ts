@@ -1,13 +1,9 @@
 // API Service - Backend Communication Layer
 // This service handles all HTTP requests to the backend
 
-const API_BASE_URL = __DEV__
-  ? "http://localhost:8080"
-  : "https://api.blindly.app";
+import { config } from "@/constants/config";
 
-interface ApiConfig {
-  token?: string;
-}
+const API_BASE_URL = config.api_host;
 
 class ApiService {
   private token: string | null = null;

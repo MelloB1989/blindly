@@ -11,7 +11,7 @@
     "db:browser": "cd db && npx drizzle-kit studio",
     "gqlgen": "cd services && (go run github.com/99designs/gqlgen@v0.17.84 generate || true) && go run ./tools/add_import.go",
     "start:backend": "cd services && go run -ldflags \"-X main.Version=$(git describe --tags --always --dirty)\" main.go",
-    "start:app": "npm run sync:expo && cd expo && bunx expo start",
+    "start:app": "npm run sync:expo && cd expo && bunx expo start --clear",
     "build:backend": "cd services && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags \"-X main.Version=$(git describe --tags --always --dirty)\" -o blindly",
     "build:docker": "bun run build:backend && cd services && docker build -t registry.prod.lyzn.in/blindly:latest .",
     "deploy:docker": "docker push registry.prod.lyzn.in/blindly:latest && kubectl apply -f deployment.yaml && kubectl rollout restart deployment blindly"

@@ -18,12 +18,11 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Chip } from "../../components/ui/Chip";
 import { SwipeCard, SwipeCardProfile } from "../../components/ui/SwipeCard";
-import { useSwipeStore, SwipeType } from "../../store/useSwipeStore";
+import { useSwipeStore } from "../../store/useSwipeStore";
 import {
   X,
   Heart,
   Sparkles,
-  RotateCcw,
   SlidersHorizontal,
   MapPin,
   Users,
@@ -31,6 +30,7 @@ import {
   Check,
   RefreshCw,
 } from "lucide-react-native";
+import { GradientBackground } from "../../components/ui/GradientBackground";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -107,7 +107,7 @@ export default function SwipeScreen() {
         console.error("Failed to submit swipe:", result.error);
       }
     },
-    [swipe]
+    [swipe],
   );
 
   const handleSwipeRight = useCallback(
@@ -128,13 +128,13 @@ export default function SwipeScreen() {
               onPress: () => router.push("/(tabs)/chat" as Href),
             },
             { text: "Keep Swiping" },
-          ]
+          ],
         );
       } else if (!result.success) {
         console.error("Failed to submit swipe:", result.error);
       }
     },
-    [swipe, router]
+    [swipe, router],
   );
 
   const handleSwipeUp = useCallback(
@@ -155,18 +155,18 @@ export default function SwipeScreen() {
               onPress: () => router.push("/(tabs)/chat" as Href),
             },
             { text: "Keep Swiping" },
-          ]
+          ],
         );
       } else if (result.success) {
         Alert.alert(
           "Super Like Sent! ⭐",
-          `${profile.firstName} will be notified that you super liked them!`
+          `${profile.firstName} will be notified that you super liked them!`,
         );
       } else {
         console.error("Failed to submit swipe:", result.error);
       }
     },
-    [swipe, router]
+    [swipe, router],
   );
 
   const handleShare = useCallback((profile: SwipeCardProfile) => {
@@ -180,11 +180,11 @@ export default function SwipeScreen() {
           onPress: () => {
             Alert.alert(
               "Shared!",
-              `You've shared ${profile.firstName}'s profile link.`
+              `You've shared ${profile.firstName}'s profile link.`,
             );
           },
         },
-      ]
+      ],
     );
   }, []);
 
@@ -193,7 +193,7 @@ export default function SwipeScreen() {
       Alert.alert(
         "Report Received",
         "Thank you for keeping our community safe. We will review this profile shortly.",
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
     };
 
@@ -214,7 +214,7 @@ export default function SwipeScreen() {
           text: "Harassment",
           onPress: confirmReport,
         },
-      ]
+      ],
     );
   }, []);
 
@@ -222,7 +222,7 @@ export default function SwipeScreen() {
     (profile: SwipeCardProfile) => {
       router.push(`/(tabs)/maytri?profileName=${profile.firstName}` as Href);
     },
-    [router]
+    [router],
   );
 
   const handleButtonSwipe = (direction: "left" | "right" | "up") => {
@@ -235,28 +235,6 @@ export default function SwipeScreen() {
       handleSwipeRight(currentProfile);
     } else {
       handleSwipeUp(currentProfile);
-    }
-  };
-
-  const handleUndo = () => {
-    if (lastAction) {
-      Alert.alert(
-        "Undo",
-        `Undo ${lastAction.action.toLowerCase()} on ${lastAction.profile.firstName}?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Undo",
-            onPress: () => {
-              // TODO: Implement actual undo logic with API
-              console.log("Undoing action on:", lastAction.profile.firstName);
-              setLastAction(null);
-            },
-          },
-        ]
-      );
-    } else {
-      Alert.alert("Nothing to Undo", "You haven't swiped on anyone yet!");
     }
   };
 
@@ -323,161 +301,183 @@ export default function SwipeScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" />
+    <GradientBackground>
+      <SafeAreaView className="flex-1" edges={["top"]}>
+        <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View className="px-4 py-3 flex-row justify-between items-center z-50">
-        {/* Left placeholder for balance */}
-        <View className="w-10" />
-
-        {/* Centered Branding */}
-        <View className="flex-row items-center gap-2">
-          <Image
-            source={require("../../assets/main-trans.png")}
-            style={{ width: 80, height: 40 }}
-          />
+        {/* Header */}
+        <View className="px-4 py-3 flex-row justify-between items-center">
+          <View className="w-10" />
+          <View className="flex-row items-center gap-2">
+            <Image
+              source={require("../../assets/main-trans.png")}
+              style={{ width: 80, height: 40, tintColor: "#fff" }}
+              resizeMode="contain"
+            />
+          </View>
+          <Pressable
+            onPress={() => setShowFilters(true)}
+            className="w-10 h-10 rounded-full bg-surface-elevated items-center justify-center border border-white/10 active:bg-surface"
+          >
+            <SlidersHorizontal size={20} color="#fff" />
+          </Pressable>
         </View>
 
-        {/* Right Filter Button */}
-        <Pressable
-          onPress={() => setShowFilters(true)}
-          className="w-10 h-10 rounded-full bg-surface-elevated items-center justify-center active:bg-surface"
+        {/* Card Stack - Adjusted positioning */}
+        <View
+          className="flex-1 items-center justify-center px-4"
+          style={{
+            marginTop: 8,
+            marginBottom: 100,
+            transform: [{ scale: 0.9 }],
+          }}
         >
-          <SlidersHorizontal size={20} color="#A6A6B2" />
-        </Pressable>
-      </View>
-
-      {/* Card Stack */}
-      <View
-        className="flex-1 items-center justify-center my-2"
-        style={{ height: SCREEN_HEIGHT * 0.65 }}
-      >
-        {/* Feedback Animation Overlay */}
-        {feedback && (
-          <View
-            className="absolute inset-0 items-center justify-center z-50"
-            pointerEvents="none"
-          >
-            <Animated.View
-              entering={BounceIn.duration(500)}
-              exiting={FadeOut.duration(300)}
-              className={`px-10 py-6 border-8 rounded-3xl transform -rotate-12 ${feedback.type === "like"
-                  ? "border-success bg-success/20"
-                  : feedback.type === "pass"
-                    ? "border-danger bg-danger/20"
-                    : "border-primary bg-primary/20"
-                }`}
+          {/* Feedback Animation Overlay */}
+          {feedback && (
+            <View
+              className="absolute inset-0 items-center justify-center"
+              style={{ zIndex: 100 }}
+              pointerEvents="none"
             >
-              <Typography
-                variant="h1"
-                className={`text-6xl font-black uppercase tracking-widest ${feedback.type === "like"
-                    ? "text-success"
+              <Animated.View
+                entering={BounceIn.duration(400)}
+                exiting={FadeOut.duration(200)}
+                className={`px-10 py-6 border-4 rounded-3xl transform -rotate-12 ${
+                  feedback.type === "like"
+                    ? "border-[#14D679] bg-[#14D679]/20"
                     : feedback.type === "pass"
-                      ? "text-danger"
-                      : "text-primary"
-                  }`}
+                      ? "border-[#FF4C61] bg-[#FF4C61]/20"
+                      : "border-[#6A1BFF] bg-[#6A1BFF]/20"
+                }`}
               >
-                {feedback.text}
-              </Typography>
-            </Animated.View>
-          </View>
-        )}
-
-        {hasProfiles ? (
-          <>
-            {visibleProfiles
-              .map((profile, index) => (
-                <SwipeCard
-                  key={profile.id}
-                  profile={profile}
-                  index={index}
-                  isFirst={index === 0}
-                  onSwipeLeft={handleSwipeLeft}
-                  onSwipeRight={handleSwipeRight}
-                  onSwipeUp={handleSwipeUp}
-                  onShare={handleShare}
-                  onReport={handleReport}
-                  onAskAi={handleAskAi}
-                />
-              ))
-              .reverse()}
-            {/* Loading more indicator */}
-            {isLoadingMore && (
-              <View className="absolute bottom-4">
-                <ActivityIndicator size="small" color="#7C3AED" />
-              </View>
-            )}
-          </>
-        ) : (
-          <View className="items-center justify-center px-8">
-            <View className="w-24 h-24 rounded-full bg-surface-elevated items-center justify-center mb-6">
-              <Heart size={48} color="#7C3AED" />
+                <Typography
+                  variant="h1"
+                  className={`text-5xl font-black uppercase tracking-widest ${
+                    feedback.type === "like"
+                      ? "text-[#14D679]"
+                      : feedback.type === "pass"
+                        ? "text-[#FF4C61]"
+                        : "text-[#6A1BFF]"
+                  }`}
+                >
+                  {feedback.text}
+                </Typography>
+              </Animated.View>
             </View>
-            <Typography variant="h2" className="text-center mb-2">
-              {hasMore ? "Loading more..." : "No more profiles"}
-            </Typography>
-            <Typography
-              variant="body"
-              color="muted"
-              className="text-center mb-6"
-            >
-              {hasMore
-                ? "Finding more people for you..."
-                : "You've seen everyone nearby. Check back later for new people!"}
-            </Typography>
-            <Button variant="primary" onPress={handleRefresh}>
-              <View className="flex-row items-center gap-2">
-                <RefreshCw size={18} color="#FFFFFF" />
-                <Typography className="text-white">Refresh</Typography>
+          )}
+
+          {hasProfiles ? (
+            <>
+              {visibleProfiles
+                .map((profile, index) => (
+                  <SwipeCard
+                    key={profile.id}
+                    profile={profile}
+                    index={index}
+                    isFirst={index === 0}
+                    onSwipeLeft={handleSwipeLeft}
+                    onSwipeRight={handleSwipeRight}
+                    onSwipeUp={handleSwipeUp}
+                    onShare={handleShare}
+                    onReport={handleReport}
+                    onAskAi={handleAskAi}
+                  />
+                ))
+                .reverse()}
+
+              {/* Loading more */}
+              {isLoadingMore && (
+                <View className="absolute bottom-4">
+                  <ActivityIndicator size="small" color="#6A1BFF" />
+                </View>
+              )}
+            </>
+          ) : (
+            <View className="items-center justify-center px-8">
+              <View className="w-24 h-24 rounded-full bg-surface-elevated items-center justify-center mb-6 border border-white/10">
+                <Heart size={48} color="#6A1BFF" />
               </View>
-            </Button>
+              <Typography variant="h2" className="text-center mb-2 text-white">
+                {hasMore ? "Loading more..." : "No more profiles"}
+              </Typography>
+              <Typography
+                variant="body"
+                color="muted"
+                className="text-center mb-6"
+              >
+                {hasMore
+                  ? "Finding more people for you..."
+                  : "You've seen everyone nearby. Check back later!"}
+              </Typography>
+              <Button variant="primary" onPress={handleRefresh}>
+                <View className="flex-row items-center gap-2">
+                  <RefreshCw size={18} color="#FFFFFF" />
+                  <Typography className="text-white">Refresh</Typography>
+                </View>
+              </Button>
+            </View>
+          )}
+        </View>
+
+        {/* Action Buttons - Fixed positioning at bottom */}
+        {hasProfiles && (
+          <View
+            className="absolute bottom-0 left-0 right-0 flex-row justify-center items-center gap-8 pb-8 pt-4 bg-gradient-to-t from-black/50"
+            style={{
+              zIndex: 50,
+            }}
+          >
+            <Pressable
+              onPress={() => handleButtonSwipe("left")}
+              className="w-16 h-16 rounded-full bg-[#1D0F45] items-center justify-center border-2 border-[#FF4C61] active:scale-95 shadow-lg shadow-[#FF4C61]/30"
+              style={{
+                shadowColor: "#FF4C61",
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.4,
+                shadowRadius: 10,
+                elevation: 5,
+              }}
+            >
+              <X size={32} color="#FF4C61" strokeWidth={3} />
+            </Pressable>
+
+            <Pressable
+              onPress={() => handleButtonSwipe("up")}
+              className="w-14 h-14 rounded-full bg-[#1D0F45] items-center justify-center border-2 border-[#6A1BFF] active:scale-90 shadow-lg shadow-[#6A1BFF]/30"
+              style={{
+                shadowColor: "#6A1BFF",
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.4,
+                shadowRadius: 10,
+                elevation: 5,
+              }}
+            >
+              <Sparkles size={24} color="#6A1BFF" fill="#6A1BFF" />
+            </Pressable>
+
+            <Pressable
+              onPress={() => handleButtonSwipe("right")}
+              className="w-16 h-16 rounded-full bg-[#1D0F45] items-center justify-center border-2 border-[#14D679] active:scale-95 shadow-lg shadow-[#14D679]/30"
+              style={{
+                shadowColor: "#14D679",
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.4,
+                shadowRadius: 10,
+                elevation: 5,
+              }}
+            >
+              <Heart size={32} color="#14D679" fill="#14D679" />
+            </Pressable>
           </View>
         )}
-      </View>
-
-      {/* Action Buttons */}
-      {hasProfiles && (
-        <View className="flex-row justify-center items-center gap-6 pb-4">
-          {/* Undo */}
-          <Pressable
-            onPress={handleUndo}
-            className="w-12 h-12 rounded-full bg-surface-elevated items-center justify-center border border-white/5 active:scale-95"
-          >
-            <RotateCcw size={20} color="#FFD166" />
-          </Pressable>
-
-          {/* Pass */}
-          <Pressable
-            onPress={() => handleButtonSwipe("left")}
-            className="w-16 h-16 rounded-full bg-surface-elevated items-center justify-center border-2 border-danger/30 active:scale-95 active:bg-danger/20"
-          >
-            <X size={28} color="#EF4444" />
-          </Pressable>
-
-          {/* Super Like */}
-          <Pressable
-            onPress={() => handleButtonSwipe("up")}
-            className="w-12 h-12 rounded-full bg-surface-elevated items-center justify-center border border-primary/30 active:scale-95 active:bg-primary/20"
-          >
-            <Sparkles size={20} color="#7C3AED" />
-          </Pressable>
-
-          {/* Like */}
-          <Pressable
-            onPress={() => handleButtonSwipe("right")}
-            className="w-16 h-16 rounded-full bg-surface-elevated items-center justify-center border-2 border-success/30 active:scale-95 active:bg-success/20"
-          >
-            <Heart size={28} color="#16A34A" />
-          </Pressable>
-        </View>
-      )}
+      </SafeAreaView>
 
       {/* Filters Modal */}
       <Modal
         visible={showFilters}
         animationType="slide"
         presentationStyle="pageSheet"
+        transparent={true}
       >
         <SafeAreaView className="flex-1 bg-background">
           {/* Header */}
@@ -511,7 +511,7 @@ export default function SwipeScreen() {
                     selected={selectedAgeRange === index}
                     onPress={() =>
                       setSelectedAgeRange(
-                        selectedAgeRange === index ? null : index
+                        selectedAgeRange === index ? null : index,
                       )
                     }
                   />
@@ -564,10 +564,11 @@ export default function SwipeScreen() {
                     </Typography>
                   </View>
                   <View
-                    className={`w-6 h-6 rounded-md items-center justify-center ${showVerifiedOnly
+                    className={`w-6 h-6 rounded-md items-center justify-center ${
+                      showVerifiedOnly
                         ? "bg-primary"
                         : "bg-surface border border-muted/30"
-                      }`}
+                    }`}
                   >
                     {showVerifiedOnly && <Check size={16} color="#FFFFFF" />}
                   </View>
@@ -589,6 +590,6 @@ export default function SwipeScreen() {
           </View>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </GradientBackground>
   );
 }

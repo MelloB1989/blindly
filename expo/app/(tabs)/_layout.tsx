@@ -7,6 +7,7 @@ import {
   Users,
   Heart,
 } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function TabLayout() {
   return (
@@ -14,19 +15,25 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#121218",
-          borderTopColor: "#16161B",
+          backgroundColor: "transparent",
+          borderTopColor: "rgba(255, 255, 255, 0.05)",
           borderTopWidth: 1,
           height: 88,
           paddingTop: 8,
           paddingBottom: 28,
         },
-        tabBarActiveTintColor: "#7C3AED",
-        tabBarInactiveTintColor: "#A6A6B2",
+        tabBarBackground: () => (
+          <LinearGradient
+            colors={["rgba(23, 16, 46, 0.95)", "rgba(10, 3, 20, 0.5)"]}
+            style={{ flex: 1 }}
+          />
+        ),
+        tabBarActiveTintColor: "#A78BFA",
+        tabBarInactiveTintColor: "#6E6A85",
         tabBarShowLabel: true,
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: "500",
+          fontWeight: "600",
           marginTop: 4,
         },
       }}

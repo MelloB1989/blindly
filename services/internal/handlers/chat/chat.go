@@ -148,13 +148,11 @@ func WSHandler(c *websocket.Conn) {
 	}
 
 	c.SetPongHandler(func(string) error {
-		log.Printf("[%s] Received pong from client", chatId)
 		c.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
 
 	c.SetPingHandler(func(appData string) error {
-		log.Printf("[%s] Received ping from client", chatId)
 		c.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
@@ -417,10 +415,9 @@ func WSHandler(c *websocket.Conn) {
 				continue
 			}
 			userMgs := &models.Message{
-				Id:        *incoming.Message.Id,
-				SenderId:  userId,
-				Content:   incoming.Message.Content,
-				UpdatedAt: time.Now(),
+				Id:       *incoming.Message.Id,
+				SenderId: userId,
+				Content:  incoming.Message.Content,
 			}
 			if len(incoming.Message.Media) > 0 {
 				for _, media := range incoming.Message.Media {

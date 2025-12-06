@@ -4,6 +4,8 @@ import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack, useRouter, useSegments, Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
 import "react-native-reanimated";
 import "../global.css";
 
@@ -17,11 +19,11 @@ const BlindlyDarkTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    background: "#0B0B10",
-    card: "#121218",
-    border: "#16161B",
-    primary: "#7C3AED",
-    text: "#E6E6F0",
+    background: "#0B0223",
+    card: "#1D0F45",
+    border: "rgba(255, 255, 255, 0.1)",
+    primary: "#6A1BFF",
+    text: "#FFFFFF",
   },
 };
 
@@ -55,8 +57,8 @@ function RootLayoutNav() {
             hobbies: result.user.hobbies || [],
             personalityTraits: result.user.personality_traits
               ? Object.fromEntries(
-                  result.user.personality_traits.map((t) => [t.key, t.value]),
-                )
+                result.user.personality_traits.map((t) => [t.key, t.value]),
+              )
               : {},
             photos: result.user.photos || [],
             isVerified: result.user.is_verified,
@@ -194,7 +196,46 @@ function RootLayoutNav() {
   );
 }
 
+// Prevent splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    // Lexend fonts
+    "Lexend-Thin": require("../assets/fonts/Lexend/static/Lexend-Thin.ttf"),
+    "Lexend-ExtraLight": require("../assets/fonts/Lexend/static/Lexend-ExtraLight.ttf"),
+    "Lexend-Light": require("../assets/fonts/Lexend/static/Lexend-Light.ttf"),
+    "Lexend-Regular": require("../assets/fonts/Lexend/static/Lexend-Regular.ttf"),
+    "Lexend-Medium": require("../assets/fonts/Lexend/static/Lexend-Medium.ttf"),
+    "Lexend-SemiBold": require("../assets/fonts/Lexend/static/Lexend-SemiBold.ttf"),
+    "Lexend-Bold": require("../assets/fonts/Lexend/static/Lexend-Bold.ttf"),
+    "Lexend-ExtraBold": require("../assets/fonts/Lexend/static/Lexend-ExtraBold.ttf"),
+    "Lexend-Black": require("../assets/fonts/Lexend/static/Lexend-Black.ttf"),
+    // Nunito fonts
+    "Nunito-ExtraLight": require("../assets/fonts/Nunito/static/Nunito-ExtraLight.ttf"),
+    "Nunito-Light": require("../assets/fonts/Nunito/static/Nunito-Light.ttf"),
+    "Nunito-Regular": require("../assets/fonts/Nunito/static/Nunito-Regular.ttf"),
+    "Nunito-Medium": require("../assets/fonts/Nunito/static/Nunito-Medium.ttf"),
+    "Nunito-SemiBold": require("../assets/fonts/Nunito/static/Nunito-SemiBold.ttf"),
+    "Nunito-Bold": require("../assets/fonts/Nunito/static/Nunito-Bold.ttf"),
+    "Nunito-ExtraBold": require("../assets/fonts/Nunito/static/Nunito-ExtraBold.ttf"),
+    "Nunito-Black": require("../assets/fonts/Nunito/static/Nunito-Black.ttf"),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#0B0223", alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" color="#6A1BFF" />
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={BlindlyDarkTheme}>

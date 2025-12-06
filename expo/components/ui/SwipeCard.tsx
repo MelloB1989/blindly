@@ -28,6 +28,14 @@ import {
   Lock,
   Quote,
   MessageCircle,
+  GraduationCap,
+  Briefcase,
+  Wine,
+  Cigarette,
+  Baby,
+  Church,
+  Users,
+  Dumbbell,
 } from "lucide-react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -53,6 +61,18 @@ export interface SwipeCardProfile {
   lastActive?: string;
   prompts?: { question: string; answer: string }[];
   aiSummary?: string;
+  extra?: {
+    school?: string;
+    work?: string;
+    lookingFor?: string[];
+    exercise?: string;
+    drinking?: string;
+    smoking?: string;
+    kids?: string;
+    religion?: string;
+    ethnicity?: string;
+    sexuality?: string;
+  };
 }
 
 interface SwipeCardProps {
@@ -279,7 +299,7 @@ export function SwipeCard({
                 likeIndicatorStyle,
               ]}
             >
-              <Heart size={28} color="#16A34A" fill="#16A34A" />
+              <Heart size={32} color="#14D679" fill="#14D679" />
               <Typography variant="h3" className="text-success ml-2">
                 LIKE
               </Typography>
@@ -293,7 +313,7 @@ export function SwipeCard({
                 nopeIndicatorStyle,
               ]}
             >
-              <X size={28} color="#EF4444" />
+              <X size={32} color="#FF4C61" strokeWidth={3} />
               <Typography variant="h3" className="text-danger ml-2">
                 NOPE
               </Typography>
@@ -307,7 +327,7 @@ export function SwipeCard({
                 superLikeIndicatorStyle,
               ]}
             >
-              <Sparkles size={28} color="#7C3AED" />
+              <Sparkles size={32} color="#6A1BFF" fill="#6A1BFF" />
               <Typography variant="h3" className="text-primary ml-2">
                 SUPER
               </Typography>
@@ -317,7 +337,7 @@ export function SwipeCard({
 
         {/* Card Content */}
         <Animated.ScrollView
-          className="flex-1 bg-surface-elevated rounded-3xl overflow-hidden border border-white/5"
+          className="flex-1 bg-[#1D0F45] rounded-[32px] overflow-hidden border-[3px] border-white/20"
           showsVerticalScrollIndicator={false}
           scrollEnabled={isFirst}
           nestedScrollEnabled
@@ -468,12 +488,9 @@ export function SwipeCard({
                 className="text-sm leading-relaxed text-muted"
               >
                 {profile.aiSummary ||
-                  `${profile.firstName} appears to be a ${
-                    profile.traits[0]?.toLowerCase() || "unique"
-                  } soul who loves ${
-                    profile.hobbies[0]?.toLowerCase() || "exploring"
-                  }. A perfect match if you're looking for someone ${
-                    profile.traits[1]?.toLowerCase() || "genuine"
+                  `${profile.firstName} appears to be a ${profile.traits[0]?.toLowerCase() || "unique"
+                  } soul who loves ${profile.hobbies[0]?.toLowerCase() || "exploring"
+                  }. A perfect match if you're looking for someone ${profile.traits[1]?.toLowerCase() || "genuine"
                   }!`}
               </Typography>
             </View>
@@ -592,6 +609,85 @@ export function SwipeCard({
               </View>
             </View>
 
+            {/* Extra Info Section */}
+            {profile.extra && Object.values(profile.extra).some(v => v && (Array.isArray(v) ? v.length > 0 : true)) && (
+              <View className="mb-6">
+                <Typography
+                  variant="label"
+                  color="muted"
+                  className="mb-3 uppercase tracking-wider text-xs"
+                >
+                  More About Me
+                </Typography>
+                <View className="flex-row flex-wrap gap-2">
+                  {profile.extra.work && (
+                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
+                      <Briefcase size={14} color="#A78BFA" />
+                      <Typography variant="caption" className="ml-2 text-white/80">
+                        {profile.extra.work}
+                      </Typography>
+                    </View>
+                  )}
+                  {profile.extra.school && (
+                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
+                      <GraduationCap size={14} color="#60A5FA" />
+                      <Typography variant="caption" className="ml-2 text-white/80">
+                        {profile.extra.school}
+                      </Typography>
+                    </View>
+                  )}
+                  {profile.extra.exercise && (
+                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
+                      <Dumbbell size={14} color="#34D399" />
+                      <Typography variant="caption" className="ml-2 text-white/80">
+                        {profile.extra.exercise}
+                      </Typography>
+                    </View>
+                  )}
+                  {profile.extra.drinking && (
+                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
+                      <Wine size={14} color="#F472B6" />
+                      <Typography variant="caption" className="ml-2 text-white/80">
+                        {profile.extra.drinking}
+                      </Typography>
+                    </View>
+                  )}
+                  {profile.extra.smoking && (
+                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
+                      <Cigarette size={14} color="#FB923C" />
+                      <Typography variant="caption" className="ml-2 text-white/80">
+                        {profile.extra.smoking}
+                      </Typography>
+                    </View>
+                  )}
+                  {profile.extra.kids && (
+                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
+                      <Baby size={14} color="#FCD34D" />
+                      <Typography variant="caption" className="ml-2 text-white/80">
+                        {profile.extra.kids}
+                      </Typography>
+                    </View>
+                  )}
+                  {profile.extra.religion && (
+                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
+                      <Church size={14} color="#94A3B8" />
+                      <Typography variant="caption" className="ml-2 text-white/80">
+                        {profile.extra.religion}
+                      </Typography>
+                    </View>
+                  )}
+                  {profile.extra.lookingFor && profile.extra.lookingFor.length > 0 && (
+                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
+                      <Users size={14} color="#E879F9" />
+                      <Typography variant="caption" className="ml-2 text-white/80">
+                        {profile.extra.lookingFor.join(", ")}
+                      </Typography>
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+
             {/* Photos Hidden Notice */}
             {!profile.isRevealed && (
               <View className="bg-primary/10 rounded-xl p-4 flex-row items-center border border-primary/20 mb-4">
@@ -621,9 +717,14 @@ export function SwipeCard({
 const styles = StyleSheet.create({
   cardContainer: {
     position: "absolute",
-    width: SCREEN_WIDTH - 32,
-    height: SCREEN_HEIGHT * 0.65, // Reduced height to prevent interference
+    width: SCREEN_WIDTH - 24,
+    height: SCREEN_HEIGHT * 0.72,
     alignSelf: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
   },
   photo: {
     width: "100%",
@@ -638,32 +739,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     zIndex: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 3,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 99,
+    borderWidth: 2,
   },
   likeIndicator: {
     top: 60,
-    left: 16,
-    borderColor: "#16A34A",
-    backgroundColor: "rgba(22, 163, 74, 0.15)",
+    left: 20,
+    borderColor: "#14D679", // Neon Green
+    backgroundColor: "rgba(20, 214, 121, 0.2)",
     transform: [{ rotate: "-12deg" }],
+    shadowColor: "#14D679",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
   },
   nopeIndicator: {
     top: 60,
-    right: 16,
-    borderColor: "#EF4444",
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    right: 20,
+    borderColor: "#FF4C61", // Neon Red
+    backgroundColor: "rgba(255, 76, 97, 0.2)",
     transform: [{ rotate: "12deg" }],
+    shadowColor: "#FF4C61",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
   },
   superLikeIndicator: {
-    bottom: 80,
+    bottom: 100,
     alignSelf: "center",
-    left: "50%",
-    marginLeft: -55,
-    borderColor: "#7C3AED",
-    backgroundColor: "rgba(124, 58, 237, 0.15)",
+    borderColor: "#6A1BFF", // Neon Purple
+    backgroundColor: "rgba(106, 27, 255, 0.2)",
+    shadowColor: "#6A1BFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
   },
 });
 

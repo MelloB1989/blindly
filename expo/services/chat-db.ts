@@ -135,16 +135,14 @@ export async function saveMessages(chatId: string, messages: Message[]): Promise
 
     const database = await getDb();
 
-    await database.withTransactionAsync(async () => {
-        for (const message of messages) {
-            const dbMsg = toDBMessage(chatId, message);
-            await database.runAsync(
-                `INSERT OR REPLACE INTO messages (id, chat_id, type, content, sender_id, received, seen, media, reactions, created_at, updated_at)
+    for (const message of messages) {
+        const dbMsg = toDBMessage(chatId, message);
+        await database.runAsync(
+            `INSERT OR REPLACE INTO messages (id, chat_id, type, content, sender_id, received, seen, media, reactions, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [dbMsg.id, dbMsg.chat_id, dbMsg.type, dbMsg.content, dbMsg.sender_id, dbMsg.received, dbMsg.seen, dbMsg.media, dbMsg.reactions, dbMsg.created_at, dbMsg.updated_at]
-            );
-        }
-    });
+            [dbMsg.id, dbMsg.chat_id, dbMsg.type, dbMsg.content, dbMsg.sender_id, dbMsg.received, dbMsg.seen, dbMsg.media, dbMsg.reactions, dbMsg.created_at, dbMsg.updated_at]
+        );
+    }
 
     await trimMessages(chatId);
 }

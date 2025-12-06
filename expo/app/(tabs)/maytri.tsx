@@ -28,6 +28,7 @@ import {
   History,
   Plus,
 } from "lucide-react-native";
+import { GradientBackground } from "../../components/ui/GradientBackground";
 
 const INITIAL_MESSAGES: MaytriMessage[] = [
   {
@@ -392,152 +393,154 @@ export default function MaytriScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
-      >
-        {/* Header */}
-        <View className="px-4 py-3 border-b border-surface-elevated">
-          <View className="flex-row items-center">
-            <View className="w-12 h-12 rounded-full bg-primary/20 items-center justify-center mr-3 border-2 border-primary overflow-hidden">
-              <Image
-                source={require("../../assets/maytri.jpg")}
-                style={{ width: "100%", height: "100%" }}
-              />
-            </View>
-            <View className="flex-1">
-              <View className="flex-row items-center gap-2">
-                <Typography variant="h2" className="text-lg">
-                  Maytri
-                </Typography>
-                <Badge label="AI" variant="ai" size="sm" />
+    <GradientBackground>
+      <SafeAreaView className="flex-1">
+        <StatusBar barStyle="light-content" />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+        >
+          {/* Header */}
+          <View className="px-4 py-3 border-b border-surface-elevated">
+            <View className="flex-row items-center">
+              <View className="w-12 h-12 rounded-full bg-primary/20 items-center justify-center mr-3 border-2 border-primary overflow-hidden">
+                <Image
+                  source={require("../../assets/maytri.jpg")}
+                  style={{ width: "100%", height: "100%" }}
+                />
               </View>
-              <Typography variant="caption" color="muted">
-                Your AI matchmaker & love guru
-              </Typography>
-            </View>
-            <View className="flex-row gap-2">
-              <Pressable
-                onPress={() => router.push("/maytri-history" as Href)}
-                className="w-10 h-10 rounded-full bg-surface-elevated items-center justify-center"
-              >
-                <History size={20} color="#A6A6B2" />
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  if (maytriMessages.length > 1) {
-                    saveMaytriSession({
-                      id: `session-${Date.now()}`,
-                      title:
-                        maytriMessages[1]?.text.slice(0, 30) + "..." ||
-                        "New Chat",
-                      date: new Date().toISOString(),
-                      messages: maytriMessages,
-                    });
+              <View className="flex-1">
+                <View className="flex-row items-center gap-2">
+                  <Typography variant="h2" className="text-lg">
+                    Maytri
+                  </Typography>
+                  <Badge label="AI" variant="ai" size="sm" />
+                </View>
+                <Typography variant="caption" color="muted">
+                  Your AI matchmaker & love guru
+                </Typography>
+              </View>
+              <View className="flex-row gap-2">
+                <Pressable
+                  onPress={() => router.push("/maytri-history" as Href)}
+                  className="w-10 h-10 rounded-full bg-surface-elevated items-center justify-center"
+                >
+                  <History size={20} color="#A6A6B2" />
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    if (maytriMessages.length > 1) {
+                      saveMaytriSession({
+                        id: `session-${Date.now()}`,
+                        title:
+                          maytriMessages[1]?.text.slice(0, 30) + "..." ||
+                          "New Chat",
+                        date: new Date().toISOString(),
+                        messages: maytriMessages,
+                      });
+                    }
+                    clearMaytriMessages();
+                    setMaytriMessages(INITIAL_MESSAGES);
+                  }}
+                  className="w-10 h-10 rounded-full bg-surface-elevated items-center justify-center"
+                >
+                  <Plus size={20} color="#A6A6B2" />
+                </Pressable>
+                <Pressable
+                  onPress={() =>
+                    Alert.alert(
+                      "About Maytri",
+                      "Maytri is your AI dating assistant designed to help you find meaningful connections.",
+                    )
                   }
-                  clearMaytriMessages();
-                  setMaytriMessages(INITIAL_MESSAGES);
-                }}
-                className="w-10 h-10 rounded-full bg-surface-elevated items-center justify-center"
-              >
-                <Plus size={20} color="#A6A6B2" />
-              </Pressable>
-              <Pressable
-                onPress={() =>
-                  Alert.alert(
-                    "About Maytri",
-                    "Maytri is your AI dating assistant designed to help you find meaningful connections.",
-                  )
-                }
-                className="w-10 h-10 rounded-full bg-surface-elevated items-center justify-center"
-              >
-                <Info size={20} color="#A6A6B2" />
-              </Pressable>
+                  className="w-10 h-10 rounded-full bg-surface-elevated items-center justify-center"
+                >
+                  <Info size={20} color="#A6A6B2" />
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Messages */}
-        <FlatList
-          ref={flatListRef}
-          data={maytriMessages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingVertical: 16 }}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() =>
-            flatListRef.current?.scrollToEnd({ animated: false })
-          }
-        />
+          {/* Messages */}
+          <FlatList
+            ref={flatListRef}
+            data={maytriMessages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingVertical: 16 }}
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() =>
+              flatListRef.current?.scrollToEnd({ animated: false })
+            }
+          />
 
-        {/* Typing Indicator */}
-        {isTyping && (
-          <View className="px-4 mb-2">
-            <View className="flex-row items-center">
-              <View className="w-8 h-8 rounded-full bg-primary items-center justify-center mr-2">
-                <Sparkles size={16} color="#FFFFFF" />
-              </View>
-              <View className="bg-surface-elevated rounded-2xl rounded-bl-sm px-4 py-3">
-                <View className="flex-row gap-1">
-                  <View className="w-2 h-2 rounded-full bg-muted animate-pulse" />
-                  <View className="w-2 h-2 rounded-full bg-muted animate-pulse" />
-                  <View className="w-2 h-2 rounded-full bg-muted animate-pulse" />
+          {/* Typing Indicator */}
+          {isTyping && (
+            <View className="px-4 mb-2">
+              <View className="flex-row items-center">
+                <View className="w-8 h-8 rounded-full bg-primary items-center justify-center mr-2">
+                  <Sparkles size={16} color="#FFFFFF" />
+                </View>
+                <View className="bg-surface-elevated rounded-2xl rounded-bl-sm px-4 py-3">
+                  <View className="flex-row gap-1">
+                    <View className="w-2 h-2 rounded-full bg-muted animate-pulse" />
+                    <View className="w-2 h-2 rounded-full bg-muted animate-pulse" />
+                    <View className="w-2 h-2 rounded-full bg-muted animate-pulse" />
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {/* Input Area */}
-        <View className="px-4 py-3 border-t border-surface-elevated bg-surface">
-          <View className="flex-row items-center gap-2">
-            {/* Text Input */}
-            <View className="flex-1 flex-row items-center bg-surface-elevated rounded-full px-4 py-2">
-              <TextInput
-                value={inputText}
-                onChangeText={setInputText}
-                placeholder="Ask Maytri anything..."
-                placeholderTextColor="#A6A6B2"
-                className="flex-1 text-body text-base py-1"
-                style={{ color: "#E6E6F0" }}
-                multiline
-                maxLength={500}
-                onSubmitEditing={() => handleSend()}
-              />
+          {/* Input Area */}
+          <View className="px-4 py-3 border-t border-surface-elevated bg-surface">
+            <View className="flex-row items-center gap-2">
+              {/* Text Input */}
+              <View className="flex-1 flex-row items-center bg-surface-elevated rounded-full px-4 py-2">
+                <TextInput
+                  value={inputText}
+                  onChangeText={setInputText}
+                  placeholder="Ask Maytri anything..."
+                  placeholderTextColor="#A6A6B2"
+                  className="flex-1 text-body text-base py-1"
+                  style={{ color: "#E6E6F0" }}
+                  multiline
+                  maxLength={500}
+                  onSubmitEditing={() => handleSend()}
+                />
+              </View>
+
+              {/* Send Button */}
+              <Pressable
+                onPress={() => handleSend()}
+                disabled={!inputText.trim()}
+                className={`w-11 h-11 rounded-full items-center justify-center ${
+                  inputText.trim()
+                    ? "bg-primary active:bg-primary/80"
+                    : "bg-surface-elevated"
+                }`}
+              >
+                <Send
+                  size={20}
+                  color={inputText.trim() ? "#FFFFFF" : "#A6A6B2"}
+                />
+              </Pressable>
             </View>
 
-            {/* Send Button */}
-            <Pressable
-              onPress={() => handleSend()}
-              disabled={!inputText.trim()}
-              className={`w-11 h-11 rounded-full items-center justify-center ${
-                inputText.trim()
-                  ? "bg-primary active:bg-primary/80"
-                  : "bg-surface-elevated"
-              }`}
-            >
-              <Send
-                size={20}
-                color={inputText.trim() ? "#FFFFFF" : "#A6A6B2"}
-              />
-            </Pressable>
+            {/* Powered by AI notice */}
+            <View className="flex-row items-center justify-center mt-2">
+              <Sparkles size={12} color="#FFD166" />
+              <Typography
+                variant="caption"
+                color="muted"
+                className="ml-1 text-xs"
+              >
+                Powered by AI • Your conversations help improve recommendations
+              </Typography>
+            </View>
           </View>
-
-          {/* Powered by AI notice */}
-          <View className="flex-row items-center justify-center mt-2">
-            <Sparkles size={12} color="#FFD166" />
-            <Typography
-              variant="caption"
-              color="muted"
-              className="ml-1 text-xs"
-            >
-              Powered by AI • Your conversations help improve recommendations
-            </Typography>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }

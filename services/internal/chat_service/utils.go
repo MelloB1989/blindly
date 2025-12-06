@@ -79,8 +79,10 @@ func (s *Store) updateMessageInDB(messageId string, updates *models.Message) (*m
 
 	for i, msg := range chat.Messages {
 		if msg.Id == messageId {
-			if updates.Content != "" {
+			contentChanged := false
+			if updates.Content != "" && updates.Content != msg.Content {
 				chat.Messages[i].Content = updates.Content
+				contentChanged = true
 			}
 			if updates.Type != "" {
 				chat.Messages[i].Type = updates.Type
@@ -92,6 +94,10 @@ func (s *Store) updateMessageInDB(messageId string, updates *models.Message) (*m
 			}
 			if updates.Reactions != nil {
 				chat.Messages[i].Reactions = updates.Reactions
+			}
+			// Only update UpdatedAt if content was changed
+			if contentChanged {
+				chat.Messages[i].UpdatedAt = time.Now()
 			}
 			updatedMsg = &chat.Messages[i]
 			break
@@ -125,10 +131,15 @@ func (s *Store) updateMessageInBuffer(messageId string, updates *models.Message)
 			if msg.id == ARGV[1] then
 				-- Update fields from the updates JSON
 				local updates = cjson.decode(ARGV[2])
+				local contentChanged = false
 				for k, v in pairs(updates) do
-					-- Skip nil values, id, and created_at
-					if k == 'id' or k == 'created_at' then
-						-- never update these
+					-- Skip nil values, id, created_at, and updated_at
+					if k == 'id' or k == 'created_at' or k == 'updated_at' then
+						-- never update these directly
+					elseif k == 'content' and type(v) == 'string' and v ~= '' and v ~= msg.content then
+						-- content is being updated
+						msg[k] = v
+						contentChanged = true
 					elseif type(v) == 'string' and v == '' then
 						-- skip empty strings
 					elseif type(v) == 'boolean' then
@@ -139,6 +150,10 @@ func (s *Store) updateMessageInBuffer(messageId string, updates *models.Message)
 						msg[k] = v
 					end
 				end
+				-- Only update updated_at if content was changed
+				if contentChanged then
+					msg.updated_at = ARGV[3]
+				end
 				local updated = cjson.encode(msg)
 				redis.call('LSET', KEYS[1], i - 1, updated)
 				return updated
@@ -148,7 +163,8 @@ func (s *Store) updateMessageInBuffer(messageId string, updates *models.Message)
 	`)
 
 	updatesJSON, _ := json.Marshal(updates)
-	result, err := luaScript.Run(ctx, s.rc, []string{msgsKey}, messageId, string(updatesJSON)).Result()
+	nowStr := time.Now().Format(time.RFC3339Nano)
+	result, err := luaScript.Run(ctx, s.rc, []string{msgsKey}, messageId, string(updatesJSON), nowStr).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, nil // Not found in buffer

@@ -18,7 +18,10 @@ import { Avatar } from "../../components/ui/Avatar";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { useConnectionsStore } from "../../store/useConnectionsStore";
-import { useActivitiesStore, UserProfileActivity } from "../../store/useActivitiesStore";
+import {
+  useActivitiesStore,
+  UserProfileActivity,
+} from "../../store/useActivitiesStore";
 import { Connection } from "../../services/chat-service";
 import {
   Lock,
@@ -32,6 +35,7 @@ import {
   X,
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
+import { GradientBackground } from "../../components/ui/GradientBackground";
 
 // Enable LayoutAnimation for Android
 if (
@@ -48,7 +52,7 @@ export default function ChatScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("messages");
   const [pokeFilter, setPokeFilter] = useState<"received" | "sent">("received");
   const [viewFilter, setViewFilter] = useState<"viewed_you" | "you_viewed">(
-    "viewed_you"
+    "viewed_you",
   );
 
   // Use Zustand stores
@@ -116,11 +120,11 @@ export default function ChatScreen() {
     return (
       <Pressable
         onPress={() => handleChatPress(item.chat.id)}
-        className="flex-row items-center p-4 border-b border-surface-elevated active:bg-surface-elevated/50"
+        className="flex-row items-center p-4 border-b border-white/5 active:bg-white/5"
       >
         <View className="mr-4">
           <Avatar
-            source={item.match.is_unlocked ? profile.pfp : undefined}
+            source={profile.pfp}
             fallback={profile.name}
             locked={!item.match.is_unlocked}
             size="md"
@@ -169,29 +173,48 @@ export default function ChatScreen() {
 
           {/* Unlock Progress */}
           {!item.match.is_unlocked && (
-            <View className="mt-3 bg-surface-elevated/50 p-2 rounded-lg border border-white/5">
+            <View
+              className="mt-3 p-2 rounded-lg border border-white/5"
+              style={{ backgroundColor: "rgba(30,22,54,0.55)" }}
+            >
+              {/* Header */}
               <View className="flex-row items-center justify-between mb-2">
                 <View className="flex-row items-center gap-1.5">
-                  <Lock size={12} color="#A6A6B2" />
-                  <Typography variant="caption" className="font-medium">
+                  <Lock size={12} color="#8E8AA8" />
+                  <Typography
+                    variant="caption"
+                    className="font-medium text-[#CFCBDF]"
+                  >
                     Unlock Photos
                   </Typography>
                 </View>
+
                 <Typography
                   variant="caption"
-                  color={item.percentage_complete >= 1 ? "primary" : "muted"}
                   className="font-bold"
+                  style={{
+                    color:
+                      item.percentage_complete >= 1 ? "#A78BFA" : "#6E6A85",
+                  }}
                 >
                   {progressPercent}%
                 </Typography>
               </View>
-              <View className="h-1.5 bg-surface rounded-full overflow-hidden">
+
+              {/* Progress Bar */}
+              <View
+                className="h-1.5 rounded-full overflow-hidden"
+                style={{ backgroundColor: "#1C1433" }}
+              >
                 <View
-                  className={`h-full rounded-full ${item.percentage_complete >= 1
-                      ? "bg-primary"
-                      : "bg-primary/50"
-                    }`}
-                  style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.min(progressPercent, 100)}%`,
+                    backgroundColor:
+                      item.percentage_complete >= 1
+                        ? "#7C3AED"
+                        : "rgba(124,58,237,0.45)",
+                  }}
                 />
               </View>
             </View>
@@ -216,7 +239,7 @@ export default function ChatScreen() {
     return (
       <Pressable
         onPress={() => handleProfilePress(profile.id)}
-        className="flex-row items-center p-4 border-b border-surface-elevated active:bg-surface-elevated/50"
+        className="flex-row items-center p-4 border-b border-white/5 active:bg-white/5"
       >
         <View className="mr-4 relative">
           <View className="w-14 h-14 rounded-full overflow-hidden bg-surface-elevated border border-white/10">
@@ -303,7 +326,13 @@ export default function ChatScreen() {
   );
 
   // Error component
-  const ErrorView = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+  const ErrorView = ({
+    message,
+    onRetry,
+  }: {
+    message: string;
+    onRetry: () => void;
+  }) => (
     <View className="flex-1 items-center justify-center px-8 py-16">
       <View className="w-20 h-20 rounded-full bg-surface-elevated items-center justify-center mb-4">
         <X size={40} color="#EF4444" />
@@ -324,219 +353,237 @@ export default function ChatScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" />
+    <GradientBackground>
+      <SafeAreaView className="flex-1">
+        <StatusBar barStyle="light-content" />
 
-      {/* Header & Tabs */}
-      <View className="bg-background z-10 shadow-sm">
-        <View className="px-4 py-3 border-b border-surface-elevated">
-          <Typography variant="h1">Connections</Typography>
+        {/* Header & Tabs */}
+        <View className="z-10 bg-transparent">
+          <View className="px-4 py-3 border-b border-white/5">
+            <Typography variant="h1" className="text-white">
+              Connections
+            </Typography>
+          </View>
+
+          {/* Custom Tab Bar */}
+          <View className="flex-row px-2 pt-2">
+            {[
+              { key: "messages", label: "Messages", icon: MessageCircle },
+              { key: "pokes", label: "Pokes", icon: Hand },
+              { key: "views", label: "Views", icon: Eye },
+            ].map((tab) => {
+              const isActive = activeTab === tab.key;
+              const Icon = tab.icon;
+              return (
+                <Pressable
+                  key={tab.key}
+                  onPress={() => handleTabChange(tab.key as TabType)}
+                  className="flex-1 items-center py-3 relative"
+                >
+                  <View className="flex-row items-center gap-2 mb-1">
+                    <Icon size={18} color={isActive ? "#6A1BFF" : "#A6A6B2"} />
+                    <Typography
+                      variant="label"
+                      className={
+                        isActive ? "text-primary font-bold" : "text-muted"
+                      }
+                    >
+                      {tab.label}
+                    </Typography>
+                  </View>
+                  {isActive && (
+                    <View className="absolute bottom-0 w-full h-0.5 bg-[#6A1BFF] rounded-full shadow-[0_0_8px_#6A1BFF]" />
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
-        {/* Custom Tab Bar */}
-        <View className="flex-row px-2 pt-2">
-          {[
-            { key: "messages", label: "Messages", icon: MessageCircle },
-            { key: "pokes", label: "Pokes", icon: Hand },
-            { key: "views", label: "Views", icon: Eye },
-          ].map((tab) => {
-            const isActive = activeTab === tab.key;
-            const Icon = tab.icon;
-            return (
-              <Pressable
-                key={tab.key}
-                onPress={() => handleTabChange(tab.key as TabType)}
-                className="flex-1 items-center py-3 relative"
-              >
-                <View className="flex-row items-center gap-2 mb-1">
-                  <Icon size={18} color={isActive ? "#7C3AED" : "#A6A6B2"} />
-                  <Typography
-                    variant="label"
-                    className={
-                      isActive ? "text-primary font-bold" : "text-muted"
+        {/* Sub-Filters */}
+        {activeTab !== "messages" && (
+          <View className="px-4 py-2 border-b border-white/5 flex-row gap-2">
+            {activeTab === "pokes" ? (
+              <>
+                <Button
+                  variant={pokeFilter === "received" ? "primary" : "secondary"}
+                  size="sm"
+                  onPress={() => setPokeFilter("received")}
+                  className="h-8"
+                >
+                  Received
+                </Button>
+                <Button
+                  variant={pokeFilter === "sent" ? "primary" : "secondary"}
+                  size="sm"
+                  onPress={() => setPokeFilter("sent")}
+                  className="h-8"
+                >
+                  Sent
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant={
+                    viewFilter === "viewed_you" ? "primary" : "secondary"
+                  }
+                  size="sm"
+                  onPress={() => setViewFilter("viewed_you")}
+                  className="h-8"
+                >
+                  Viewed You
+                </Button>
+                <Button
+                  variant={
+                    viewFilter === "you_viewed" ? "primary" : "secondary"
+                  }
+                  size="sm"
+                  onPress={() => setViewFilter("you_viewed")}
+                  className="h-8"
+                >
+                  You Viewed
+                </Button>
+              </>
+            )}
+          </View>
+        )}
+
+        {/* Content Area */}
+        <View className="flex-1">
+          {activeTab === "messages" &&
+            (connectionsError && connections.length === 0 ? (
+              <ErrorView
+                message={connectionsError || "An error occurred"}
+                onRetry={fetchConnections}
+              />
+            ) : isLoadingConnections && connections.length === 0 ? (
+              <LoadingView />
+            ) : connections.length > 0 ? (
+              <FlatList
+                data={connections}
+                renderItem={renderMessageItem}
+                keyExtractor={(item) => item.chat.id}
+                contentContainerStyle={{ paddingBottom: 20 }}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={isRefreshing}
+                    onRefresh={handleRefresh}
+                    tintColor="#6A1BFF"
+                  />
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={MessageCircle}
+                title="No Conversations Yet"
+                message="Match with someone to start chatting!"
+                action={() => router.push("/(tabs)/swipe" as Href)}
+                actionLabel="Start Swiping"
+              />
+            ))}
+
+          {activeTab === "pokes" &&
+            (activitiesError &&
+            receivedActivities.length === 0 &&
+            sentActivities.length === 0 ? (
+              <ErrorView
+                message={activitiesError || "An error occurred"}
+                onRetry={fetchActivities}
+              />
+            ) : isLoadingActivities ? (
+              <LoadingView />
+            ) : (
+              <FlatList
+                data={pokeFilter === "received" ? receivedPokes : sentPokes}
+                renderItem={({ item }) =>
+                  renderInteractionItem({
+                    item,
+                    type: "poke",
+                    direction:
+                      pokeFilter === "received" ? "incoming" : "outgoing",
+                  })
+                }
+                keyExtractor={(item) => `poke-${item.id}`}
+                contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={isRefreshing}
+                    onRefresh={handleRefresh}
+                    tintColor="#6A1BFF"
+                  />
+                }
+                ListEmptyComponent={
+                  <EmptyState
+                    icon={Hand}
+                    title={
+                      pokeFilter === "received"
+                        ? "No Pokes Received"
+                        : "No Pokes Sent"
                     }
-                  >
-                    {tab.label}
-                  </Typography>
-                </View>
-                {isActive && (
-                  <View className="absolute bottom-0 w-full h-0.5 bg-primary rounded-full" />
-                )}
-              </Pressable>
-            );
-          })}
+                    message={
+                      pokeFilter === "received"
+                        ? "When someone pokes you, they'll appear here!"
+                        : "Poke someone to let them know you're interested!"
+                    }
+                  />
+                }
+              />
+            ))}
+
+          {activeTab === "views" &&
+            (activitiesError &&
+            receivedActivities.length === 0 &&
+            sentActivities.length === 0 ? (
+              <ErrorView
+                message={activitiesError || "An error occurred"}
+                onRetry={fetchActivities}
+              />
+            ) : isLoadingActivities ? (
+              <LoadingView />
+            ) : (
+              <FlatList
+                data={viewFilter === "viewed_you" ? viewedYou : youViewed}
+                renderItem={({ item }) =>
+                  renderInteractionItem({
+                    item,
+                    type: "view",
+                    direction:
+                      viewFilter === "viewed_you" ? "incoming" : "outgoing",
+                  })
+                }
+                keyExtractor={(item) => `view-${item.id}`}
+                contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={isRefreshing}
+                    onRefresh={handleRefresh}
+                    tintColor="#6A1BFF"
+                  />
+                }
+                ListEmptyComponent={
+                  <EmptyState
+                    icon={Eye}
+                    title={
+                      viewFilter === "viewed_you"
+                        ? "No Profile Views Yet"
+                        : "You Haven't Viewed Anyone"
+                    }
+                    message={
+                      viewFilter === "viewed_you"
+                        ? "When someone views your profile, they'll show up here."
+                        : "Start swiping to discover new profiles!"
+                    }
+                  />
+                }
+              />
+            ))}
         </View>
-      </View>
-
-      {/* Sub-Filters */}
-      {activeTab !== "messages" && (
-        <View className="px-4 py-2 bg-background border-b border-surface-elevated flex-row gap-2">
-          {activeTab === "pokes" ? (
-            <>
-              <Button
-                variant={pokeFilter === "received" ? "primary" : "secondary"}
-                size="sm"
-                onPress={() => setPokeFilter("received")}
-                className="h-8"
-              >
-                Received
-              </Button>
-              <Button
-                variant={pokeFilter === "sent" ? "primary" : "secondary"}
-                size="sm"
-                onPress={() => setPokeFilter("sent")}
-                className="h-8"
-              >
-                Sent
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant={viewFilter === "viewed_you" ? "primary" : "secondary"}
-                size="sm"
-                onPress={() => setViewFilter("viewed_you")}
-                className="h-8"
-              >
-                Viewed You
-              </Button>
-              <Button
-                variant={viewFilter === "you_viewed" ? "primary" : "secondary"}
-                size="sm"
-                onPress={() => setViewFilter("you_viewed")}
-                className="h-8"
-              >
-                You Viewed
-              </Button>
-            </>
-          )}
-        </View>
-      )}
-
-      {/* Content Area */}
-      <View className="flex-1">
-        {activeTab === "messages" && (
-          connectionsError && connections.length === 0 ? (
-            <ErrorView message={connectionsError} onRetry={fetchConnections} />
-          ) : isLoadingConnections && connections.length === 0 ? (
-            <LoadingView />
-          ) : connections.length > 0 ? (
-            <FlatList
-              data={connections}
-              renderItem={renderMessageItem}
-              keyExtractor={(item) => item.chat.id}
-              contentContainerStyle={{ paddingBottom: 20 }}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl
-                  refreshing={isRefreshing}
-                  onRefresh={handleRefresh}
-                  tintColor="#7C3AED"
-                />
-              }
-            />
-          ) : (
-            <EmptyState
-              icon={MessageCircle}
-              title="No Conversations Yet"
-              message="Match with someone to start chatting!"
-              action={() => router.push("/(tabs)/swipe" as Href)}
-              actionLabel="Start Swiping"
-            />
-          )
-        )}
-
-        {activeTab === "pokes" && (
-          activitiesError && receivedActivities.length === 0 && sentActivities.length === 0 ? (
-            <ErrorView message={activitiesError} onRetry={fetchActivities} />
-          ) : isLoadingActivities ? (
-            <LoadingView />
-          ) : (
-            <FlatList
-              data={pokeFilter === "received" ? receivedPokes : sentPokes}
-              renderItem={({ item }) =>
-                renderInteractionItem({
-                  item,
-                  type: "poke",
-                  direction:
-                    pokeFilter === "received" ? "incoming" : "outgoing",
-                })
-              }
-              keyExtractor={(item) => `poke-${item.id}`}
-              contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl
-                  refreshing={isRefreshing}
-                  onRefresh={handleRefresh}
-                  tintColor="#7C3AED"
-                />
-              }
-              ListEmptyComponent={
-                <EmptyState
-                  icon={Hand}
-                  title={
-                    pokeFilter === "received"
-                      ? "No Pokes Received"
-                      : "No Pokes Sent"
-                  }
-                  message={
-                    pokeFilter === "received"
-                      ? "When someone pokes you, they'll appear here!"
-                      : "Poke someone to let them know you're interested!"
-                  }
-                />
-              }
-            />
-          )
-        )}
-
-        {activeTab === "views" && (
-          activitiesError && receivedActivities.length === 0 && sentActivities.length === 0 ? (
-            <ErrorView message={activitiesError} onRetry={fetchActivities} />
-          ) : isLoadingActivities ? (
-            <LoadingView />
-          ) : (
-            <FlatList
-              data={viewFilter === "viewed_you" ? viewedYou : youViewed}
-              renderItem={({ item }) =>
-                renderInteractionItem({
-                  item,
-                  type: "view",
-                  direction:
-                    viewFilter === "viewed_you" ? "incoming" : "outgoing",
-                })
-              }
-              keyExtractor={(item) => `view-${item.id}`}
-              contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl
-                  refreshing={isRefreshing}
-                  onRefresh={handleRefresh}
-                  tintColor="#7C3AED"
-                />
-              }
-              ListEmptyComponent={
-                <EmptyState
-                  icon={Eye}
-                  title={
-                    viewFilter === "viewed_you"
-                      ? "No Profile Views Yet"
-                      : "You Haven't Viewed Anyone"
-                  }
-                  message={
-                    viewFilter === "viewed_you"
-                      ? "When someone views your profile, they'll show up here."
-                      : "Start swiping to discover new profiles!"
-                  }
-                />
-              }
-            />
-          )
-        )}
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 

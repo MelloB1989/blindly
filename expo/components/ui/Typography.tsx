@@ -37,27 +37,27 @@ export function Typography({
   ...props
 }: TypographyProps) {
 
-  let styles = "font-inter";
+  let styles = "font-sans"; // Base Lexend-Regular
 
-  // Variant styles
+  // Variant styles - using Lexend font family
   switch (variant) {
     case 'h1':
-      styles += " text-[28px] font-bold leading-tight";
+      styles = "font-lexend-bold text-[28px] leading-tight";
       break;
     case 'h2':
-      styles += " text-[24px] font-semibold leading-snug";
+      styles = "font-lexend-semibold text-[24px] leading-snug";
       break;
     case 'h3':
-      styles += " text-[20px] font-semibold leading-snug";
+      styles = "font-lexend-semibold text-[20px] leading-snug";
       break;
     case 'body':
-      styles += " text-[16px] font-normal leading-relaxed";
+      styles = "font-lexend-regular text-[16px] leading-relaxed";
       break;
     case 'label':
-      styles += " text-[14px] font-medium leading-none";
+      styles = "font-lexend-medium text-[14px] leading-none";
       break;
     case 'caption':
-      styles += " text-[12px] font-normal leading-tight";
+      styles = "font-lexend-regular text-[12px] leading-tight";
       break;
   }
 
