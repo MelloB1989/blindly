@@ -1,5 +1,23 @@
 # blindly
 
+## 0.6.0
+
+### Minor Changes
+
+- 🚀 New Features
+
+  Community Screens & Functionality
+  • Added full community module UI including:
+  • Post listing & details screen (expo/app/community/[id].tsx)
+  • Post cards, comments, upload progress UI
+  • Modal for creating posts with media support
+  • Added community store using Zustand (useCommunityStore.ts)
+  • Added dedicated community service layer for API interactions
+
+  Backend GraphQL Reports Module
+  • New GraphQL schema, resolvers, and handlers for reports
+  (content moderation extension: posts, comments, etc.)
+
 ## 0.4.0
 
 ### Minor Changes
