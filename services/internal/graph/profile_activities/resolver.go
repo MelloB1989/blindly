@@ -38,6 +38,19 @@ func (r *Resolver) CreateProfileActivity(ctx context.Context, typeArg models.Act
 	activityORM := orm.Load(&models.UserProfileActivity{})
 	defer activityORM.Close()
 
+	var ac []models.UserProfileActivity
+	if err := activityORM.GetByFieldsEquals(map[string]any{
+		"UserId":   claims.UserID,
+		"TargetId": targetUserID,
+		"Type":     typeArg,
+	}).Scan(&ac); err != nil {
+		ae.SendRequestError(anal.SERVER_ERROR_500, err)
+		return nil, fmt.Errorf("failed to get user profile activities: %w", err)
+	}
+	if len(ac) > 0 {
+		return nil, fmt.Errorf("activity already exists")
+	}
+
 	if err := activityORM.Insert(profileActivity); err != nil {
 		ae.SendRequestError(anal.SERVER_ERROR_500, err)
 		return nil, fmt.Errorf("failed to create profile activity: %w", err)

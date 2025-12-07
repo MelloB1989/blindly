@@ -46,6 +46,11 @@ func (r *queryResolver) Me(ctx context.Context) (*models.User, error) {
 	return r.UserResolver.Me(ctx)
 }
 
+// User is the resolver for the user field.
+func (r *queryResolver) User(ctx context.Context, id string) (*model.UserPublic, error) {
+	return r.UserResolver.User(ctx, id)
+}
+
 // PersonalityTraits is the resolver for the personality_traits field.
 func (r *userResolver) PersonalityTraits(ctx context.Context, obj *models.User) ([]*model.PersonalityTrait, error) {
 	var traits []*model.PersonalityTrait

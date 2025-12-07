@@ -67,6 +67,9 @@ type UserPublic {
     extra: ExtraMetadata
     created_at: Time!
     is_online: Boolean!
+    is_locked: Boolean!
+    is_poked: Boolean!
+    chat_id: String!
 }
 
 """
@@ -124,6 +127,7 @@ input UpdateUserInput {
 
 extend type Query {
     me: User @auth
+    user(id: String!): UserPublic! @auth
 }
 
 extend type Mutation {

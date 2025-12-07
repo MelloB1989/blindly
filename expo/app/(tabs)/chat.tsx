@@ -106,10 +106,17 @@ export default function ChatScreen() {
   };
 
   // Get filtered activities using store selectors
-  const receivedPokes = getReceivedPokes();
-  const sentPokes = getSentPokes();
-  const viewedYou = getViewedYou();
-  const youViewed = getYouViewed();
+  const [receivedPokes, setReceivedPokes] = useState<UserProfileActivity[]>([]);
+  const [sentPokes, setSentPokes] = useState<UserProfileActivity[]>([]);
+  const [viewedYou, setViewedYou] = useState<UserProfileActivity[]>([]);
+  const [youViewed, setYouViewed] = useState<UserProfileActivity[]>([]);
+
+  useEffect(() => {
+    setReceivedPokes(getReceivedPokes());
+    setSentPokes(getSentPokes());
+    setViewedYou(getViewedYou());
+    setYouViewed(getYouViewed());
+  }, [activeTab]);
 
   // --- Render Components ---
 

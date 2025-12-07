@@ -159,3 +159,21 @@ func (r *Resolver) Me(ctx context.Context) (*models.User, error) {
 
 	return fu, nil
 }
+
+func (r *Resolver) User(ctx context.Context, id string) (*model.UserPublic, error) {
+	claims, ae, err := directives.GetAuthClaims(ctx)
+	if err != nil {
+		ae.SendRequestError(anal.UNAUTHORIZED_401, err)
+		return nil, fmt.Errorf("unauthorized: %w", err)
+	}
+
+	fu, err := users.GetUserPublicById(id, claims.UserID)
+	if err != nil || fu == nil {
+		if err != nil {
+			return nil, err
+		}
+		return nil, errors.New("user not found")
+	}
+
+	return fu, nil
+}

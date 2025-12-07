@@ -60,6 +60,13 @@ type CreatePostInput struct {
 	Media   []*MediaInput `json:"media,omitempty"`
 }
 
+type CreateReportInput struct {
+	TargetID       string        `json:"target_id"`
+	Reason         string        `json:"reason"`
+	AdditionalInfo *string       `json:"additional_info,omitempty"`
+	Media          []*MediaInput `json:"media"`
+}
+
 type CreateUserInput struct {
 	Email       string        `json:"email"`
 	Password    string        `json:"password"`
@@ -197,6 +204,9 @@ type UserPublic struct {
 	Extra             *models.ExtraMetadata `json:"extra,omitempty"`
 	CreatedAt         time.Time             `json:"created_at"`
 	IsOnline          bool                  `json:"is_online"`
+	IsLocked          bool                  `json:"is_locked"`
+	IsPoked           bool                  `json:"is_poked"`
+	ChatID            string                `json:"chat_id"`
 }
 
 type ActivityClass string

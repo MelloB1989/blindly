@@ -21,7 +21,7 @@ type User struct {
 	Photos            []string       `json:"photos" db:"photos"`
 	IsVerified        bool           `json:"is_verified"`
 	Address           Address        `json:"address" db:"address"`
-	Extra             ExtraMetadata  `json:"extra"`
+	Extra             ExtraMetadata  `json:"extra" db:"extra"`
 	CreatedAt         time.Time      `json:"created_at"`
 	UpdatedAt         time.Time      `json:"updated_at"`
 }
@@ -97,4 +97,17 @@ type Swipe struct {
 	TargetId   string    `json:"target_id"`
 	ActionType SwipeType `json:"action_type"` // "like", "superlike", "dislike"
 	CreatedAt  time.Time `json:"created_at"`
+}
+
+type Report struct {
+	TableName      struct{}  `karma_table:"reports"`
+	Id             string    `json:"id" karma:"primary"`
+	UserId         string    `json:"user_id"`
+	TargetId       string    `json:"target_id"`
+	Reason         string    `json:"reason"`
+	AdditionalInfo string    `json:"additional_info"`
+	Media          []Media   `json:"media" db:"media"`
+	Status         string    `json:"status"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }

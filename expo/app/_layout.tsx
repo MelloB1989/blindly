@@ -57,8 +57,8 @@ function RootLayoutNav() {
             hobbies: result.user.hobbies || [],
             personalityTraits: result.user.personality_traits
               ? Object.fromEntries(
-                result.user.personality_traits.map((t) => [t.key, t.value]),
-              )
+                  result.user.personality_traits.map((t) => [t.key, t.value]),
+                )
               : {},
             photos: result.user.photos || [],
             isVerified: result.user.is_verified,
@@ -187,6 +187,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="community/[id]"
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
         name="index"
         options={{
           headerShown: false,
@@ -230,7 +237,14 @@ export default function RootLayout() {
 
   if (!fontsLoaded && !fontError) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#0B0223", alignItems: "center", justifyContent: "center" }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#0B0223",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <ActivityIndicator size="large" color="#6A1BFF" />
       </View>
     );

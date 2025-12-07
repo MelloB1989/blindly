@@ -11,6 +11,7 @@ import {
   json,
   unique,
   boolean,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -51,23 +52,42 @@ export const chats = pgTable("chats", {
   messages: json("messages").default([]),
 });
 
-export const posts = pgTable("posts", {
-  id: varchar("id").primaryKey().notNull(),
-  user_id: varchar("user_id").notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  content: text("content").notNull(),
-  likes: integer("likes").default(0),
-  comments: integer("comments").default(0),
-});
+export const posts = pgTable(
+  "posts",
+  {
+    id: varchar("id").primaryKey().notNull(),
+    user_id: varchar("user_id").notNull(),
+    created_at: timestamp("created_at").defaultNow().notNull(),
+    content: text("content").notNull(),
+    media: json("media").default([]),
+    likes: integer("likes").default(0),
+    comments: integer("comments").default(0),
+    views: integer("views").default(0),
+  },
+  (table) => ({
+    postsUserIdIdx: index("idx_posts_user_id").on(table.user_id),
+    postsCreatedAtIdx: index("idx_posts_created_at").on(table.created_at),
+  }),
+);
 
-export const comments = pgTable("comments", {
-  id: varchar("id").primaryKey().notNull(),
-  post_id: varchar("post_id").notNull(),
-  reply_to_id: varchar("reply_to_id").notNull(),
-  user_id: varchar("user_id").notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  content: text("content").notNull(),
-});
+export const comments = pgTable(
+  "comments",
+  {
+    id: varchar("id").primaryKey().notNull(),
+    post_id: varchar("post_id").notNull(),
+    reply_to_id: varchar("reply_to_id").notNull(),
+    user_id: varchar("user_id").notNull(),
+    created_at: timestamp("created_at").defaultNow().notNull(),
+    content: text("content").notNull(),
+    likes: integer("likes").default(0),
+  },
+  (table) => ({
+    commentsPostIdIdx: index("idx_comments_post_id").on(table.post_id),
+    commentsReplyToIdIdx: index("idx_comments_reply_to_id").on(
+      table.reply_to_id,
+    ),
+  }),
+);
 
 export const user_files = pgTable("user_files", {
   id: varchar("id").primaryKey().notNull(),
@@ -93,4 +113,16 @@ export const swipes = pgTable("swipes", {
   target_id: varchar("target_id").notNull(),
   action_type: varchar("action_type").notNull(), // "like", "superlike", "dislike"
   created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const reports = pgTable("reports", {
+  id: varchar("id").primaryKey().notNull(),
+  user_id: varchar("user_id").notNull(),
+  target_id: varchar("target_id").notNull(), // user_id, post_id, comment_id
+  reason: varchar("reason").notNull(),
+  additional_info: varchar("additional_info").notNull(),
+  media: json("media").default([]),
+  status: varchar("status").notNull(), // "pending", "resolved", "rejected"
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });

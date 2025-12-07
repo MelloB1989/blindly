@@ -1,5 +1,12 @@
 import React from "react";
-import { View, Image, StyleSheet, ViewStyle, Text } from "react-native";
+import {
+  View,
+  Image,
+  StyleSheet,
+  ViewStyle,
+  Text,
+  Platform,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 
@@ -44,7 +51,12 @@ export const Avatar: React.FC<AvatarProps> = ({
     <View
       style={[
         styles.innerContainer,
-        { borderRadius: radius - 2, backgroundColor: "#1A0244" },
+        {
+          borderRadius: radius - 2,
+          backgroundColor: "#17102E", // improved surface
+          borderColor: "rgba(255,255,255,0.03)",
+          borderWidth: 1,
+        },
       ]}
       className={className}
     >
@@ -60,12 +72,23 @@ export const Avatar: React.FC<AvatarProps> = ({
             resizeMode="cover"
           />
           {locked && (
-            <BlurView intensity={30} tint="dark" style={styles.blurOverlay} />
+            <BlurView
+              intensity={Platform.OS === "ios" ? 30 : 20}
+              tint="dark"
+              style={styles.blurOverlay}
+            >
+              {/* optional lock icon center could go here */}
+            </BlurView>
           )}
         </>
       ) : (
-        <View style={styles.fallback}>
-          <Text style={[styles.fallbackText, { fontSize: dimension / 2.5 }]}>
+        <View style={[styles.fallback, { borderRadius: radius - 2 }]}>
+          <Text
+            style={[
+              styles.fallbackText,
+              { fontSize: Math.round(dimension / 2.6) },
+            ]}
+          >
             {fallback.charAt(0).toUpperCase()}
           </Text>
         </View>
@@ -84,7 +107,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     >
       {bordered ? (
         <LinearGradient
-          colors={["#6A1BFF", "#FF4C61"]}
+          colors={["#6D28D9", "#A78BFA"]} // soft brand purple -> light violet
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.borderGradient, { borderRadius: radius }]}
@@ -119,12 +142,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2A1A4D",
+    backgroundColor: "#1C1433", // improved fallback surface (deep violet)
     width: "100%",
     height: "100%",
   },
   fallbackText: {
-    color: "#FFFFFF",
+    color: "#F5F3FF", // warm white, less harsh than pure #FFF
     fontWeight: "700",
   },
   blurOverlay: {
@@ -135,12 +158,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: "center",
     justifyContent: "center",
+    // tint already handled by BlurView 'tint' prop
   },
   glowEffect: {
-    shadowColor: "#6A1BFF",
+    // softer, wide purple glow for dark backgrounds
+    shadowColor: "#7C3AED",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.55,
+    shadowRadius: 18,
+    elevation: 12,
+    // Android: emulate glow with a translucent border (optional)
+    borderWidth: Platform.OS === "android" ? 0.6 : 0,
+    borderColor: "rgba(124,58,237,0.12)",
   },
 });

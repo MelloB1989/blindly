@@ -77,6 +77,10 @@ models:
   Comment:
     model: blindly/internal/models.Comment
 
+  # Report models
+  Report:
+    model: blindly/internal/models.Report
+
 directives:
   auth:
     implementation: "directives.AuthDirective"

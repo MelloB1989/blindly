@@ -251,30 +251,29 @@ func GetFeedPosts(userID string, limit int, offset int) ([]*models.Post, int, er
 
 	query := `
 		SELECT p.* FROM posts p
-		INNER JOIN matches m ON (
-			(m.she_id = $1 AND p.user_id = m.he_id) OR
-			(m.he_id = $1 AND p.user_id = m.she_id)
+		LEFT JOIN matches m ON (
+			(m.she_id = $1 AND p.user_id = m.he_id AND m.is_unlocked = true) OR
+			(m.he_id = $1 AND p.user_id = m.she_id AND m.is_unlocked = true)
 		)
-		WHERE m.is_unlocked = true
-		ORDER BY p.created_at DESC
+		ORDER BY
+			CASE
+				WHEN p.user_id = $1 THEN 3
+				WHEN m.id IS NOT NULL THEN 2
+				ELSE 1
+			END DESC,
+			p.created_at DESC
 		LIMIT $2 OFFSET $3
 	`
 
-	countQuery := `
-		SELECT COUNT(*) FROM posts p
-		INNER JOIN matches m ON (
-			(m.she_id = $1 AND p.user_id = m.he_id) OR
-			(m.he_id = $1 AND p.user_id = m.she_id)
-		)
-		WHERE m.is_unlocked = true
-	`
+	countQuery := `SELECT COUNT(*) FROM posts`
 
 	total := 0
 	db, dbErr := database.PostgresConn()
 	if dbErr == nil {
 		defer db.Close()
-		_ = db.QueryRow(countQuery, userID).Scan(&total)
+		_ = db.QueryRow(countQuery).Scan(&total)
 	}
+	defer db.Close()
 
 	var postsRaw []models.Post
 	err := postORM.QueryRaw(query, userID, limit, offset).Scan(&postsRaw)

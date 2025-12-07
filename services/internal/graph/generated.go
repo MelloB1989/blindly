@@ -138,6 +138,7 @@ type ComplexityRoot struct {
 		CreateComment         func(childComplexity int, input model.CreateCommentInput) int
 		CreatePost            func(childComplexity int, input model.CreatePostInput) int
 		CreateProfileActivity func(childComplexity int, typeArg models.ActivityType, targetUserID string) int
+		CreateReport          func(childComplexity int, input model.CreateReportInput) int
 		CreateUser            func(childComplexity int, input model.CreateUserInput) int
 		DeleteComment         func(childComplexity int, commentID string) int
 		DeletePost            func(childComplexity int, postID string) int
@@ -202,6 +203,7 @@ type ComplexityRoot struct {
 		MySwipes          func(childComplexity int) int
 		ProfileActivities func(childComplexity int, class *model.ActivityClass) int
 		Recommendations   func(childComplexity int, cursor *string, limit *int32) int
+		User              func(childComplexity int, id string) int
 	}
 
 	RecommendationsResult struct {
@@ -218,6 +220,18 @@ type ComplexityRoot struct {
 		MatchScore         func(childComplexity int) int
 		Profile            func(childComplexity int) int
 		Reason             func(childComplexity int) int
+	}
+
+	Report struct {
+		AdditionalInfo func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Id             func(childComplexity int) int
+		Media          func(childComplexity int) int
+		Reason         func(childComplexity int) int
+		Status         func(childComplexity int) int
+		TargetId       func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
+		UserId         func(childComplexity int) int
 	}
 
 	Swipe struct {
@@ -268,6 +282,7 @@ type ComplexityRoot struct {
 
 	UserPublic struct {
 		Bio               func(childComplexity int) int
+		ChatID            func(childComplexity int) int
 		CreatedAt         func(childComplexity int) int
 		Dob               func(childComplexity int) int
 		Extra             func(childComplexity int) int
@@ -275,7 +290,9 @@ type ComplexityRoot struct {
 		Hobbies           func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Interests         func(childComplexity int) int
+		IsLocked          func(childComplexity int) int
 		IsOnline          func(childComplexity int) int
+		IsPoked           func(childComplexity int) int
 		IsVerified        func(childComplexity int) int
 		Name              func(childComplexity int) int
 		PersonalityTraits func(childComplexity int) int
@@ -306,6 +323,7 @@ type MutationResolver interface {
 	ToggleCommentLike(ctx context.Context, commentID string) (*models.Comment, error)
 	IncrementPostView(ctx context.Context, postID string) (*models.Post, error)
 	CreateProfileActivity(ctx context.Context, typeArg models.ActivityType, targetUserID string) (*models.UserProfileActivity, error)
+	CreateReport(ctx context.Context, input model.CreateReportInput) (*models.Report, error)
 	Swipe(ctx context.Context, targetID string, actionType models.SwipeType) (*model.SwipeResponse, error)
 	CreateUser(ctx context.Context, input model.CreateUserInput) (*model.AuthPayload, error)
 	LoginWithPassword(ctx context.Context, email string, password string) (*model.AuthPayload, error)
@@ -336,6 +354,7 @@ type QueryResolver interface {
 	Recommendations(ctx context.Context, cursor *string, limit *int32) (*model.RecommendationsResult, error)
 	MySwipes(ctx context.Context) ([]*model.SwipedProfile, error)
 	Me(ctx context.Context) (*models.User, error)
+	User(ctx context.Context, id string) (*model.UserPublic, error)
 }
 type UserResolver interface {
 	PersonalityTraits(ctx context.Context, obj *models.User) ([]*model.PersonalityTrait, error)
@@ -710,6 +729,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreateProfileActivity(childComplexity, args["type"].(models.ActivityType), args["target_user_id"].(string)), true
+	case "Mutation.createReport":
+		if e.complexity.Mutation.CreateReport == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createReport_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateReport(childComplexity, args["input"].(model.CreateReportInput)), true
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
 			break
@@ -1097,6 +1127,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Recommendations(childComplexity, args["cursor"].(*string), args["limit"].(*int32)), true
+	case "Query.user":
+		if e.complexity.Query.User == nil {
+			break
+		}
+
+		args, err := ec.field_Query_user_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.User(childComplexity, args["id"].(string)), true
 
 	case "RecommendationsResult.fetched_at":
 		if e.complexity.RecommendationsResult.FetchedAt == nil {
@@ -1159,6 +1200,61 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.RecommendedProfile.Reason(childComplexity), true
+
+	case "Report.additional_info":
+		if e.complexity.Report.AdditionalInfo == nil {
+			break
+		}
+
+		return e.complexity.Report.AdditionalInfo(childComplexity), true
+	case "Report.created_at":
+		if e.complexity.Report.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Report.CreatedAt(childComplexity), true
+	case "Report.id":
+		if e.complexity.Report.Id == nil {
+			break
+		}
+
+		return e.complexity.Report.Id(childComplexity), true
+	case "Report.media":
+		if e.complexity.Report.Media == nil {
+			break
+		}
+
+		return e.complexity.Report.Media(childComplexity), true
+	case "Report.reason":
+		if e.complexity.Report.Reason == nil {
+			break
+		}
+
+		return e.complexity.Report.Reason(childComplexity), true
+	case "Report.status":
+		if e.complexity.Report.Status == nil {
+			break
+		}
+
+		return e.complexity.Report.Status(childComplexity), true
+	case "Report.target_id":
+		if e.complexity.Report.TargetId == nil {
+			break
+		}
+
+		return e.complexity.Report.TargetId(childComplexity), true
+	case "Report.updated_at":
+		if e.complexity.Report.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Report.UpdatedAt(childComplexity), true
+	case "Report.user_id":
+		if e.complexity.Report.UserId == nil {
+			break
+		}
+
+		return e.complexity.Report.UserId(childComplexity), true
 
 	case "Swipe.action_type":
 		if e.complexity.Swipe.ActionType == nil {
@@ -1357,6 +1453,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.UserPublic.Bio(childComplexity), true
+	case "UserPublic.chat_id":
+		if e.complexity.UserPublic.ChatID == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.ChatID(childComplexity), true
 	case "UserPublic.created_at":
 		if e.complexity.UserPublic.CreatedAt == nil {
 			break
@@ -1399,12 +1501,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.UserPublic.Interests(childComplexity), true
+	case "UserPublic.is_locked":
+		if e.complexity.UserPublic.IsLocked == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.IsLocked(childComplexity), true
 	case "UserPublic.is_online":
 		if e.complexity.UserPublic.IsOnline == nil {
 			break
 		}
 
 		return e.complexity.UserPublic.IsOnline(childComplexity), true
+	case "UserPublic.is_poked":
+		if e.complexity.UserPublic.IsPoked == nil {
+			break
+		}
+
+		return e.complexity.UserPublic.IsPoked(childComplexity), true
 	case "UserPublic.is_verified":
 		if e.complexity.UserPublic.IsVerified == nil {
 			break
@@ -1454,6 +1568,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCommentFilterInput,
 		ec.unmarshalInputCreateCommentInput,
 		ec.unmarshalInputCreatePostInput,
+		ec.unmarshalInputCreateReportInput,
 		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputMediaInput,
 		ec.unmarshalInputPersonalityTraitInput,
@@ -1558,7 +1673,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "chats/chats.graphqls" "community/community.graphqls" "profile_activities/profile.activities.graphqls" "schema.graphqls" "swipes/swipes.graphqls" "users/users.graphqls"
+//go:embed "chats/chats.graphqls" "community/community.graphqls" "profile_activities/profile.activities.graphqls" "reports/reports.graphqls" "schema.graphqls" "swipes/swipes.graphqls" "users/users.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1573,6 +1688,7 @@ var sources = []*ast.Source{
 	{Name: "chats/chats.graphqls", Input: sourceData("chats/chats.graphqls"), BuiltIn: false},
 	{Name: "community/community.graphqls", Input: sourceData("community/community.graphqls"), BuiltIn: false},
 	{Name: "profile_activities/profile.activities.graphqls", Input: sourceData("profile_activities/profile.activities.graphqls"), BuiltIn: false},
+	{Name: "reports/reports.graphqls", Input: sourceData("reports/reports.graphqls"), BuiltIn: false},
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
 	{Name: "swipes/swipes.graphqls", Input: sourceData("swipes/swipes.graphqls"), BuiltIn: false},
 	{Name: "users/users.graphqls", Input: sourceData("users/users.graphqls"), BuiltIn: false},
@@ -1596,6 +1712,17 @@ func (ec *executionContext) field_Mutation_createProfileActivity_args(ctx contex
 		return nil, err
 	}
 	args["target_user_id"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createReport_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateReportInput2blindlyᚋinternalᚋgraphᚋmodelᚐCreateReportInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -1925,6 +2052,17 @@ func (ec *executionContext) field_Query_recommendations_args(ctx context.Context
 		return nil, err
 	}
 	args["limit"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -2536,6 +2674,12 @@ func (ec *executionContext) fieldContext_Comment_user(_ context.Context, field g
 				return ec.fieldContext_UserPublic_created_at(ctx, field)
 			case "is_online":
 				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			case "is_locked":
+				return ec.fieldContext_UserPublic_is_locked(ctx, field)
+			case "is_poked":
+				return ec.fieldContext_UserPublic_is_poked(ctx, field)
+			case "chat_id":
+				return ec.fieldContext_UserPublic_chat_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
 		},
@@ -2912,6 +3056,12 @@ func (ec *executionContext) fieldContext_Connection_connection_profile(_ context
 				return ec.fieldContext_UserPublic_created_at(ctx, field)
 			case "is_online":
 				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			case "is_locked":
+				return ec.fieldContext_UserPublic_is_locked(ctx, field)
+			case "is_poked":
+				return ec.fieldContext_UserPublic_is_poked(ctx, field)
+			case "chat_id":
+				return ec.fieldContext_UserPublic_chat_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
 		},
@@ -4250,6 +4400,76 @@ func (ec *executionContext) fieldContext_Mutation_createProfileActivity(ctx cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createReport(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createReport,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().CreateReport(ctx, fc.Args["input"].(model.CreateReportInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNReport2ᚖblindlyᚋinternalᚋmodelsᚐReport,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createReport(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Report_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_Report_user_id(ctx, field)
+			case "target_id":
+				return ec.fieldContext_Report_target_id(ctx, field)
+			case "reason":
+				return ec.fieldContext_Report_reason(ctx, field)
+			case "additional_info":
+				return ec.fieldContext_Report_additional_info(ctx, field)
+			case "media":
+				return ec.fieldContext_Report_media(ctx, field)
+			case "status":
+				return ec.fieldContext_Report_status(ctx, field)
+			case "created_at":
+				return ec.fieldContext_Report_created_at(ctx, field)
+			case "updated_at":
+				return ec.fieldContext_Report_updated_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Report", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createReport_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_swipe(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5090,6 +5310,12 @@ func (ec *executionContext) fieldContext_Post_user(_ context.Context, field grap
 				return ec.fieldContext_UserPublic_created_at(ctx, field)
 			case "is_online":
 				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			case "is_locked":
+				return ec.fieldContext_UserPublic_is_locked(ctx, field)
+			case "is_poked":
+				return ec.fieldContext_UserPublic_is_poked(ctx, field)
+			case "chat_id":
+				return ec.fieldContext_UserPublic_chat_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
 		},
@@ -5969,6 +6195,94 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_user,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().User(ctx, fc.Args["id"].(string))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNUserPublic2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐUserPublic,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserPublic_id(ctx, field)
+			case "name":
+				return ec.fieldContext_UserPublic_name(ctx, field)
+			case "pfp":
+				return ec.fieldContext_UserPublic_pfp(ctx, field)
+			case "bio":
+				return ec.fieldContext_UserPublic_bio(ctx, field)
+			case "dob":
+				return ec.fieldContext_UserPublic_dob(ctx, field)
+			case "gender":
+				return ec.fieldContext_UserPublic_gender(ctx, field)
+			case "hobbies":
+				return ec.fieldContext_UserPublic_hobbies(ctx, field)
+			case "interests":
+				return ec.fieldContext_UserPublic_interests(ctx, field)
+			case "user_prompts":
+				return ec.fieldContext_UserPublic_user_prompts(ctx, field)
+			case "personality_traits":
+				return ec.fieldContext_UserPublic_personality_traits(ctx, field)
+			case "photos":
+				return ec.fieldContext_UserPublic_photos(ctx, field)
+			case "is_verified":
+				return ec.fieldContext_UserPublic_is_verified(ctx, field)
+			case "extra":
+				return ec.fieldContext_UserPublic_extra(ctx, field)
+			case "created_at":
+				return ec.fieldContext_UserPublic_created_at(ctx, field)
+			case "is_online":
+				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			case "is_locked":
+				return ec.fieldContext_UserPublic_is_locked(ctx, field)
+			case "is_poked":
+				return ec.fieldContext_UserPublic_is_poked(ctx, field)
+			case "chat_id":
+				return ec.fieldContext_UserPublic_chat_id(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_user_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6261,6 +6575,12 @@ func (ec *executionContext) fieldContext_RecommendedProfile_profile(_ context.Co
 				return ec.fieldContext_UserPublic_created_at(ctx, field)
 			case "is_online":
 				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			case "is_locked":
+				return ec.fieldContext_UserPublic_is_locked(ctx, field)
+			case "is_poked":
+				return ec.fieldContext_UserPublic_is_poked(ctx, field)
+			case "chat_id":
+				return ec.fieldContext_UserPublic_chat_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
 		},
@@ -6408,6 +6728,277 @@ func (ec *executionContext) fieldContext_RecommendedProfile_reason(_ context.Con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Report_id(ctx context.Context, field graphql.CollectedField, obj *models.Report) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Report_id,
+		func(ctx context.Context) (any, error) {
+			return obj.Id, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Report_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Report",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Report_user_id(ctx context.Context, field graphql.CollectedField, obj *models.Report) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Report_user_id,
+		func(ctx context.Context) (any, error) {
+			return obj.UserId, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Report_user_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Report",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Report_target_id(ctx context.Context, field graphql.CollectedField, obj *models.Report) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Report_target_id,
+		func(ctx context.Context) (any, error) {
+			return obj.TargetId, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Report_target_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Report",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Report_reason(ctx context.Context, field graphql.CollectedField, obj *models.Report) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Report_reason,
+		func(ctx context.Context) (any, error) {
+			return obj.Reason, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Report_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Report",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Report_additional_info(ctx context.Context, field graphql.CollectedField, obj *models.Report) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Report_additional_info,
+		func(ctx context.Context) (any, error) {
+			return obj.AdditionalInfo, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Report_additional_info(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Report",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Report_media(ctx context.Context, field graphql.CollectedField, obj *models.Report) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Report_media,
+		func(ctx context.Context) (any, error) {
+			return obj.Media, nil
+		},
+		nil,
+		ec.marshalNMedia2ᚕblindlyᚋinternalᚋmodelsᚐMedia,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Report_media(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Report",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Media_id(ctx, field)
+			case "url":
+				return ec.fieldContext_Media_url(ctx, field)
+			case "type":
+				return ec.fieldContext_Media_type(ctx, field)
+			case "created_at":
+				return ec.fieldContext_Media_created_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Media", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Report_status(ctx context.Context, field graphql.CollectedField, obj *models.Report) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Report_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Report_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Report",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Report_created_at(ctx context.Context, field graphql.CollectedField, obj *models.Report) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Report_created_at,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Report_created_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Report",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Report_updated_at(ctx context.Context, field graphql.CollectedField, obj *models.Report) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Report_updated_at,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Report_updated_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Report",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6698,6 +7289,12 @@ func (ec *executionContext) fieldContext_SwipedProfile_profile(_ context.Context
 				return ec.fieldContext_UserPublic_created_at(ctx, field)
 			case "is_online":
 				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			case "is_locked":
+				return ec.fieldContext_UserPublic_is_locked(ctx, field)
+			case "is_poked":
+				return ec.fieldContext_UserPublic_is_poked(ctx, field)
+			case "chat_id":
+				return ec.fieldContext_UserPublic_chat_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
 		},
@@ -7422,6 +8019,12 @@ func (ec *executionContext) fieldContext_UserProfileActivity_target_user(_ conte
 				return ec.fieldContext_UserPublic_created_at(ctx, field)
 			case "is_online":
 				return ec.fieldContext_UserPublic_is_online(ctx, field)
+			case "is_locked":
+				return ec.fieldContext_UserPublic_is_locked(ctx, field)
+			case "is_poked":
+				return ec.fieldContext_UserPublic_is_poked(ctx, field)
+			case "chat_id":
+				return ec.fieldContext_UserPublic_chat_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserPublic", field.Name)
 		},
@@ -7920,6 +8523,93 @@ func (ec *executionContext) fieldContext_UserPublic_is_online(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_is_locked(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_is_locked,
+		func(ctx context.Context) (any, error) {
+			return obj.IsLocked, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_is_locked(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_is_poked(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_is_poked,
+		func(ctx context.Context) (any, error) {
+			return obj.IsPoked, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_is_poked(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPublic_chat_id(ctx context.Context, field graphql.CollectedField, obj *model.UserPublic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserPublic_chat_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ChatID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserPublic_chat_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPublic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9563,6 +10253,54 @@ func (ec *executionContext) unmarshalInputCreatePostInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateReportInput(ctx context.Context, obj any) (model.CreateReportInput, error) {
+	var it model.CreateReportInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"target_id", "reason", "additional_info", "media"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "target_id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("target_id"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TargetID = data
+		case "reason":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reason"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Reason = data
+		case "additional_info":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("additional_info"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AdditionalInfo = data
+		case "media":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("media"))
+			data, err := ec.unmarshalNMediaInput2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐMediaInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Media = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, obj any) (model.CreateUserInput, error) {
 	var it model.CreateUserInput
 	asMap := map[string]any{}
@@ -10784,6 +11522,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createReport":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createReport(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "swipe":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_swipe(ctx, field)
@@ -11563,6 +12308,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "user":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_user(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -11680,6 +12447,85 @@ func (ec *executionContext) _RecommendedProfile(ctx context.Context, sel ast.Sel
 			out.Values[i] = ec._RecommendedProfile_distance_km(ctx, field, obj)
 		case "reason":
 			out.Values[i] = ec._RecommendedProfile_reason(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var reportImplementors = []string{"Report"}
+
+func (ec *executionContext) _Report(ctx context.Context, sel ast.SelectionSet, obj *models.Report) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reportImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Report")
+		case "id":
+			out.Values[i] = ec._Report_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "user_id":
+			out.Values[i] = ec._Report_user_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "target_id":
+			out.Values[i] = ec._Report_target_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reason":
+			out.Values[i] = ec._Report_reason(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "additional_info":
+			out.Values[i] = ec._Report_additional_info(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "media":
+			out.Values[i] = ec._Report_media(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._Report_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "created_at":
+			out.Values[i] = ec._Report_created_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updated_at":
+			out.Values[i] = ec._Report_updated_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12174,6 +13020,21 @@ func (ec *executionContext) _UserPublic(ctx context.Context, sel ast.SelectionSe
 			}
 		case "is_online":
 			out.Values[i] = ec._UserPublic_is_online(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "is_locked":
+			out.Values[i] = ec._UserPublic_is_locked(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "is_poked":
+			out.Values[i] = ec._UserPublic_is_poked(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "chat_id":
+			out.Values[i] = ec._UserPublic_chat_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -12721,6 +13582,11 @@ func (ec *executionContext) unmarshalNCreatePostInput2blindlyᚋinternalᚋgraph
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateReportInput2blindlyᚋinternalᚋgraphᚋmodelᚐCreateReportInput(ctx context.Context, v any) (model.CreateReportInput, error) {
+	res, err := ec.unmarshalInputCreateReportInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateUserInput2blindlyᚋinternalᚋgraphᚋmodelᚐCreateUserInput(ctx context.Context, v any) (model.CreateUserInput, error) {
 	res, err := ec.unmarshalInputCreateUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -12820,6 +13686,21 @@ func (ec *executionContext) marshalNMedia2ᚕblindlyᚋinternalᚋmodelsᚐMedia
 	wg.Wait()
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalNMediaInput2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐMediaInput(ctx context.Context, v any) ([]*model.MediaInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.MediaInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOMediaInput2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐMediaInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalNMediaType2blindlyᚋinternalᚋgraphᚋmodelᚐMediaType(ctx context.Context, v any) (model.MediaType, error) {
@@ -13037,6 +13918,20 @@ func (ec *executionContext) marshalNRecommendedProfile2ᚖblindlyᚋinternalᚋg
 		return graphql.Null
 	}
 	return ec._RecommendedProfile(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNReport2blindlyᚋinternalᚋmodelsᚐReport(ctx context.Context, sel ast.SelectionSet, v models.Report) graphql.Marshaler {
+	return ec._Report(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNReport2ᚖblindlyᚋinternalᚋmodelsᚐReport(ctx context.Context, sel ast.SelectionSet, v *models.Report) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Report(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNSortOrder2blindlyᚋinternalᚋgraphᚋmodelᚐSortOrder(ctx context.Context, v any) (model.SortOrder, error) {
