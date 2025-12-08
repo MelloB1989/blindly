@@ -39,6 +39,13 @@ export interface ButtonProps extends PressableProps {
   icon?: React.ReactNode;
 
   /**
+   * Position of the icon relative to the text.
+   * - left: Before the text (default)
+   * - right: After the text
+   */
+  iconPosition?: "left" | "right";
+
+  /**
    * The text content of the button.
    */
   children?: React.ReactNode;
@@ -52,6 +59,7 @@ export function Button({
   loading = false,
   disabled = false,
   icon,
+  iconPosition = "left",
   children,
   className = "",
   style,
@@ -138,7 +146,10 @@ export function Button({
         />
       ) : (
         <>
-          {icon && <View className="mr-2">{icon}</View>}
+          {icon && iconPosition === "left" && (
+            <View className="mr-2">{icon}</View>
+          )}
+
           {typeof children === "string" ? (
             <Typography
               variant={textVariant}
@@ -149,6 +160,10 @@ export function Button({
             </Typography>
           ) : (
             children
+          )}
+
+          {icon && iconPosition === "right" && (
+            <View className="ml-2">{icon}</View>
           )}
         </>
       )}

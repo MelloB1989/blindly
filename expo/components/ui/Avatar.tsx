@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
   glowEffect: {
     // softer, wide purple glow for dark backgrounds
-    shadowColor: "#7C3AED",
+    // shadowColor: "#7C3AED",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.55,
     shadowRadius: 18,

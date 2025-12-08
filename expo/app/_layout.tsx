@@ -194,6 +194,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="(modals)/edit-profile"
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
         name="index"
         options={{
           headerShown: false,

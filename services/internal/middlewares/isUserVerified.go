@@ -56,6 +56,7 @@ func IsUserVerified(c *fiber.Ctx) error {
 		c.Locals("uid", claims.UserID)
 		c.Locals("email", claims.Email)
 		c.Locals("gender", claims.Gender)
+		c.Locals("age", claims.Age)
 		c.Locals("exp", time.Unix(claims.ExpiresAt, 0))
 		c.Locals("name", claims.Name)
 		c.Locals("pfp", claims.Pfp)

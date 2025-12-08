@@ -14,8 +14,24 @@ export interface UserProfile {
   hobbies: string[];
   personalityTraits: Record<string, number>;
   photos: string[];
+  interests?: string[];
+  user_prompts?: string[];
   isVerified: boolean;
   isPhotosRevealed: boolean;
+  extra?: {
+    school?: string;
+    work?: string;
+    looking_for?: string[];
+    zodiac?: string;
+    languages?: string[];
+    excercise?: string;
+    drinking?: string;
+    smoking?: string;
+    kids?: string;
+    religion?: string;
+    ethnicity?: string;
+    sexuality?: string;
+  };
 }
 
 export interface ProfileCard {
@@ -177,14 +193,14 @@ interface InteractionState {
 
 interface AppState
   extends
-    AuthState,
-    OnboardingState,
-    DiscoveryState,
-    MatchState,
-    ChatState,
-    SocialState,
-    AIState,
-    InteractionState {
+  AuthState,
+  OnboardingState,
+  DiscoveryState,
+  MatchState,
+  ChatState,
+  SocialState,
+  AIState,
+  InteractionState {
   // Auth Actions
   setUser: (user: UserProfile) => void;
   setAccessToken: (token: string | null) => void;
@@ -496,13 +512,13 @@ export const useStore = create<AppState>()(
           activeChat:
             state.activeChat?.id === chatId
               ? {
-                  ...state.activeChat,
-                  messages: [...state.activeChat.messages, message],
-                  messagesCount: state.activeChat.messagesCount + 1,
-                  canUnlock:
-                    state.activeChat.messagesCount + 1 >=
-                    state.activeChat.messagesRequired,
-                }
+                ...state.activeChat,
+                messages: [...state.activeChat.messages, message],
+                messagesCount: state.activeChat.messagesCount + 1,
+                canUnlock:
+                  state.activeChat.messagesCount + 1 >=
+                  state.activeChat.messagesRequired,
+              }
               : state.activeChat,
         })),
 
@@ -518,9 +534,9 @@ export const useStore = create<AppState>()(
           chats: state.chats.map((chat) =>
             chat.id === chatId
               ? {
-                  ...chat,
-                  otherUser: { ...chat.otherUser, isRevealed: true },
-                }
+                ...chat,
+                otherUser: { ...chat.otherUser, isRevealed: true },
+              }
               : chat,
           ),
         })),
@@ -538,10 +554,10 @@ export const useStore = create<AppState>()(
           posts: state.posts.map((post) =>
             post.id === postId
               ? {
-                  ...post,
-                  isLiked: !post.isLiked,
-                  likes: post.isLiked ? post.likes - 1 : post.likes + 1,
-                }
+                ...post,
+                isLiked: !post.isLiked,
+                likes: post.isLiked ? post.likes - 1 : post.likes + 1,
+              }
               : post,
           ),
         })),
@@ -551,12 +567,12 @@ export const useStore = create<AppState>()(
           posts: state.posts.map((post) =>
             post.id === postId
               ? {
-                  ...post,
-                  isReposted: !post.isReposted,
-                  reposts: post.isReposted
-                    ? post.reposts - 1
-                    : post.reposts + 1,
-                }
+                ...post,
+                isReposted: !post.isReposted,
+                reposts: post.isReposted
+                  ? post.reposts - 1
+                  : post.reposts + 1,
+              }
               : post,
           ),
         })),

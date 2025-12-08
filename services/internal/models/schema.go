@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"github.com/MelloB1989/karma/models"
 )
 
 type User struct {
@@ -110,4 +112,23 @@ type Report struct {
 	Status         string    `json:"status"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type AIChat struct {
+	TableName string             `karma_table:"aichat_chats" json:"-"`
+	Id        string             `json:"id" karma:"primary"`
+	UserId    string             `json:"user_id"`
+	Messages  []models.AIMessage `json:"messages" db:"messages"`
+	Title     string             `json:"title"`
+	CreatedAt time.Time          `json:"created_at"`
+}
+
+type UserVerification struct {
+	TableName string    `karma_table:"user_verifications" json:"-"`
+	Id        string    `json:"id" karma:"primary"`
+	UserId    string    `json:"user_id"`
+	Media     []Media   `json:"media" db:"media"`
+	Status    string    `json:"status"` // "pending", "verified", "failed"
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

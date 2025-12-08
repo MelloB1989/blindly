@@ -309,6 +309,30 @@ const UPDATE_ME_MUTATION = gql`
   }
 `;
 
+// ============= Verification =============
+
+const CREATE_VERIFICATION_MUTATION = gql`
+  mutation CreateVerification($input: UserVerificationInput!) {
+    createVerification(input: $input) {
+      id
+      user_id
+      status
+      created_at
+    }
+  }
+`;
+
+const GET_VERIFICATION_STATUS_QUERY = gql`
+  query GetUserVerificationStatus($id: String!) {
+    getUserVerificationStatus(id: $id) {
+      id
+      status
+      created_at
+      updated_at
+    }
+  }
+`;
+
 // ============= Types =============
 
 export interface CreateUserInput {
@@ -742,6 +766,63 @@ class GraphQLAuthService {
    */
   async getStoredUser(): Promise<GraphQLUser | null> {
     return getStoredUser();
+  }
+
+  /**
+   * Create a verification request
+   * MediaInput requires: id, url, type (IMAGE|VIDEO|AUDIO|FILE), created_at
+   */
+  async createVerification(photoUri: string): Promise<{ success: boolean; verificationId?: string; error?: string }> {
+    try {
+      // Build media array with all required fields
+      const media = [{
+        id: `verification_${Date.now()}`,
+        url: photoUri,
+        type: "IMAGE" as const,
+        created_at: new Date().toISOString(),
+      }];
+
+      const result = await graphqlClient
+        .mutation(CREATE_VERIFICATION_MUTATION, { input: { media } })
+        .toPromise();
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      return {
+        success: true,
+        verificationId: result.data.createVerification.id,
+      };
+    } catch (error) {
+      console.error("Create Verification Error:", error);
+      const message = error instanceof Error ? error.message : "Failed to create verification";
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * Get verification status for user
+   */
+  async getVerificationStatus(userId: string): Promise<{ success: boolean; status?: string; error?: string }> {
+    try {
+      const result = await graphqlClient
+        .query(GET_VERIFICATION_STATUS_QUERY, { id: userId })
+        .toPromise();
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      return {
+        success: true,
+        status: result.data.getUserVerificationStatus.status,
+      };
+    } catch (error) {
+      console.error("Get Verification Status Error:", error);
+      const message = error instanceof Error ? error.message : "Failed to get status";
+      return { success: false, error: message };
+    }
   }
 }
 

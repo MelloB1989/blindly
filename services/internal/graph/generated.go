@@ -140,6 +140,7 @@ type ComplexityRoot struct {
 		CreateProfileActivity func(childComplexity int, typeArg models.ActivityType, targetUserID string) int
 		CreateReport          func(childComplexity int, input model.CreateReportInput) int
 		CreateUser            func(childComplexity int, input model.CreateUserInput) int
+		CreateVerification    func(childComplexity int, input model.UserVerificationInput) int
 		DeleteComment         func(childComplexity int, commentID string) int
 		DeletePost            func(childComplexity int, postID string) int
 		IncrementPostView     func(childComplexity int, postID string) int
@@ -192,18 +193,19 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetComment        func(childComplexity int, commentID string) int
-		GetComments       func(childComplexity int, filter model.CommentFilterInput, sort *model.SortInput, limit *int32, cursor *string) int
-		GetFeedPosts      func(childComplexity int, limit *int32, cursor *string) int
-		GetMyConnections  func(childComplexity int) int
-		GetPost           func(childComplexity int, postID string) int
-		GetPosts          func(childComplexity int, filter *model.PostFilterInput, sort *model.SortInput, limit *int32, cursor *string) int
-		GetTrendingPosts  func(childComplexity int, timeWindow *int32, limit *int32, cursor *string) int
-		Me                func(childComplexity int) int
-		MySwipes          func(childComplexity int) int
-		ProfileActivities func(childComplexity int, class *model.ActivityClass) int
-		Recommendations   func(childComplexity int, cursor *string, limit *int32) int
-		User              func(childComplexity int, id string) int
+		GetComment                func(childComplexity int, commentID string) int
+		GetComments               func(childComplexity int, filter model.CommentFilterInput, sort *model.SortInput, limit *int32, cursor *string) int
+		GetFeedPosts              func(childComplexity int, limit *int32, cursor *string) int
+		GetMyConnections          func(childComplexity int) int
+		GetPost                   func(childComplexity int, postID string) int
+		GetPosts                  func(childComplexity int, filter *model.PostFilterInput, sort *model.SortInput, limit *int32, cursor *string) int
+		GetTrendingPosts          func(childComplexity int, timeWindow *int32, limit *int32, cursor *string) int
+		GetUserVerificationStatus func(childComplexity int) int
+		Me                        func(childComplexity int) int
+		MySwipes                  func(childComplexity int) int
+		ProfileActivities         func(childComplexity int, class *model.ActivityClass) int
+		Recommendations           func(childComplexity int, cursor *string, limit *int32) int
+		User                      func(childComplexity int, id string) int
 	}
 
 	RecommendationsResult struct {
@@ -300,6 +302,15 @@ type ComplexityRoot struct {
 		Photos            func(childComplexity int) int
 		UserPrompts       func(childComplexity int) int
 	}
+
+	UserVerification struct {
+		CreatedAt func(childComplexity int) int
+		Id        func(childComplexity int) int
+		Media     func(childComplexity int) int
+		Status    func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		UserId    func(childComplexity int) int
+	}
 }
 
 type CommentResolver interface {
@@ -331,6 +342,7 @@ type MutationResolver interface {
 	VerifyEmailLoginCode(ctx context.Context, email string, code string) (*model.AuthPayload, error)
 	UpdateMe(ctx context.Context, input model.UpdateUserInput) (*models.User, error)
 	RefreshToken(ctx context.Context) (*model.AuthPayload, error)
+	CreateVerification(ctx context.Context, input model.UserVerificationInput) (*models.UserVerification, error)
 }
 type PostResolver interface {
 	Likes(ctx context.Context, obj *models.Post) (int32, error)
@@ -355,6 +367,7 @@ type QueryResolver interface {
 	MySwipes(ctx context.Context) ([]*model.SwipedProfile, error)
 	Me(ctx context.Context) (*models.User, error)
 	User(ctx context.Context, id string) (*model.UserPublic, error)
+	GetUserVerificationStatus(ctx context.Context) (*models.UserVerification, error)
 }
 type UserResolver interface {
 	PersonalityTraits(ctx context.Context, obj *models.User) ([]*model.PersonalityTrait, error)
@@ -751,6 +764,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(model.CreateUserInput)), true
+	case "Mutation.createVerification":
+		if e.complexity.Mutation.CreateVerification == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createVerification_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateVerification(childComplexity, args["input"].(model.UserVerificationInput)), true
 	case "Mutation.delete_comment":
 		if e.complexity.Mutation.DeleteComment == nil {
 			break
@@ -1093,6 +1117,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.GetTrendingPosts(childComplexity, args["time_window"].(*int32), args["limit"].(*int32), args["cursor"].(*string)), true
+	case "Query.getUserVerificationStatus":
+		if e.complexity.Query.GetUserVerificationStatus == nil {
+			break
+		}
+
+		return e.complexity.Query.GetUserVerificationStatus(childComplexity), true
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
 			break
@@ -1556,6 +1586,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.UserPublic.UserPrompts(childComplexity), true
 
+	case "UserVerification.created_at":
+		if e.complexity.UserVerification.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.UserVerification.CreatedAt(childComplexity), true
+	case "UserVerification.id":
+		if e.complexity.UserVerification.Id == nil {
+			break
+		}
+
+		return e.complexity.UserVerification.Id(childComplexity), true
+	case "UserVerification.media":
+		if e.complexity.UserVerification.Media == nil {
+			break
+		}
+
+		return e.complexity.UserVerification.Media(childComplexity), true
+	case "UserVerification.status":
+		if e.complexity.UserVerification.Status == nil {
+			break
+		}
+
+		return e.complexity.UserVerification.Status(childComplexity), true
+	case "UserVerification.updated_at":
+		if e.complexity.UserVerification.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.UserVerification.UpdatedAt(childComplexity), true
+	case "UserVerification.user_id":
+		if e.complexity.UserVerification.UserId == nil {
+			break
+		}
+
+		return e.complexity.UserVerification.UserId(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -1577,6 +1644,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateCommentInput,
 		ec.unmarshalInputUpdatePostInput,
 		ec.unmarshalInputUpdateUserInput,
+		ec.unmarshalInputUserVerificationInput,
 	)
 	first := true
 
@@ -1673,7 +1741,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "chats/chats.graphqls" "community/community.graphqls" "profile_activities/profile.activities.graphqls" "reports/reports.graphqls" "schema.graphqls" "swipes/swipes.graphqls" "users/users.graphqls"
+//go:embed "chats/chats.graphqls" "community/community.graphqls" "profile_activities/profile.activities.graphqls" "reports/reports.graphqls" "schema.graphqls" "swipes/swipes.graphqls" "users/users.graphqls" "verifications/verifications.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1692,6 +1760,7 @@ var sources = []*ast.Source{
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
 	{Name: "swipes/swipes.graphqls", Input: sourceData("swipes/swipes.graphqls"), BuiltIn: false},
 	{Name: "users/users.graphqls", Input: sourceData("users/users.graphqls"), BuiltIn: false},
+	{Name: "verifications/verifications.graphqls", Input: sourceData("verifications/verifications.graphqls"), BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -1730,6 +1799,17 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateUserInput2blindlyᚋinternalᚋgraphᚋmodelᚐCreateUserInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createVerification_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUserVerificationInput2blindlyᚋinternalᚋgraphᚋmodelᚐUserVerificationInput)
 	if err != nil {
 		return nil, err
 	}
@@ -4840,6 +4920,70 @@ func (ec *executionContext) fieldContext_Mutation_refreshToken(_ context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createVerification(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createVerification,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().CreateVerification(ctx, fc.Args["input"].(model.UserVerificationInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNUserVerification2ᚖblindlyᚋinternalᚋmodelsᚐUserVerification,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createVerification(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserVerification_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_UserVerification_user_id(ctx, field)
+			case "media":
+				return ec.fieldContext_UserVerification_media(ctx, field)
+			case "status":
+				return ec.fieldContext_UserVerification_status(ctx, field)
+			case "created_at":
+				return ec.fieldContext_UserVerification_created_at(ctx, field)
+			case "updated_at":
+				return ec.fieldContext_UserVerification_updated_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserVerification", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createVerification_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PageInfo_has_next_page(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6279,6 +6423,58 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 	if fc.Args, err = ec.field_Query_user_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getUserVerificationStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_getUserVerificationStatus,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().GetUserVerificationStatus(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				return builtInDirectiveAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNUserVerification2ᚖblindlyᚋinternalᚋmodelsᚐUserVerification,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_getUserVerificationStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserVerification_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_UserVerification_user_id(ctx, field)
+			case "media":
+				return ec.fieldContext_UserVerification_media(ctx, field)
+			case "status":
+				return ec.fieldContext_UserVerification_status(ctx, field)
+			case "created_at":
+				return ec.fieldContext_UserVerification_created_at(ctx, field)
+			case "updated_at":
+				return ec.fieldContext_UserVerification_updated_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserVerification", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -8615,6 +8811,190 @@ func (ec *executionContext) fieldContext_UserPublic_chat_id(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _UserVerification_id(ctx context.Context, field graphql.CollectedField, obj *models.UserVerification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserVerification_id,
+		func(ctx context.Context) (any, error) {
+			return obj.Id, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserVerification_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserVerification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserVerification_user_id(ctx context.Context, field graphql.CollectedField, obj *models.UserVerification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserVerification_user_id,
+		func(ctx context.Context) (any, error) {
+			return obj.UserId, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserVerification_user_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserVerification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserVerification_media(ctx context.Context, field graphql.CollectedField, obj *models.UserVerification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserVerification_media,
+		func(ctx context.Context) (any, error) {
+			return obj.Media, nil
+		},
+		nil,
+		ec.marshalNMedia2ᚕblindlyᚋinternalᚋmodelsᚐMediaᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserVerification_media(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserVerification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Media_id(ctx, field)
+			case "url":
+				return ec.fieldContext_Media_url(ctx, field)
+			case "type":
+				return ec.fieldContext_Media_type(ctx, field)
+			case "created_at":
+				return ec.fieldContext_Media_created_at(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Media", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserVerification_status(ctx context.Context, field graphql.CollectedField, obj *models.UserVerification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserVerification_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserVerification_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserVerification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserVerification_created_at(ctx context.Context, field graphql.CollectedField, obj *models.UserVerification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserVerification_created_at,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserVerification_created_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserVerification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserVerification_updated_at(ctx context.Context, field graphql.CollectedField, obj *models.UserVerification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserVerification_updated_at,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UserVerification_updated_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserVerification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10790,6 +11170,33 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUserVerificationInput(ctx context.Context, obj any) (model.UserVerificationInput, error) {
+	var it model.UserVerificationInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"media"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "media":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("media"))
+			data, err := ec.unmarshalNMediaInput2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐMediaInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Media = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -11578,6 +11985,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createVerification":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createVerification(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12330,6 +12744,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getUserVerificationStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getUserVerificationStatus(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -13061,6 +13497,70 @@ func (ec *executionContext) _UserPublic(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var userVerificationImplementors = []string{"UserVerification"}
+
+func (ec *executionContext) _UserVerification(ctx context.Context, sel ast.SelectionSet, obj *models.UserVerification) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userVerificationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserVerification")
+		case "id":
+			out.Values[i] = ec._UserVerification_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "user_id":
+			out.Values[i] = ec._UserVerification_user_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "media":
+			out.Values[i] = ec._UserVerification_media(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._UserVerification_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "created_at":
+			out.Values[i] = ec._UserVerification_created_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updated_at":
+			out.Values[i] = ec._UserVerification_updated_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
@@ -13650,6 +14150,10 @@ func (ec *executionContext) marshalNMatch2ᚖblindlyᚋinternalᚋmodelsᚐMatch
 	return ec._Match(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMedia2blindlyᚋinternalᚋmodelsᚐMedia(ctx context.Context, sel ast.SelectionSet, v models.Media) graphql.Marshaler {
+	return ec._Media(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNMedia2ᚕblindlyᚋinternalᚋmodelsᚐMedia(ctx context.Context, sel ast.SelectionSet, v []models.Media) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -13688,6 +14192,50 @@ func (ec *executionContext) marshalNMedia2ᚕblindlyᚋinternalᚋmodelsᚐMedia
 	return ret
 }
 
+func (ec *executionContext) marshalNMedia2ᚕblindlyᚋinternalᚋmodelsᚐMediaᚄ(ctx context.Context, sel ast.SelectionSet, v []models.Media) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMedia2blindlyᚋinternalᚋmodelsᚐMedia(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNMediaInput2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐMediaInput(ctx context.Context, v any) ([]*model.MediaInput, error) {
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
@@ -13701,6 +14249,26 @@ func (ec *executionContext) unmarshalNMediaInput2ᚕᚖblindlyᚋinternalᚋgrap
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMediaInput2ᚕᚖblindlyᚋinternalᚋgraphᚋmodelᚐMediaInputᚄ(ctx context.Context, v any) ([]*model.MediaInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.MediaInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMediaInput2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐMediaInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMediaInput2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐMediaInput(ctx context.Context, v any) (*model.MediaInput, error) {
+	res, err := ec.unmarshalInputMediaInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNMediaType2blindlyᚋinternalᚋgraphᚋmodelᚐMediaType(ctx context.Context, v any) (model.MediaType, error) {
@@ -14218,6 +14786,25 @@ func (ec *executionContext) marshalNUserPublic2ᚖblindlyᚋinternalᚋgraphᚋm
 		return graphql.Null
 	}
 	return ec._UserPublic(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUserVerification2blindlyᚋinternalᚋmodelsᚐUserVerification(ctx context.Context, sel ast.SelectionSet, v models.UserVerification) graphql.Marshaler {
+	return ec._UserVerification(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserVerification2ᚖblindlyᚋinternalᚋmodelsᚐUserVerification(ctx context.Context, sel ast.SelectionSet, v *models.UserVerification) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserVerification(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNUserVerificationInput2blindlyᚋinternalᚋgraphᚋmodelᚐUserVerificationInput(ctx context.Context, v any) (model.UserVerificationInput, error) {
+	res, err := ec.unmarshalInputUserVerificationInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

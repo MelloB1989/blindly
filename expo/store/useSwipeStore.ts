@@ -112,6 +112,7 @@ export interface SwipeCardProfile {
     zodiac?: string;
     lastActive?: string;
     prompts?: { question: string; answer: string }[];
+    aiSummary?: string;
     // Extra profile details
     extra?: {
         school?: string;

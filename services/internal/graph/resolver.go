@@ -7,6 +7,7 @@ import (
 	"blindly/internal/graph/reports"
 	"blindly/internal/graph/swipes"
 	"blindly/internal/graph/users"
+	"blindly/internal/graph/verifications"
 )
 
 type Resolver struct {
@@ -16,6 +17,7 @@ type Resolver struct {
 	SwipesResolver          *swipes.Resolver
 	CommunityResolver       *community.Resolver
 	ReportResolver          *reports.Resolver
+	VerificationResolver    *verifications.Resolver
 }
 
 func NewResolver() *Resolver {
@@ -26,5 +28,6 @@ func NewResolver() *Resolver {
 		SwipesResolver:          swipes.NewResolver(),
 		CommunityResolver:       community.NewResolver(),
 		ReportResolver:          reports.NewResolver(),
+		VerificationResolver:    verifications.NewResolver(),
 	}
 }

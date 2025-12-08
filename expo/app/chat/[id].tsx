@@ -468,7 +468,7 @@ export default function ChatDetailScreen() {
                 style={
                   isMe
                     ? {
-                        shadowColor: "#6A1BFF",
+                        // shadowColor: "#6A1BFF",
                         shadowOpacity: 0.25,
                         shadowRadius: 10,
                         shadowOffset: { width: 0, height: 4 },

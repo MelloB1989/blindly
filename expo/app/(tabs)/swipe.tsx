@@ -19,6 +19,7 @@ import { Card } from "../../components/ui/Card";
 import { Chip } from "../../components/ui/Chip";
 import { SwipeCard, SwipeCardProfile } from "../../components/ui/SwipeCard";
 import { useSwipeStore } from "../../store/useSwipeStore";
+import { useAIStore } from "../../store/useAIStore";
 import {
   X,
   Heart,
@@ -78,6 +79,9 @@ export default function SwipeScreen() {
     loadMore,
   } = useSwipeStore();
 
+  // AI Store for profile summaries
+  const { profileSummaries, fetchProfileSummary } = useAIStore();
+
   // Filter states
   const [selectedAgeRange, setSelectedAgeRange] = useState<number | null>(null);
   const [selectedDistance, setSelectedDistance] = useState<number>(25);
@@ -94,6 +98,16 @@ export default function SwipeScreen() {
   useEffect(() => {
     loadMore();
   }, [currentIndex, profiles.length, loadMore]);
+
+  // Fetch AI summaries for visible profiles
+  useEffect(() => {
+    const visibleProfiles = profiles.slice(currentIndex, currentIndex + 3);
+    visibleProfiles.forEach((profile) => {
+      if (!profileSummaries[profile.id]) {
+        fetchProfileSummary(profile.id);
+      }
+    });
+  }, [currentIndex, profiles, profileSummaries, fetchProfileSummary]);
 
   const handleSwipeLeft = useCallback(
     async (profile: SwipeCardProfile) => {
@@ -220,7 +234,7 @@ export default function SwipeScreen() {
 
   const handleAskAi = useCallback(
     (profile: SwipeCardProfile) => {
-      router.push(`/(tabs)/maytri?profileName=${profile.firstName}` as Href);
+      router.push(`/(tabs)/maytri?profileName=${profile.firstName}&profileId=${profile.id}` as Href);
     },
     [router],
   );
@@ -342,23 +356,21 @@ export default function SwipeScreen() {
               <Animated.View
                 entering={BounceIn.duration(400)}
                 exiting={FadeOut.duration(200)}
-                className={`px-10 py-6 border-4 rounded-3xl transform -rotate-12 ${
-                  feedback.type === "like"
-                    ? "border-[#14D679] bg-[#14D679]/20"
-                    : feedback.type === "pass"
-                      ? "border-[#FF4C61] bg-[#FF4C61]/20"
-                      : "border-[#6A1BFF] bg-[#6A1BFF]/20"
-                }`}
+                className={`px-10 py-6 border-4 rounded-3xl transform -rotate-12 ${feedback.type === "like"
+                  ? "border-[#14D679] bg-[#14D679]/20"
+                  : feedback.type === "pass"
+                    ? "border-[#FF4C61] bg-[#FF4C61]/20"
+                    : "border-[#6A1BFF] bg-[#6A1BFF]/20"
+                  }`}
               >
                 <Typography
                   variant="h1"
-                  className={`text-5xl font-black uppercase tracking-widest ${
-                    feedback.type === "like"
-                      ? "text-[#14D679]"
-                      : feedback.type === "pass"
-                        ? "text-[#FF4C61]"
-                        : "text-[#6A1BFF]"
-                  }`}
+                  className={`text-5xl font-black uppercase tracking-widest ${feedback.type === "like"
+                    ? "text-[#14D679]"
+                    : feedback.type === "pass"
+                      ? "text-[#FF4C61]"
+                      : "text-[#6A1BFF]"
+                    }`}
                 >
                   {feedback.text}
                 </Typography>
@@ -372,7 +384,10 @@ export default function SwipeScreen() {
                 .map((profile, index) => (
                   <SwipeCard
                     key={profile.id}
-                    profile={profile}
+                    profile={{
+                      ...profile,
+                      aiSummary: profileSummaries[profile.id] || profile.aiSummary,
+                    }}
                     index={index}
                     isFirst={index === 0}
                     onSwipeLeft={handleSwipeLeft}
@@ -431,7 +446,7 @@ export default function SwipeScreen() {
               onPress={() => handleButtonSwipe("left")}
               className="w-16 h-16 rounded-full bg-[#1D0F45] items-center justify-center border-2 border-[#FF4C61] active:scale-95 shadow-lg shadow-[#FF4C61]/30"
               style={{
-                shadowColor: "#FF4C61",
+                // shadowColor: "#FF4C61",
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: 0.4,
                 shadowRadius: 10,
@@ -445,7 +460,7 @@ export default function SwipeScreen() {
               onPress={() => handleButtonSwipe("up")}
               className="w-14 h-14 rounded-full bg-[#1D0F45] items-center justify-center border-2 border-[#6A1BFF] active:scale-90 shadow-lg shadow-[#6A1BFF]/30"
               style={{
-                shadowColor: "#6A1BFF",
+                // shadowColor: "#6A1BFF",
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: 0.4,
                 shadowRadius: 10,
@@ -459,7 +474,7 @@ export default function SwipeScreen() {
               onPress={() => handleButtonSwipe("right")}
               className="w-16 h-16 rounded-full bg-[#1D0F45] items-center justify-center border-2 border-[#14D679] active:scale-95 shadow-lg shadow-[#14D679]/30"
               style={{
-                shadowColor: "#14D679",
+                // shadowColor: "#14D679",
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: 0.4,
                 shadowRadius: 10,
@@ -564,11 +579,10 @@ export default function SwipeScreen() {
                     </Typography>
                   </View>
                   <View
-                    className={`w-6 h-6 rounded-md items-center justify-center ${
-                      showVerifiedOnly
-                        ? "bg-primary"
-                        : "bg-surface border border-muted/30"
-                    }`}
+                    className={`w-6 h-6 rounded-md items-center justify-center ${showVerifiedOnly
+                      ? "bg-primary"
+                      : "bg-surface border border-muted/30"
+                      }`}
                   >
                     {showVerifiedOnly && <Check size={16} color="#FFFFFF" />}
                   </View>

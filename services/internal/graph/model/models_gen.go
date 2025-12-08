@@ -209,6 +209,10 @@ type UserPublic struct {
 	ChatID            string                `json:"chat_id"`
 }
 
+type UserVerificationInput struct {
+	Media []*MediaInput `json:"media"`
+}
+
 type ActivityClass string
 
 const (

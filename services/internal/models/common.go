@@ -49,6 +49,7 @@ type Claims struct {
 	UserID      string `json:"uid"`
 	Email       string `json:"email"`
 	Gender      string `json:"gender"`
+	Age         int    `json:"age"`
 	DateOfBirth string `json:"date_of_birth"`
 	Name        string `json:"name"`
 	Pfp         string `json:"pfp"`

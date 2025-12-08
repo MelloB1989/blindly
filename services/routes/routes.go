@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"blindly/internal/handlers/ai"
 	"blindly/internal/handlers/chat"
 	"blindly/internal/handlers/fs"
 	"blindly/internal/middlewares"
@@ -28,6 +29,10 @@ func Routes() *fiber.App {
 	chatserviceRoutes := v1.Group("/chat")
 	chatserviceRoutes.Post("/flush", chat.FlushHandler)
 	chatserviceRoutes.Get("/ws/:chatId", middlewares.IsWebsocketVerified, websocket.New(chat.WSHandler))
+
+	aiRoutes := v1.Group("/ai")
+	aiRoutes.Get("/summarize_profile/:userId", middlewares.IsUserVerified, ai.GetProfileSummary)
+	aiRoutes.Get("/chat", middlewares.IsWebsocketVerified, websocket.New(ai.AIChatHandler))
 
 	return app
 }

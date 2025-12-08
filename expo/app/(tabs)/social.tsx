@@ -6,12 +6,12 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
 import {
   PostCard,
   CreatePostModal,
@@ -21,6 +21,9 @@ import { useCommunityStore, Post } from "../../store/useCommunityStore";
 import { getCurrentUserId } from "../../utils/jwt";
 import { Hand } from "lucide-react-native";
 import { GradientBackground } from "../../components/ui/GradientBackground";
+import { LinearGradient } from "expo-linear-gradient";
+
+const TAB_BAR_HEIGHT = 88;
 
 export default function SocialScreen() {
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -161,19 +164,55 @@ export default function SocialScreen() {
       <UploadProgressBar upload={pendingUpload} />
 
       <View className="mx-4 mt-4 mb-2">
-        <Card variant="elevated" padding="md" className="flex-row items-center">
-          <View className="w-10 h-10 rounded-full bg-[#7C3AED]/20 items-center justify-center mr-3">
-            <Hand size={20} color="#7C3AED" />
+        <LinearGradient
+          colors={["rgba(30,22,54,0.95)", "rgba(16,10,40,0.6)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.pokeCardWrapper}
+        >
+          <View className="flex-row items-center">
+            {/* Gradient circular avatar with Hand icon */}
+            <LinearGradient
+              colors={["#7C3AED", "#F472B6"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.pokeAvatarGradient}
+            >
+              <View style={styles.pokeAvatarInner}>
+                <Hand size={18} color="#FFF" />
+              </View>
+            </LinearGradient>
+
+            <View className="flex-1 ml-3">
+              <Typography variant="label" className="text-white font-semibold">
+                Poke to Connect
+              </Typography>
+              <Typography variant="caption" className="text-white/60">
+                Interested in someone? Send a quick poke to break the ice.
+              </Typography>
+            </View>
+
+            {/*<TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setShowCreatePost(true)}
+              style={styles.pokeCTA}
+            >
+              <LinearGradient
+                colors={["#A78BFA", "#7C3AED"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.pokeCTAGradient}
+              >
+                <Typography
+                  variant="label"
+                  className="text-[#080314] font-semibold"
+                >
+                  Poke
+                </Typography>
+              </LinearGradient>
+            </TouchableOpacity>*/}
           </View>
-          <View className="flex-1">
-            <Typography variant="label" className="text-white font-semibold">
-              Poke to Connect
-            </Typography>
-            <Typography variant="caption" className="text-white/50">
-              Interested in someone? Poke them to let them know!
-            </Typography>
-          </View>
-        </Card>
+        </LinearGradient>
       </View>
     </>
   );
@@ -182,7 +221,7 @@ export default function SocialScreen() {
     if (isLoadingPosts) {
       return (
         <View className="py-16 items-center">
-          <ActivityIndicator size="large" color="#6A1BFF" />
+          <ActivityIndicator size="large" color="#A78BFA" />
           <Typography variant="body" className="text-white/50 mt-4">
             Loading posts...
           </Typography>
@@ -222,7 +261,7 @@ export default function SocialScreen() {
     if (isLoadingMorePosts) {
       return (
         <View className="py-4 items-center">
-          <ActivityIndicator size="small" color="#6A1BFF" />
+          <ActivityIndicator size="small" color="#A78BFA" />
         </View>
       );
     }
@@ -231,11 +270,14 @@ export default function SocialScreen() {
 
   return (
     <GradientBackground>
-      <SafeAreaView className="flex-1">
+      <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
         <StatusBar barStyle="light-content" />
 
         {/* Header */}
-        <View className="px-4 py-4 border-b border-white/5 flex-row justify-between items-center">
+        <View
+          className="px-4 py-4 flex-row justify-between items-center"
+          style={styles.headerBar}
+        >
           <View>
             <Typography variant="h1" className="text-white">
               Community
@@ -250,7 +292,10 @@ export default function SocialScreen() {
             className="h-9"
             onPress={() => setShowCreatePost(true)}
           >
-            <Typography variant="label" className="text-white font-semibold">
+            <Typography
+              variant="label"
+              className="text-[#080314] font-semibold"
+            >
               + Post
             </Typography>
           </Button>
@@ -269,15 +314,19 @@ export default function SocialScreen() {
             <RefreshControl
               refreshing={isLoadingPosts && posts.length > 0}
               onRefresh={handleRefresh}
-              tintColor="#6A1BFF"
-              colors={["#6A1BFF"]}
+              tintColor="#A78BFA"
+              colors={["#A78BFA"]}
             />
           }
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{
+            paddingBottom: TAB_BAR_HEIGHT,
+          }}
+          style={{ flex: 1 }}
           removeClippedSubviews
           initialNumToRender={10}
           maxToRenderPerBatch={5}
+          updateCellsBatchingPeriod={50}
           windowSize={10}
         />
 
@@ -290,3 +339,48 @@ export default function SocialScreen() {
     </GradientBackground>
   );
 }
+
+const styles = StyleSheet.create({
+  headerBar: {
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.04)",
+    paddingBottom: 10,
+  },
+  pokeCardWrapper: {
+    borderRadius: 14,
+    padding: 12,
+
+    backgroundColor: "rgba(30,22,54,0.55)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.03)",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  pokeAvatarGradient: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pokeAvatarInner: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  pokeCTA: {
+    marginLeft: 12,
+  },
+  pokeCTAGradient: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

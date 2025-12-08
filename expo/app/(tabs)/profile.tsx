@@ -1,59 +1,104 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   ScrollView,
-  Switch,
-  Pressable,
-  Alert,
+  RefreshControl,
   Modal,
+  Alert,
+  Pressable,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, Href } from "expo-router";
-import { Typography } from "../../components/ui/Typography";
-import { Avatar } from "../../components/ui/Avatar";
-import { Button } from "../../components/ui/Button";
-import { Chip } from "../../components/ui/Chip";
-import { Badge } from "../../components/ui/Badge";
-import { GlassCard } from "../../components/ui/GlassCard";
-import { GradientBackground } from "../../components/ui/GradientBackground";
+import { useRouter } from "expo-router";
 import { useStore } from "../../store/useStore";
+import { graphqlAuthService, GraphQLUser } from "../../services/graphql-auth";
 import { authService } from "../../services/auth";
-import {
-  Settings,
-  Shield,
-  Sparkles,
-  Camera,
-  CheckCircle2,
-  Edit3,
-  ChevronRight,
-  Bell,
-  Lock,
-  HelpCircle,
-  LogOut,
-  X,
-  Heart,
-  MessageCircle,
-  Eye,
-} from "lucide-react-native";
+import { GradientBackground } from "../../components/ui/GradientBackground";
+import { Typography } from "../../components/ui/Typography";
+import { Button } from "../../components/ui/Button";
+import { Settings, LogOut, X } from "lucide-react-native";
+
+// New Components
+import { ProfileHeader } from "../../components/profile/ProfileHeader";
+import { CompletionMeter } from "../../components/profile/CompletionMeter";
+import { BioSection } from "../../components/profile/BioSection";
+import { PhotoGrid } from "../../components/profile/PhotoGrid";
+import { MetadataDisplay } from "../../components/profile/MetadataDisplay";
+import { PromptsDisplay } from "../../components/profile/PromptsDisplay";
+import { VerificationFlow } from "../../components/profile/VerificationFlow";
+
+import Constants from "expo-constants";
+
+const version = Constants.expoConfig?.version ?? "(latest)";
+
+const calculateAge = (dob: string): number => {
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+  return age;
+};
+
+const convertToUserProfile = (gqlUser: GraphQLUser) => {
+  const personalityTraits: Record<string, number> = {};
+  gqlUser.personality_traits?.forEach((trait) => {
+    personalityTraits[trait.key] = trait.value;
+  });
+
+  return {
+    id: gqlUser.id,
+    email: gqlUser.email,
+    firstName: gqlUser.first_name,
+    lastName: gqlUser.last_name,
+    age: gqlUser.dob ? calculateAge(gqlUser.dob) : undefined,
+    bio: gqlUser.bio || "",
+    hobbies: gqlUser.hobbies || [],
+    personalityTraits,
+    photos: gqlUser.photos || [],
+    isVerified: gqlUser.is_verified,
+    isPhotosRevealed: false,
+    extra: gqlUser.extra,
+    interests: gqlUser.interests || ([] as string[]),
+    user_prompts: gqlUser.user_prompts || ([] as string[]),
+  };
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout, isOnboardingComplete } = useStore();
-  const [aiEnabled, setAiEnabled] = useState(true);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const { user, setUser, logout } = useStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Default user data for display
-  const displayUser = user || {
-    firstName: "User",
-    lastName: "",
-    age: 0,
-    bio: "No bio yet",
-    hobbies: [],
-    personalityTraits: {},
-    photos: [],
-    isVerified: false,
+  const fetchProfile = async () => {
+    try {
+      const result = await graphqlAuthService.getMe();
+      if (result.success && result.user) {
+        setUser(convertToUserProfile(result.user));
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile", err);
+    }
   };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchProfile();
+    setIsRefreshing(false);
+  };
+
+  useEffect(() => {
+    if (!user) {
+      fetchProfile();
+    }
+  }, []);
 
   const handleLogout = async () => {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -66,12 +111,11 @@ export default function ProfileScreen() {
           try {
             await authService.signOut();
             logout();
-            router.replace("/(auth)/welcome" as Href);
+            router.replace("/(auth)/welcome");
           } catch (error) {
-            console.error("Logout error:", error);
-            // Still logout locally even if server logout fails
+            console.error("Logout failed", error);
             logout();
-            router.replace("/(auth)/welcome" as Href);
+            router.replace("/(auth)/welcome");
           } finally {
             setIsLoggingOut(false);
           }
@@ -80,346 +124,181 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const handleEditProfile = () => {
-    Alert.alert("Edit Profile", "Profile editing coming soon!");
-  };
-
-  const handleEditPhoto = () => {
-    Alert.alert("Change Photo", "Photo upload coming soon!");
-  };
-
-  const handleAIBioRewrite = () => {
-    Alert.alert(
-      "AI Bio Rewrite",
-      "Let AI help you write a more engaging bio?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Generate",
-          onPress: () => {
-            Alert.alert("Coming Soon", "AI bio generation is in development!");
-          },
-        },
-      ],
-    );
-  };
-
-  // Calculate profile completion percentage
   const calculateCompletion = () => {
     let score = 0;
-    if (displayUser.firstName) score += 20;
-    if (displayUser.bio && displayUser.bio !== "No bio yet") score += 25;
-    if (displayUser.hobbies && displayUser.hobbies.length > 0) score += 25;
-    if (
-      displayUser.personalityTraits &&
-      Object.keys(displayUser.personalityTraits).length > 0
-    )
-      score += 20;
-    if (displayUser.photos && displayUser.photos.length > 0) score += 10;
-    return score;
+    if (user?.firstName) score += 10;
+    if (user?.bio && user.bio.length > 20) score += 20;
+    if (user?.photos && user.photos.length >= 3) score += 25;
+    else if (user?.photos && user.photos.length > 0) score += 10;
+    if (user?.hobbies && user.hobbies.length >= 3) score += 15;
+    if (user?.isVerified) score += 15;
+    if (user?.extra?.work || user?.extra?.school) score += 10;
+    if (user?.user_prompts && user.user_prompts.length > 0) score += 5;
+    return Math.min(100, score);
   };
 
-  const completionPercentage = calculateCompletion();
-
-  // Get personality trait labels from scores
-  const getTraitLabels = () => {
-    if (!displayUser.personalityTraits) return [];
-    return Object.keys(displayUser.personalityTraits).slice(0, 4);
+  const displayUser = user || {
+    firstName: "User",
+    photos: [],
+    isVerified: false,
+    bio: "",
+    personalityTraits: {},
+    extra: {},
+    hobbies: [],
+    interests: [],
+    user_prompts: [],
   };
 
   return (
     <GradientBackground>
-      <SafeAreaView className="flex-1">
+      <SafeAreaView className="flex-1" edges={["top"]}>
+        {/* Header Bar */}
+        <View className="px-6 py-4 flex-row justify-between items-center bg-transparent z-10">
+          <Typography variant="h1" className="text-white">
+            Profile
+          </Typography>
+          <Pressable
+            onPress={() => setShowSettings(true)}
+            className="w-10 h-10 rounded-full bg-white/10 items-center justify-center border border-white/10"
+          >
+            <Settings size={22} color="#E6E6F0" />
+          </Pressable>
+        </View>
+
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor="#6A1BFF"
+            />
+          }
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100 }}
         >
-          {/* Header */}
-          <View className="px-6 py-4 flex-row justify-between items-center">
-            <Typography variant="h1" className="text-white">
-              Profile
-            </Typography>
-            <Pressable
-              onPress={() => setShowSettingsModal(true)}
-              className="w-10 h-10 rounded-full bg-white/10 items-center justify-center border border-white/10"
-            >
-              <Settings size={22} color="#E6E6F0" />
-            </Pressable>
-          </View>
+          <ProfileHeader
+            user={displayUser}
+            isOwnProfile
+            onEditProfile={() => router.push("/(modals)/edit-profile")}
+            onEditPhoto={() => router.push("/(modals)/edit-profile")}
+          />
 
-          {/* Profile Header Card */}
-          <View className="items-center px-6 mb-6">
-            <Pressable onPress={handleEditPhoto} className="relative mb-4">
-              <Avatar
-                source={displayUser.photos?.[0]}
-                fallback={displayUser.firstName}
-                size="xl"
-                // className="border-4 border-[#6A1BFF]/30"
-                glow
-              />
-              <View className="absolute bottom-0 right-0 bg-[#6A1BFF] rounded-full p-2 border-2 border-[#1A0244]">
-                <Camera size={16} color="#FFFFFF" />
-              </View>
-            </Pressable>
+          <CompletionMeter percent={calculateCompletion()} />
 
-            <View className="flex-row items-center gap-2 mb-1">
-              <Typography variant="h2" className="text-white">
-                {displayUser.firstName}
-                {displayUser.age ? `, ${displayUser.age}` : ""}
-              </Typography>
-              {displayUser.isVerified && (
-                <CheckCircle2 size={20} color="#14D679" fill="#14D679" />
-              )}
-            </View>
-
-            {user?.email && (
-              <Typography variant="caption" className="text-white/60">
-                {user.email}
-              </Typography>
-            )}
-
-            <Button
-              variant="secondary"
-              size="sm"
-              onPress={handleEditProfile}
-              className="mt-4 bg-white/10 border border-white/10"
-              icon={<Edit3 size={14} color="#E6E6F0" />}
-            >
-              <Typography className="text-white">Edit Profile</Typography>
-            </Button>
-          </View>
-
-          {/* Stats / Quick Actions */}
-          <View className="flex-row px-6 gap-3 mb-6">
-            <GlassCard className="flex-1 items-center py-4" intensity={30}>
-              <View className="flex-row items-center gap-1 mb-1">
-                <Typography variant="h2" className="text-[#6A1BFF] font-bold">
-                  {completionPercentage}%
-                </Typography>
-              </View>
-              <Typography variant="caption" className="text-white/60">
-                Profile Complete
-              </Typography>
-              <View className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                <View
-                  className="h-full bg-[#6A1BFF] rounded-full shadow-[0_0_8px_#6A1BFF]"
-                  style={{ width: `${completionPercentage}%` }}
-                />
-              </View>
-            </GlassCard>
-            <GlassCard className="flex-1 items-center py-4" intensity={30}>
-              <View className="flex-row items-center gap-1 mb-1">
-                <Heart size={16} color="#FFD166" fill="#FFD166" />
-                <Typography variant="h2" className="text-[#FFD166] font-bold">
-                  12
-                </Typography>
-              </View>
-              <Typography variant="caption" className="text-white/60">
-                Matches
-              </Typography>
-            </GlassCard>
-          </View>
-
-          {/* Bio Section */}
-          <View className="px-6 mb-6">
-            <View className="flex-row justify-between items-center mb-3">
-              <Typography variant="h3" className="text-white">
-                Bio
-              </Typography>
+          {!displayUser.isVerified && (
+            <View className="px-6 mb-6">
               <Pressable
-                onPress={handleAIBioRewrite}
-                className="flex-row items-center bg-[#FFD166]/10 px-3 py-1.5 rounded-full border border-[#FFD166]/20"
+                onPress={() => setShowVerification(true)}
+                className="bg-[#6A1BFF]/20 border border-[#6A1BFF]/40 p-4 rounded-xl flex-row items-center justify-between"
               >
-                <Sparkles size={14} color="#FFD166" />
-                <Typography variant="caption" className="ml-1.5 text-[#FFD166]">
-                  AI Rewrite
-                </Typography>
+                <View>
+                  <Typography
+                    variant="h3"
+                    className="text-white text-base mb-1"
+                  >
+                    Get Verified
+                  </Typography>
+                  <Typography variant="caption" className="text-white/60">
+                    Unlock full features & trust badge
+                  </Typography>
+                </View>
+                <View className="bg-[#6A1BFF] px-3 py-1.5 rounded-full">
+                  <Typography
+                    variant="caption"
+                    className="text-white font-bold"
+                  >
+                    Start
+                  </Typography>
+                </View>
               </Pressable>
             </View>
-            <GlassCard className="p-4" intensity={20}>
-              <Typography
-                variant="body"
-                className="leading-relaxed text-white/90"
-              >
-                {displayUser.bio || "Add a bio to tell people about yourself!"}
-              </Typography>
-            </GlassCard>
+          )}
+
+          <BioSection
+            bio={displayUser.bio}
+            isOwnProfile
+            onAIGenerate={() => router.push("/(modals)/edit-profile")} // Redirect to edit for AI generation
+          />
+
+          <View className="mt-2">
+            <PhotoGrid photos={displayUser.photos} />
           </View>
 
-          {/* Hobbies & Traits */}
-          <View className="px-6 mb-6">
-            <View className="flex-row justify-between items-center mb-3">
-              <Typography variant="h3" className="text-white">
-                Interests
-              </Typography>
-              <Pressable>
-                <Typography variant="caption" className="text-[#6A1BFF]">
-                  Edit
-                </Typography>
-              </Pressable>
-            </View>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {displayUser.hobbies && displayUser.hobbies.length > 0 ? (
-                displayUser.hobbies.map((hobby) => (
-                  <Chip key={hobby} label={hobby} variant="primary" />
-                ))
-              ) : (
-                <Typography variant="body" className="text-white/50">
-                  No interests added yet
-                </Typography>
-              )}
-              {displayUser.hobbies && displayUser.hobbies.length > 0 && (
-                <Chip
-                  label="+ Add"
-                  variant="outline"
-                  onPress={handleEditProfile}
-                />
-              )}
-            </View>
+          <PromptsDisplay prompts={displayUser.user_prompts || []} />
 
-            <Typography variant="h3" className="mb-3 text-white">
-              Personality
+          <MetadataDisplay
+            extra={displayUser.extra}
+            hobbies={displayUser.hobbies}
+            interests={displayUser.interests || []}
+          />
+
+          <View className="px-6 mt-6 mb-10">
+            <Typography
+              variant="caption"
+              className="text-center text-white/30 mb-2"
+            >
+              Version {version} • Blindly
             </Typography>
-            <View className="flex-row flex-wrap gap-2">
-              {getTraitLabels().length > 0 ? (
-                getTraitLabels().map((trait) => (
-                  <Badge
-                    key={trait}
-                    label={trait}
-                    variant="default"
-                    size="md"
-                  />
-                ))
-              ) : (
-                <Typography variant="body" className="text-white/50">
-                  Complete the personality quiz to show your traits
-                </Typography>
-              )}
-            </View>
-          </View>
-
-          {/* Quick Settings */}
-          <View className="px-6 mb-6">
-            <Typography variant="h3" className="mb-3 text-white">
-              Quick Settings
+            <Typography
+              variant="caption"
+              className="text-center text-pink-500 mb-6 underline"
+              onPress={() =>
+                Linking.openURL("https://github.com/mellob1989/blindly")
+              }
+            >
+              Made with ❤️ by MelloB
             </Typography>
-
-            <GlassCard className="mb-3" intensity={20}>
-              <View className="flex-row justify-between items-center p-4">
-                <View className="flex-row items-center gap-3 flex-1">
-                  <View className="w-10 h-10 rounded-full bg-[#FFD166]/20 items-center justify-center border border-[#FFD166]/20">
-                    <Sparkles size={18} color="#FFD166" />
-                  </View>
-                  <View className="flex-1">
-                    <Typography variant="body" className="text-white">
-                      AI Features
-                    </Typography>
-                    <Typography variant="caption" className="text-white/50">
-                      Smart suggestions & matching
-                    </Typography>
-                  </View>
-                </View>
-                <Switch
-                  value={aiEnabled}
-                  onValueChange={setAiEnabled}
-                  trackColor={{ false: "#16161B", true: "#6A1BFF" }}
-                  thumbColor={"#E6E6F0"}
-                />
-              </View>
-            </GlassCard>
-
-            <Pressable>
-              <GlassCard className="mb-3" intensity={20}>
-                <View className="flex-row justify-between items-center p-4">
-                  <View className="flex-row items-center gap-3 flex-1">
-                    <View className="w-10 h-10 rounded-full bg-[#6A1BFF]/20 items-center justify-center border border-[#6A1BFF]/20">
-                      <Eye size={18} color="#6A1BFF" />
-                    </View>
-                    <View className="flex-1">
-                      <Typography variant="body" className="text-white">
-                        Photo Visibility
-                      </Typography>
-                      <Typography variant="caption" className="text-white/50">
-                        Hidden until you unlock
-                      </Typography>
-                    </View>
-                  </View>
-                  <ChevronRight size={20} color="#666680" />
-                </View>
-              </GlassCard>
-            </Pressable>
-
-            <Pressable>
-              <GlassCard intensity={20}>
-                <View className="flex-row justify-between items-center p-4">
-                  <View className="flex-row items-center gap-3 flex-1">
-                    <View className="w-10 h-10 rounded-full bg-[#14D679]/20 items-center justify-center border border-[#14D679]/20">
-                      <Shield size={18} color="#14D679" />
-                    </View>
-                    <View className="flex-1">
-                      <Typography variant="body" className="text-white">
-                        Safety Center
-                      </Typography>
-                      <Typography variant="caption" className="text-white/50">
-                        Block, report & privacy settings
-                      </Typography>
-                    </View>
-                  </View>
-                  <ChevronRight size={20} color="#666680" />
-                </View>
-              </GlassCard>
-            </Pressable>
-          </View>
-
-          {/* Logout Button */}
-          <View className="px-6 mb-8">
             <Button
               variant="secondary"
-              className="w-full border border-[#FF4C61]/30 bg-[#FF4C61]/10"
+              className="w-full border border-red-500/30 bg-red-500/10"
               onPress={handleLogout}
               loading={isLoggingOut}
-              icon={<LogOut size={18} color="#FF4C61" />}
+              icon={<LogOut size={18} color="#EF4444" />}
             >
-              <Typography className="text-[#FF4C61]">Log Out</Typography>
+              <Typography className="text-[#EF4444]">Log Out</Typography>
             </Button>
-          </View>
-
-          {/* App Info */}
-          <View className="items-center mb-8">
-            <Typography variant="caption" className="text-white/40">
-              Blindly v1.0.0
-            </Typography>
-            <Typography variant="caption" className="mt-1 text-white/40">
-              Made with 💜 for meaningful connections
-            </Typography>
           </View>
         </ScrollView>
 
-        {/* Settings Modal - keeping simpler for now or can maintain original structure but wrap content */}
         <Modal
-          visible={showSettingsModal}
+          visible={showSettings}
           animationType="slide"
           presentationStyle="pageSheet"
         >
           <GradientBackground>
-            <SafeAreaView className="flex-1">
-              <View className="flex-row justify-between items-center px-4 py-4 border-b border-white/5 bg-white/5">
-                <Typography variant="h2" className="text-white">
+            <View className="flex-1 p-6">
+              <View className="flex-row justify-between items-center mb-8">
+                <Typography variant="h1" className="text-white">
                   Settings
                 </Typography>
                 <Pressable
-                  onPress={() => setShowSettingsModal(false)}
-                  className="w-10 h-10 rounded-full bg-white/10 items-center justify-center border border-white/10"
+                  onPress={() => setShowSettings(false)}
+                  className="p-2 bg-white/10 rounded-full"
                 >
-                  <X size={22} color="#E6E6F0" />
+                  <X size={24} color="white" />
                 </Pressable>
               </View>
-              {/* Simplified content placeholder for modal to avoid huge diff, mainly wanted main screen consistent */}
-              <View className="flex-1 items-center justify-center">
-                <Typography className="text-white">Settings Content</Typography>
-              </View>
-            </SafeAreaView>
+              <Typography className="text-white/60">
+                Settings functionality coming soon.
+              </Typography>
+            </View>
           </GradientBackground>
+        </Modal>
+
+        {/* Verification Modal */}
+        <Modal
+          visible={showVerification}
+          animationType="slide"
+          presentationStyle="fullScreen"
+        >
+          <VerificationFlow
+            onCancel={() => setShowVerification(false)}
+            onComplete={() => {
+              setShowVerification(false);
+              Alert.alert("Success", "Verification submitted successfully!");
+              fetchProfile();
+            }}
+          />
         </Modal>
       </SafeAreaView>
     </GradientBackground>

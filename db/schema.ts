@@ -126,3 +126,20 @@ export const reports = pgTable("reports", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const aichat_chats = pgTable("aichat_chats", {
+  id: varchar("id").primaryKey().notNull(),
+  user_id: varchar("user_id").notNull(),
+  messages: json("messages").default([]),
+  title: varchar("title").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const user_verifications = pgTable("user_verifications", {
+  id: varchar("id").primaryKey().notNull(),
+  user_id: varchar("user_id").notNull(),
+  media: json("media").default([]),
+  status: varchar("status").notNull(), // "pending", "verified", "failed"
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
