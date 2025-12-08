@@ -1,5 +1,15 @@
 # blindly
 
+## 0.6.0
+
+### Minor Changes
+
+- feat: ai chat, ai bio completion, ai summary add: user verification apis (8a77cdf)
+- fix: version code (afed53d)
+- Changelogs (c9b8fff)
+
+_Released: 2025-12-08_
+
 ## 0.5.0
 
 ### Minor Changes

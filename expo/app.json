@@ -2,7 +2,7 @@
   "expo": {
     "name": "Blindly",
     "slug": "blindly",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "orientation": "portrait",
     "icon": "./assets/main-dark.png",
     "scheme": "blindly",
@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "0.3.5"
+      "buildNumber": "0.6.0"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 3005
+      "versionCode": 6000
     },
     "web": {
       "bundler": "metro",
