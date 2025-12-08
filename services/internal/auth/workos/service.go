@@ -213,7 +213,7 @@ func getWorkosClient() struct {
 		ClientId string
 		ApiKey   string
 	}{
-		ClientId: getWorkosClient().ClientId,
-		ApiKey:   getWorkosClient().ApiKey,
+		ClientId: config.GetEnvRaw("WORKOS_CLIENT_ID"),
+		ApiKey:   config.GetEnvRaw("WORKOS_API_KEY"),
 	}
 }
