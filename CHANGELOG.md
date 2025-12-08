@@ -1,5 +1,13 @@
 # blindly
 
+## 0.6.1
+
+### Patch Changes
+
+- fix(workos): remove recursive call and load correct production WorkOS credentials (14179e9)
+
+_Released: 2025-12-08_
+
 ## 0.6.0
 
 ### Minor Changes
