@@ -2,7 +2,7 @@
   "expo": {
     "name": "Blindly",
     "slug": "blindly",
-    "version": "0.6.1",
+    "version": "0.6.2",
     "orientation": "portrait",
     "icon": "./assets/main-dark.png",
     "scheme": "blindly",
@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "0.6.1"
+      "buildNumber": "0.6.2"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 6001,
+      "versionCode": 6002,
       "package": "com.mellob.blindly"
     },
     "web": {

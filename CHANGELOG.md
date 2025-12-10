@@ -1,5 +1,13 @@
 # blindly
 
+## 0.6.2
+
+### Patch Changes
+
+- fix: auth related issues, New tokens weren't used until app restart add: onboarding screens enhaced: welcome screen (8d8574b)
+
+_Released: 2025-12-10_
+
 ## 0.6.1
 
 ### Patch Changes
