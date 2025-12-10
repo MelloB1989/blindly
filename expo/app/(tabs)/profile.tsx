@@ -19,7 +19,7 @@ import { Button } from "../../components/ui/Button";
 import { Settings, LogOut, X } from "lucide-react-native";
 
 // New Components
-import { ProfileHeader } from "../../components/profile/ProfileHeader";
+import { ProfileHeader, VerificationStatus } from "../../components/profile/ProfileHeader";
 import { CompletionMeter } from "../../components/profile/CompletionMeter";
 import { BioSection } from "../../components/profile/BioSection";
 import { PhotoGrid } from "../../components/profile/PhotoGrid";
@@ -76,12 +76,29 @@ export default function ProfileScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>("none");
 
   const fetchProfile = async () => {
     try {
       const result = await graphqlAuthService.getMe();
       if (result.success && result.user) {
         setUser(convertToUserProfile(result.user));
+
+        // Also fetch verification status if user is not verified
+        if (!result.user.is_verified) {
+          const verificationResult = await graphqlAuthService.getVerificationStatus();
+          if (verificationResult.success && verificationResult.status) {
+            // Map backend status to UI status
+            const statusMap: Record<string, VerificationStatus> = {
+              "PENDING": "pending",
+              "APPROVED": "approved",
+              "REJECTED": "rejected",
+            };
+            setVerificationStatus(statusMap[verificationResult.status] || "none");
+          }
+        } else {
+          setVerificationStatus("approved");
+        }
       }
     } catch (err) {
       console.error("Failed to fetch profile", err);
@@ -178,9 +195,11 @@ export default function ProfileScreen() {
         >
           <ProfileHeader
             user={displayUser}
+            verificationStatus={verificationStatus}
             isOwnProfile
             onEditProfile={() => router.push("/(modals)/edit-profile")}
             onEditPhoto={() => router.push("/(modals)/edit-profile")}
+            onStartVerification={() => setShowVerification(true)}
           />
 
           <CompletionMeter percent={calculateCompletion()} />

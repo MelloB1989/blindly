@@ -9,6 +9,7 @@ import { HOBBIES } from "../../constants/mockData";
 import { useStore } from "../../store/useStore";
 import { ChevronLeft } from "lucide-react-native";
 import { graphqlAuthService } from "../../services/graphql-auth";
+import { authService } from "../../services/auth";
 
 export default function HobbiesScreen() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function HobbiesScreen() {
     setOnboardingStep,
     user,
     setUser,
+    logout,
   } = useStore();
 
   // Initialize from store if available
@@ -63,6 +65,21 @@ export default function HobbiesScreen() {
       router.push("/(auth)/personality" as Href);
     } catch (error) {
       console.error("Save hobbies error:", error);
+
+      // Check for invalid token error and log out
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("invalid token")) {
+        try {
+          await authService.signOut();
+        } catch (signOutError) {
+          console.error("Sign out error:", signOutError);
+        }
+        logout();
+        router.replace("/(auth)/welcome");
+        return;
+      }
+
       Alert.alert(
         "Error",
         error instanceof Error

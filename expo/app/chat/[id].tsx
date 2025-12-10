@@ -36,6 +36,7 @@ import {
   Lock,
   Unlock,
   MoreVertical,
+  Star,
 } from "lucide-react-native";
 import { AI_RIZZ_SUGGESTIONS } from "../../constants/mockData";
 import {
@@ -114,6 +115,8 @@ export default function ChatDetailScreen() {
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [hasShownRating, setHasShownRating] = useState(false);
+  const wasUnlockedRef = useRef(false);
 
   // Initialize user ID
   useEffect(() => {
@@ -126,11 +129,24 @@ export default function ChatDetailScreen() {
       const result = await chatService.getMyConnections();
       if (result.success && result.connections) {
         const conn = result.connections.find((c) => c.chat.id === chatId);
-        if (conn) setConnection(conn);
+        if (conn) {
+          // Check if this is newly unlocked (was not unlocked before, now is)
+          if (conn.match.is_unlocked && !wasUnlockedRef.current && !hasShownRating) {
+            // Check if user hasn't rated yet - show rating modal
+            const postRating = conn.match.post_unlock_rating;
+            if (postRating.she_rating === 0 || postRating.he_rating === 0) {
+              // Navigate to rating screen
+              router.push(`/modal/rating?chatId=${chatId}` as any);
+              setHasShownRating(true);
+            }
+          }
+          wasUnlockedRef.current = conn.match.is_unlocked;
+          setConnection(conn);
+        }
       }
     };
     fetchConnection();
-  }, [chatId]);
+  }, [chatId, hasShownRating]);
 
   // Load cached messages
   useEffect(() => {
@@ -169,7 +185,7 @@ export default function ChatDetailScreen() {
             const shouldMark = unseenFromOther.some(
               (u) =>
                 new Date(m.created_at).getTime() <=
-                  new Date(u.created_at).getTime() && m.sender_id !== userId,
+                new Date(u.created_at).getTime() && m.sender_id !== userId,
             );
             return shouldMark ? { ...m, seen: true } : m;
           }),
@@ -460,19 +476,18 @@ export default function ChatDetailScreen() {
               className={`max-w-[75%] ${isMe ? "items-end" : "items-start"} mx-2`}
             >
               <View
-                className={`px-4 py-3 ${"" /*shadow-md*/} ${
-                  isMe
-                    ? "bg-[#6A1BFF] rounded-2xl rounded-tr-sm border border-[#9B6BFF]"
-                    : "bg-[#1D0F45]/90 rounded-2xl rounded-tl-sm border border-white/10"
-                }`}
+                className={`px-4 py-3 ${"" /*shadow-md*/} ${isMe
+                  ? "bg-[#6A1BFF] rounded-2xl rounded-tr-sm border border-[#9B6BFF]"
+                  : "bg-[#1D0F45]/90 rounded-2xl rounded-tl-sm border border-white/10"
+                  }`}
                 style={
                   isMe
                     ? {
-                        // shadowColor: "#6A1BFF",
-                        shadowOpacity: 0.25,
-                        shadowRadius: 10,
-                        shadowOffset: { width: 0, height: 4 },
-                      }
+                      // shadowColor: "#6A1BFF",
+                      shadowOpacity: 0.25,
+                      shadowRadius: 10,
+                      shadowOffset: { width: 0, height: 4 },
+                    }
                     : {}
                 }
               >
@@ -715,12 +730,11 @@ export default function ChatDetailScreen() {
               <Pressable
                 onPress={handleSend}
                 disabled={!inputText.trim() || !isConnected}
-                className={`w-11 h-11 rounded-full items-center justify-center ${
-                  inputText.trim() && isConnected
-                    ? "bg-[#6A1BFF]"
-                    : // ? "bg-[#6A1BFF] shadow-[0_0_15px_#6A1BFF]"
-                      "bg-white/5"
-                }`}
+                className={`w-11 h-11 rounded-full items-center justify-center ${inputText.trim() && isConnected
+                  ? "bg-[#6A1BFF]"
+                  : // ? "bg-[#6A1BFF] shadow-[0_0_15px_#6A1BFF]"
+                  "bg-white/5"
+                  }`}
               >
                 <Send
                   size={20}

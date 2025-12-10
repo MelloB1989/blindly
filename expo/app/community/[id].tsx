@@ -371,6 +371,10 @@ const PostHeader = memo(function PostHeader({
     transform: [{ scale: pokeScale.value }],
   }));
 
+  const handleUserPress = useCallback((userId: string) => {
+    router.push(`/user/${userId}`);
+  }, []);
+
   return (
     <Animated.View
       entering={FadeIn.duration(300)}
@@ -378,28 +382,33 @@ const PostHeader = memo(function PostHeader({
     >
       {/* Header */}
       <View className="flex-row items-center px-4 py-3">
-        <Avatar
-          source={post.user.pfp || undefined}
-          fallback={post.user.name}
-          size="md"
-          locked={true}
-          glow
-        />
-        <View className="ml-3 flex-1">
-          <View className="flex-row items-center gap-2">
-            <Typography variant="label" className="font-bold text-white">
-              {post.user.name}
+        <Pressable
+          className="flex-row items-center flex-1"
+          onPress={() => handleUserPress(post.user_id)}
+        >
+          <Avatar
+            source={post.user.pfp || undefined}
+            fallback={post.user.name}
+            size="md"
+            locked={true}
+            glow
+          />
+          <View className="ml-3 flex-1">
+            <View className="flex-row items-center gap-2">
+              <Typography variant="label" className="font-bold text-white">
+                {post.user.name}
+              </Typography>
+              {post.user.is_verified && (
+                <View className="w-4 h-4 rounded-full bg-[#6A1BFF] items-center justify-center">
+                  <Typography className="text-[8px] text-white">✓</Typography>
+                </View>
+              )}
+            </View>
+            <Typography variant="caption" className="text-white/50">
+              {formatTimestamp(post.created_at)}
             </Typography>
-            {post.user.is_verified && (
-              <View className="w-4 h-4 rounded-full bg-[#6A1BFF] items-center justify-center">
-                <Typography className="text-[8px] text-white">✓</Typography>
-              </View>
-            )}
           </View>
-          <Typography variant="caption" className="text-white/50">
-            {formatTimestamp(post.created_at)}
-          </Typography>
-        </View>
+        </Pressable>
       </View>
 
       {/* Content */}
@@ -533,15 +542,21 @@ const MemoizedCommentItem = memo(function MemoizedCommentItem({
     );
   }, [isOwnComment, onDelete]);
 
+  const handleUserPress = useCallback((userId: string) => {
+    router.push(`/user/${userId}`);
+  }, []);
+
   return (
     <View className="px-4 py-3 border-b border-white/5">
       <View className="flex-row">
-        <Avatar
-          source={comment.user.pfp || undefined}
-          fallback={comment.user.name}
-          size="sm"
-          locked={true}
-        />
+        <Pressable onPress={() => handleUserPress(comment.user_id)}>
+          <Avatar
+            source={comment.user.pfp || undefined}
+            fallback={comment.user.name}
+            size="sm"
+            locked={true}
+          />
+        </Pressable>
         <View className="flex-1 ml-3">
           {/* Header */}
           <View className="flex-row items-center justify-between">

@@ -323,8 +323,8 @@ const CREATE_VERIFICATION_MUTATION = gql`
 `;
 
 const GET_VERIFICATION_STATUS_QUERY = gql`
-  query GetUserVerificationStatus($id: String!) {
-    getUserVerificationStatus(id: $id) {
+  query GetUserVerificationStatus {
+    getUserVerificationStatus {
       id
       status
       created_at
@@ -802,21 +802,27 @@ class GraphQLAuthService {
   }
 
   /**
-   * Get verification status for user
+   * Get verification status for the current user
    */
-  async getVerificationStatus(userId: string): Promise<{ success: boolean; status?: string; error?: string }> {
+  async getVerificationStatus(): Promise<{ success: boolean; status?: string; verificationId?: string; error?: string }> {
     try {
       const result = await graphqlClient
-        .query(GET_VERIFICATION_STATUS_QUERY, { id: userId })
+        .query(GET_VERIFICATION_STATUS_QUERY, {})
         .toPromise();
 
       if (result.error) {
         throw new Error(result.error.message);
       }
 
+      const data = result.data?.getUserVerificationStatus;
+      if (!data) {
+        return { success: false, error: "No verification found" };
+      }
+
       return {
         success: true,
-        status: result.data.getUserVerificationStatus.status,
+        status: data.status,
+        verificationId: data.id,
       };
     } catch (error) {
       console.error("Get Verification Status Error:", error);

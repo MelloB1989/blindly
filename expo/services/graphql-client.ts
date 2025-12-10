@@ -13,6 +13,11 @@ const GRAPHQL_URL = config.api_host + "/query";
 // Token refresh threshold (refresh if token expires within this many seconds)
 const TOKEN_REFRESH_THRESHOLD_SECONDS = 300; // 5 minutes
 
+// ============= In-Memory Token State =============
+// This is the CRITICAL fix: maintain an in-memory token reference that can be
+// updated immediately after login/logout, without waiting for async storage.
+let currentToken: string | null = null;
+
 /**
  * Decode JWT payload without verification (for expiry check only)
  */
@@ -52,9 +57,9 @@ function isTokenExpiringSoon(token: string): boolean {
 }
 
 /**
- * Get stored access token
+ * Get stored access token from secure storage
  */
-async function getAccessToken(): Promise<string | null> {
+async function getAccessTokenFromStorage(): Promise<string | null> {
   if (Platform.OS === "web") {
     return localStorage.getItem(config.ACCESS_TOKEN_KEY);
   }
@@ -62,9 +67,13 @@ async function getAccessToken(): Promise<string | null> {
 }
 
 /**
- * Store access token securely
+ * Store access token securely in persistent storage
  */
 export async function setAccessToken(token: string | null): Promise<void> {
+  // Update in-memory token immediately
+  currentToken = token;
+
+  // Also persist to storage
   if (Platform.OS === "web") {
     if (token) {
       localStorage.setItem(config.ACCESS_TOKEN_KEY, token);
@@ -81,28 +90,58 @@ export async function setAccessToken(token: string | null): Promise<void> {
 }
 
 /**
- * Clear all auth tokens
+ * Set GraphQL client token immediately (synchronous in-memory update)
+ * Call this AFTER login/signup to ensure subsequent requests use the new token.
+ * This is the key function that fixes the auth sync issue.
+ */
+export function setGraphQLToken(token: string | null): void {
+  currentToken = token;
+  console.log("[GraphQL] Token updated:", token ? "set" : "cleared");
+}
+
+/**
+ * Get current in-memory token (fast, synchronous)
+ */
+export function getGraphQLToken(): string | null {
+  return currentToken;
+}
+
+/**
+ * Clear all auth tokens (both in-memory and storage)
  */
 export async function clearAuthTokens(): Promise<void> {
+  // Clear in-memory immediately
+  currentToken = null;
+
+  // Clear storage
   if (Platform.OS === "web") {
     localStorage.removeItem(config.ACCESS_TOKEN_KEY);
   } else {
     await SecureStore.deleteItemAsync(config.ACCESS_TOKEN_KEY);
   }
+  console.log("[GraphQL] All tokens cleared");
+}
+
+/**
+ * Initialize token from storage (call on app start)
+ */
+export async function initializeToken(): Promise<void> {
+  currentToken = await getAccessTokenFromStorage();
+  console.log("[GraphQL] Token initialized:", currentToken ? "found" : "none");
 }
 
 /**
  * Refresh the access token using current token
  */
 async function refreshAccessToken(
-  currentToken: string,
+  tokenToRefresh: string,
 ): Promise<string | null> {
   try {
     const response = await fetch(GRAPHQL_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${currentToken}`,
+        Authorization: `Bearer ${tokenToRefresh}`,
       },
       body: JSON.stringify({
         query: `
@@ -155,20 +194,23 @@ export const graphqlClient = new Client({
     }),
     // Auth exchange - adds Authorization header and handles token refresh
     authExchange(async (utils) => {
-      let token = await getAccessToken();
+      // Initialize from storage on first load
+      if (currentToken === null) {
+        currentToken = await getAccessTokenFromStorage();
+      }
 
       return {
         addAuthToOperation(operation) {
-          // Always add auth header if we have a token
-          if (!token) return operation;
+          // Use in-memory token for immediate consistency
+          if (!currentToken) return operation;
           return utils.appendHeaders(operation, {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${currentToken}`,
           });
         },
         willAuthError() {
           // Check if token is about to expire before making request
-          if (!token) return false;
-          return isTokenExpiringSoon(token);
+          if (!currentToken) return false;
+          return isTokenExpiringSoon(currentToken);
         },
         didAuthError(error) {
           // Check if the error is an auth error
@@ -179,23 +221,16 @@ export const graphqlClient = new Client({
           );
         },
         async refreshAuth() {
-          // Get current token from storage
-          const currentToken = await getAccessToken();
-
           if (!currentToken) {
-            token = null;
             return;
           }
 
           // Try to refresh the token
           const newToken = await refreshAccessToken(currentToken);
 
-          if (newToken) {
-            token = newToken;
-          } else {
-            // Refresh failed, clear token
+          if (!newToken) {
+            // Refresh failed, clear tokens
             await clearAuthTokens();
-            token = null;
           }
         },
       };

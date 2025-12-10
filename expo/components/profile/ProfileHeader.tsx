@@ -1,8 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Pressable, StyleSheet } from "react-native";
 import { Avatar } from "../ui/Avatar";
 import { Typography } from "../ui/Typography";
-import { CheckCircle2, Camera, Edit3 } from "lucide-react-native";
+import { CheckCircle2, Camera, Edit3, Clock, Shield, AlertCircle } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
+
+export type VerificationStatus = "none" | "pending" | "approved" | "rejected";
 
 interface ProfileHeaderProps {
   user: {
@@ -13,17 +24,81 @@ interface ProfileHeaderProps {
     isVerified: boolean;
     email?: string;
   };
+  verificationStatus?: VerificationStatus;
   isOwnProfile?: boolean;
   onEditPhoto?: () => void;
   onEditProfile?: () => void;
+  onStartVerification?: () => void;
 }
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   user,
+  verificationStatus = "none",
   isOwnProfile = false,
   onEditPhoto,
   onEditProfile,
+  onStartVerification,
 }) => {
+  // Glow pulse animation for verified profiles
+  const glowOpacity = useSharedValue(0.4);
+
+  useEffect(() => {
+    if (user.isVerified || verificationStatus === "approved") {
+      glowOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.8, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.4, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      );
+    }
+  }, [user.isVerified, verificationStatus]);
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+
+  const isVerified = user.isVerified || verificationStatus === "approved";
+  const showVerificationBadge = isVerified || verificationStatus === "pending" || verificationStatus === "rejected";
+
+  const getVerificationBadge = () => {
+    if (isVerified) {
+      return (
+        <View style={styles.verifiedBadge}>
+          <Shield size={14} color="#47FFA8" />
+          <Typography variant="caption" className="text-[#47FFA8] font-semibold ml-1.5">
+            Verified
+          </Typography>
+        </View>
+      );
+    }
+
+    if (verificationStatus === "pending") {
+      return (
+        <Pressable onPress={onStartVerification} style={styles.pendingBadge}>
+          <Clock size={14} color="#FFD166" />
+          <Typography variant="caption" className="text-[#FFD166] font-semibold ml-1.5">
+            Pending Review
+          </Typography>
+        </Pressable>
+      );
+    }
+
+    if (verificationStatus === "rejected") {
+      return (
+        <Pressable onPress={onStartVerification} style={styles.rejectedBadge}>
+          <AlertCircle size={14} color="#FF4C6D" />
+          <Typography variant="caption" className="text-[#FF4C6D] font-semibold ml-1.5">
+            Retry Verification
+          </Typography>
+        </Pressable>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <View style={styles.container}>
       <Pressable
@@ -31,8 +106,30 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         disabled={!isOwnProfile}
         style={styles.avatarContainer}
       >
-        {/* Simple ring border - no gradient box */}
-        <Avatar source={user.photos?.[0]} fallback={user.firstName} size="xl" />
+        {/* Glow effect behind avatar for verified profiles */}
+        {isVerified && (
+          <Animated.View
+            style={[styles.avatarGlow, glowStyle]}
+          />
+        )}
+
+        {/* Avatar with gradient border for verified */}
+        {isVerified ? (
+          <LinearGradient
+            colors={["#47FFA8", "#8A3CFF"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatarGradientBorder}
+          >
+            <View style={styles.avatarInner}>
+              <Avatar source={user.photos?.[0]} fallback={user.firstName} size="xl" />
+            </View>
+          </LinearGradient>
+        ) : (
+          <View style={styles.avatarRing}>
+            <Avatar source={user.photos?.[0]} fallback={user.firstName} size="xl" />
+          </View>
+        )}
 
         {isOwnProfile && (
           <View style={styles.cameraButton}>
@@ -46,8 +143,8 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           {user.firstName}
           {user.age ? `, ${user.age}` : ""}
         </Typography>
-        {user.isVerified && (
-          <CheckCircle2 size={22} color="#14D679" fill="#14D679" />
+        {isVerified && (
+          <CheckCircle2 size={22} color="#47FFA8" fill="#47FFA8" />
         )}
       </View>
 
@@ -57,10 +154,14 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </Typography>
       )}
 
-      {!isOwnProfile && user.isVerified && (
+      {/* Verification Status Badge */}
+      {showVerificationBadge && getVerificationBadge()}
+
+      {/* Non-own profile verified badge (simpler) */}
+      {!isOwnProfile && isVerified && !showVerificationBadge && (
         <View style={styles.verifiedBadge}>
-          <Typography variant="caption" className="text-[#14D679] font-medium">
-            ✓ Verified
+          <Typography variant="caption" className="text-[#47FFA8] font-medium">
+            ✓ Verified Profile
           </Typography>
         </View>
       )}
@@ -87,6 +188,25 @@ const styles = StyleSheet.create({
     position: "relative",
     marginBottom: 16,
   },
+  avatarGlow: {
+    position: "absolute",
+    top: -10,
+    left: -10,
+    right: -10,
+    bottom: -10,
+    borderRadius: 100,
+    backgroundColor: "#47FFA8",
+    opacity: 0.3,
+  },
+  avatarGradientBorder: {
+    padding: 4,
+    borderRadius: 100,
+  },
+  avatarInner: {
+    borderRadius: 100,
+    backgroundColor: "#080314",
+    padding: 2,
+  },
   avatarRing: {
     padding: 3,
     borderRadius: 100,
@@ -110,13 +230,37 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   verifiedBadge: {
-    backgroundColor: "rgba(20, 214, 121, 0.1)",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(71, 255, 168, 0.1)",
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(20, 214, 121, 0.2)",
-    marginTop: 4,
+    borderColor: "rgba(71, 255, 168, 0.2)",
+    marginTop: 8,
+  },
+  pendingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 209, 102, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 209, 102, 0.2)",
+    marginTop: 8,
+  },
+  rejectedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 76, 109, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 76, 109, 0.2)",
+    marginTop: 8,
   },
   editButton: {
     marginTop: 12,
