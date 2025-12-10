@@ -7,6 +7,7 @@
       "dependencies": {
         "@expo/vector-icons": "^15.0.3",
         "@react-native-async-storage/async-storage": "2.2.0",
+        "@react-native-community/datetimepicker": "^8.5.1",
         "@react-navigation/bottom-tabs": "^7.4.0",
         "@react-navigation/elements": "^2.6.3",
         "@react-navigation/native": "^7.1.8",
@@ -40,6 +41,7 @@
         "react": "19.1.0",
         "react-dom": "19.1.0",
         "react-native": "0.81.5",
+        "react-native-confetti-cannon": "^1.5.2",
         "react-native-gesture-handler": "~2.28.0",
         "react-native-reanimated": "~4.1.1",
         "react-native-safe-area-context": "~5.6.0",
@@ -429,6 +431,8 @@
     "@radix-ui/react-use-layout-effect": ["@radix-ui/react-use-layout-effect@1.1.1", "", { "peerDependencies": { "@types/react": "*", "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react"] }, "sha512-RbJRS4UWQFkzHTTwVymMTUv8EqYhOp8dOOviLj2ugtTiXRaRQS7GLGxZTLL1jWhMeoSCf5zmcZkqTl9IiYfXcQ=="],
 
     "@react-native-async-storage/async-storage": ["@react-native-async-storage/async-storage@2.2.0", "", { "dependencies": { "merge-options": "^3.0.4" }, "peerDependencies": { "react-native": "^0.0.0-0 || >=0.65 <1.0" } }, "sha512-gvRvjR5JAaUZF8tv2Kcq/Gbt3JHwbKFYfmb445rhOj6NUMx3qPLixmDx5pZAyb9at1bYvJ4/eTUipU5aki45xw=="],
+
+    "@react-native-community/datetimepicker": ["@react-native-community/datetimepicker@8.5.1", "", { "dependencies": { "invariant": "^2.2.4" }, "peerDependencies": { "expo": ">=52.0.0", "react": "*", "react-native": "*", "react-native-windows": "*" }, "optionalPeers": ["expo", "react-native-windows"] }, "sha512-TuwM1ORbxCjOp1GOtONj0QnpDpVfq0F4UlfKZYPxL/vmriaLHt2Kgvw63Bv0Bpep4eOkslVVSS1IRfRI6d392g=="],
 
     "@react-native/assets-registry": ["@react-native/assets-registry@0.81.5", "", {}, "sha512-705B6x/5Kxm1RKRvSv0ADYWm5JOnoiQ1ufW7h8uu2E6G9Of/eE6hP/Ivw3U5jI16ERqZxiKQwk34VJbB0niX9w=="],
 
@@ -1517,6 +1521,8 @@
     "react-is": ["react-is@19.2.1", "", {}, "sha512-L7BnWgRbMwzMAubQcS7sXdPdNLmKlucPlopgAzx7FtYbksWZgEWiuYM5x9T6UqS2Ne0rsgQTq5kY2SGqpzUkYA=="],
 
     "react-native": ["react-native@0.81.5", "", { "dependencies": { "@jest/create-cache-key-function": "^29.7.0", "@react-native/assets-registry": "0.81.5", "@react-native/codegen": "0.81.5", "@react-native/community-cli-plugin": "0.81.5", "@react-native/gradle-plugin": "0.81.5", "@react-native/js-polyfills": "0.81.5", "@react-native/normalize-colors": "0.81.5", "@react-native/virtualized-lists": "0.81.5", "abort-controller": "^3.0.0", "anser": "^1.4.9", "ansi-regex": "^5.0.0", "babel-jest": "^29.7.0", "babel-plugin-syntax-hermes-parser": "0.29.1", "base64-js": "^1.5.1", "commander": "^12.0.0", "flow-enums-runtime": "^0.0.6", "glob": "^7.1.1", "invariant": "^2.2.4", "jest-environment-node": "^29.7.0", "memoize-one": "^5.0.0", "metro-runtime": "^0.83.1", "metro-source-map": "^0.83.1", "nullthrows": "^1.1.1", "pretty-format": "^29.7.0", "promise": "^8.3.0", "react-devtools-core": "^6.1.5", "react-refresh": "^0.14.0", "regenerator-runtime": "^0.13.2", "scheduler": "0.26.0", "semver": "^7.1.3", "stacktrace-parser": "^0.1.10", "whatwg-fetch": "^3.0.0", "ws": "^6.2.3", "yargs": "^17.6.2" }, "peerDependencies": { "@types/react": "^19.1.0", "react": "^19.1.0" }, "optionalPeers": ["@types/react"], "bin": { "react-native": "cli.js" } }, "sha512-1w+/oSjEXZjMqsIvmkCRsOc8UBYv163bTWKTI8+1mxztvQPhCRYGTvZ/PL1w16xXHneIj/SLGfxWg2GWN2uexw=="],
+
+    "react-native-confetti-cannon": ["react-native-confetti-cannon@1.5.2", "", {}, "sha512-IZuWjlW7QsdxEGNnvpD6W+7iKCCQhnd5BvuNvMtirU7Nxm8WS2N6LPGMBz1ZYDuusG+GRZkoXXTNCdoAAGpCTg=="],
 
     "react-native-css-interop": ["react-native-css-interop@0.2.1", "", { "dependencies": { "@babel/helper-module-imports": "^7.22.15", "@babel/traverse": "^7.23.0", "@babel/types": "^7.23.0", "debug": "^4.3.7", "lightningcss": "~1.27.0", "semver": "^7.6.3" }, "peerDependencies": { "react": ">=18", "react-native": "*", "react-native-reanimated": ">=3.6.2", "tailwindcss": "~3" } }, "sha512-B88f5rIymJXmy1sNC/MhTkb3xxBej1KkuAt7TiT9iM7oXz3RM8Bn+7GUrfR02TvSgKm4cg2XiSuLEKYfKwNsjA=="],
 
