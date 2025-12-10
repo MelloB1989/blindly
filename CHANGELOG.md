@@ -1,5 +1,13 @@
 # blindly
 
+## 0.6.3
+
+### Patch Changes
+
+- chore: update bun lockfile(s) (15e69d9)
+
+_Released: 2025-12-10_
+
 ## 0.6.2
 
 ### Patch Changes
