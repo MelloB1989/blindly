@@ -1,57 +1,69 @@
 {
-  "$schema": "https://mintlify.com/schema.json",
+  "$schema": "https://mintlify.com/docs.json",
   "theme": "maple",
   "name": "Blindly Documentation",
   "logo": {
-    "dark": "/images/main-trans.png",
-    "light": "/images/main-trans.png"
+    "light": "/images/main-trans.png",
+    "dark": "/images/main-trans.png"
   },
   "favicon": "/favicon.ico",
   "colors": {
     "primary": "#7C3AED",
     "light": "#8B5CF6",
-    "dark": "#0B0B10",
-    "anchors": {
-      "from": "#6B21A8",
-      "to": "#9B6BFF"
+    "dark": "#0B0B10"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "About Blindly",
+        "groups": [
+          {
+            "group": "About",
+            "pages": ["introduction"]
+          },
+          {
+            "group": "Legal",
+            "pages": ["legal/privacy", "legal/terms"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": ["api-reference/introduction"]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Blog",
+          "href": "https://blogs.mellob.in",
+          "icon": "newspaper"
+        }
+      ]
     }
   },
-  "topbarLinks": [
-    {
-      "name": "Contact",
-      "url": "mailto:hello@mellob.in"
-    },
-    {
-      "name": "Portfolio of creator",
-      "url": "https://mellob.in"
+  "navbar": {
+    "links": [
+      {
+        "label": "Contact",
+        "href": "mailto:hello@mellob.in"
+      },
+      {
+        "label": "Portfolio of creator",
+        "href": "https://mellob.in"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/mellob1989",
+      "github": "https://github.com/MelloB1989/blindly",
+      "linkedin": "https://www.linkedin.com/in/mellobai"
     }
-  ],
-  "tabs": [
-    {
-      "name": "API Reference",
-      "url": "api-reference"
-    }
-  ],
-  "anchors": [
-    {
-      "name": "Blog",
-      "icon": "newspaper",
-      "url": "https://blogs.mellob.in"
-    }
-  ],
-  "navigation": [
-    {
-      "group": "Get Started",
-      "pages": ["introduction"]
-    },
-    {
-      "group": "Legal",
-      "pages": ["legal/privacy", "legal/terms"]
-    }
-  ],
-  "footerSocials": {
-    "x": "https://x.com/mellob1989",
-    "github": "https://github.com/MelloB1989/blindly",
-    "linkedin": "https://www.linkedin.com/in/mellobai"
   }
 }
