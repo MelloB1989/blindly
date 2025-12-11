@@ -1,0 +1,78 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: blindly-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: blindly
+      POSTGRES_PASSWORD: blindly_password
+      POSTGRES_DB: blindly
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blindly -d blindly"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: blindly-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: node:20-alpine
+    container_name: blindly-migrate
+    working_dir: /app
+    volumes:
+      - ./db:/app
+    environment:
+      DB_HOST: postgres
+      DB_USER: blindly
+      DB_PASSWORD: blindly_password
+      DB_NAME: blindly
+      DB_PORT: 5432
+      DB_SSL: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "npm install drizzle-kit drizzle-orm pg && npx drizzle-kit migrate"
+
+  backend:
+    build:
+      context: ./services
+      dockerfile: Dockerfile
+      args:
+        - BUILDPLATFORM=linux/amd64
+    container_name: blindly-backend
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      DATABASE_URL: "postgres://blindly:blindly_password@postgres:5432/blindly?sslmode=disable"
+      REDIS_URL: "redis://redis:6379"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:
+  redis_data:

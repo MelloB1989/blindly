@@ -7,18 +7,18 @@
   },
   "favicon": "/favicon.ico",
   "colors": {
-    "primary": "#ba18cc",
-    "light": "#9018cc",
-    "dark": "#0D9373",
+    "primary": "#7C3AED",
+    "light": "#8B5CF6",
+    "dark": "#0B0B10",
     "anchors": {
-      "from": "#ba370f",
-      "to": "#eb6e49"
+      "from": "#6B21A8",
+      "to": "#9B6BFF"
     }
   },
   "topbarLinks": [
     {
       "name": "Contact",
-      "url": "mailto:kartik.mellob@coffeecodes.in"
+      "url": "mailto:hello@mellob.in"
     },
     {
       "name": "Portfolio of creator",
@@ -42,11 +42,15 @@
     {
       "group": "Get Started",
       "pages": ["introduction"]
+    },
+    {
+      "group": "Legal",
+      "pages": ["legal/privacy", "legal/terms"]
     }
   ],
   "footerSocials": {
     "x": "https://x.com/mellob1989",
-    "github": "https://github.com/MelloB1989/karma",
+    "github": "https://github.com/MelloB1989/blindly",
     "linkedin": "https://www.linkedin.com/in/mellobai"
   }
 }
