@@ -19,7 +19,7 @@
         "groups": [
           {
             "group": "About",
-            "pages": ["about"]
+            "pages": ["intro/about"]
           },
           {
             "group": "Legal",
@@ -28,11 +28,16 @@
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "API Reference",
-            "pages": ["api-reference/introduction"]
+            "group": "Setup",
+            "pages": [
+              "setup/architecture",
+              "setup/self-host",
+              "setup/dev-setup",
+              "setup/contributing"
+            ]
           }
         ]
       }
