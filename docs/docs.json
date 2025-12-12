@@ -19,7 +19,7 @@
         "groups": [
           {
             "group": "About",
-            "pages": ["introduction"]
+            "pages": ["about"]
           },
           {
             "group": "Legal",
