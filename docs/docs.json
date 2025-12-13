@@ -20,10 +20,6 @@
           {
             "group": "About",
             "pages": ["intro/about"]
-          },
-          {
-            "group": "Legal",
-            "pages": ["legal/privacy", "legal/terms"]
           }
         ]
       },
@@ -38,6 +34,15 @@
               "setup/dev-setup",
               "setup/contributing"
             ]
+          }
+        ]
+      },
+      {
+        "tab": "Legal",
+        "groups": [
+          {
+            "group": "Legal",
+            "pages": ["legal/privacy", "legal/terms"]
           }
         ]
       }
