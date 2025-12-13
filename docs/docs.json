@@ -42,7 +42,7 @@
         "groups": [
           {
             "group": "Legal",
-            "pages": ["legal/privacy", "legal/terms"]
+            "pages": ["legal/privacy", "legal/terms", "legal/csae"]
           }
         ]
       }
