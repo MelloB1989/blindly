@@ -1,5 +1,21 @@
 # blindly
 
+## 0.6.4
+
+### Patch Changes
+
+- enhance(ui): remove verified rings (46a581e)
+- update: docs (5ace88b)
+- add: docs for contributions, arch, selfhost add(landing): link to docs on navbar and hero section in landing (bd2035b)
+- : (7eae683)
+- add: landing page ui (68d9cbe)
+- update: docs (d1814fc)
+- update: docs (af305d9)
+- update: docs (aa88e37)
+- feat: add docker-compose stack (postgres, redis, migrate, backend) + multi-stage Dockerfile add: docs (e6637ea)
+
+_Released: 2025-12-13_
+
 ## 0.6.3
 
 ### Patch Changes
