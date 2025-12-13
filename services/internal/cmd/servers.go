@@ -3,7 +3,7 @@ package cmd
 import (
 	"blindly/internal/constants"
 	"blindly/internal/graph"
-	"blindly/routes"
+	"blindly/internal/routes"
 	"context"
 	"net/http"
 	"slices"

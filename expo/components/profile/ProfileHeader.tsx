@@ -2,7 +2,14 @@ import React, { useEffect } from "react";
 import { View, Pressable, StyleSheet } from "react-native";
 import { Avatar } from "../ui/Avatar";
 import { Typography } from "../ui/Typography";
-import { CheckCircle2, Camera, Edit3, Clock, Shield, AlertCircle } from "lucide-react-native";
+import {
+  CheckCircle2,
+  Camera,
+  Edit3,
+  Clock,
+  Shield,
+  AlertCircle,
+} from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useSharedValue,
@@ -46,28 +53,36 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     if (user.isVerified || verificationStatus === "approved") {
       glowOpacity.value = withRepeat(
         withSequence(
-          withTiming(0.8, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.4, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+          withTiming(0.8, {
+            duration: 1500,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          withTiming(0.4, {
+            duration: 1500,
+            easing: Easing.inOut(Easing.ease),
+          }),
         ),
         -1,
-        true
+        true,
       );
     }
   }, [user.isVerified, verificationStatus]);
 
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
-
   const isVerified = user.isVerified || verificationStatus === "approved";
-  const showVerificationBadge = isVerified || verificationStatus === "pending" || verificationStatus === "rejected";
+  const showVerificationBadge =
+    isVerified ||
+    verificationStatus === "pending" ||
+    verificationStatus === "rejected";
 
   const getVerificationBadge = () => {
     if (isVerified) {
       return (
         <View style={styles.verifiedBadge}>
           <Shield size={14} color="#47FFA8" />
-          <Typography variant="caption" className="text-[#47FFA8] font-semibold ml-1.5">
+          <Typography
+            variant="caption"
+            className="text-[#47FFA8] font-semibold ml-1.5"
+          >
             Verified
           </Typography>
         </View>
@@ -78,7 +93,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       return (
         <Pressable onPress={onStartVerification} style={styles.pendingBadge}>
           <Clock size={14} color="#FFD166" />
-          <Typography variant="caption" className="text-[#FFD166] font-semibold ml-1.5">
+          <Typography
+            variant="caption"
+            className="text-[#FFD166] font-semibold ml-1.5"
+          >
             Pending Review
           </Typography>
         </Pressable>
@@ -89,7 +107,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       return (
         <Pressable onPress={onStartVerification} style={styles.rejectedBadge}>
           <AlertCircle size={14} color="#FF4C6D" />
-          <Typography variant="caption" className="text-[#FF4C6D] font-semibold ml-1.5">
+          <Typography
+            variant="caption"
+            className="text-[#FF4C6D] font-semibold ml-1.5"
+          >
             Retry Verification
           </Typography>
         </Pressable>
@@ -106,30 +127,14 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         disabled={!isOwnProfile}
         style={styles.avatarContainer}
       >
-        {/* Glow effect behind avatar for verified profiles */}
-        {isVerified && (
-          <Animated.View
-            style={[styles.avatarGlow, glowStyle]}
-          />
-        )}
-
         {/* Avatar with gradient border for verified */}
-        {isVerified ? (
-          <LinearGradient
-            colors={["#47FFA8", "#8A3CFF"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.avatarGradientBorder}
-          >
-            <View style={styles.avatarInner}>
-              <Avatar source={user.photos?.[0]} fallback={user.firstName} size="xl" />
-            </View>
-          </LinearGradient>
-        ) : (
-          <View style={styles.avatarRing}>
-            <Avatar source={user.photos?.[0]} fallback={user.firstName} size="xl" />
-          </View>
-        )}
+        <View>
+          <Avatar
+            source={user.photos?.[0]}
+            fallback={user.firstName}
+            size="xl"
+          />
+        </View>
 
         {isOwnProfile && (
           <View style={styles.cameraButton}>
@@ -143,9 +148,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           {user.firstName}
           {user.age ? `, ${user.age}` : ""}
         </Typography>
-        {isVerified && (
-          <CheckCircle2 size={22} color="#47FFA8" fill="#47FFA8" />
-        )}
       </View>
 
       {user.email && isOwnProfile && (
