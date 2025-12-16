@@ -79,7 +79,8 @@ func GetUserPublicById(id string, queryUser ...string) (*model.UserPublic, error
 			SELECT
 				m.id as match_id,
 				c.id as chat_id,
-				CASE WHEN upa.id IS NOT NULL THEN true ELSE false END as is_poked
+				CASE WHEN upa.id IS NOT NULL THEN true ELSE false END as is_poked,
+				COALESCE(m.is_unlocked, false) as is_unlocked
 			FROM (
 				SELECT $1::varchar as user_id, $2::varchar as query_user_id
 			) params
@@ -97,9 +98,10 @@ func GetUserPublicById(id string, queryUser ...string) (*model.UserPublic, error
 		`
 
 		type RelationData struct {
-			MatchID *string `json:"match_id"`
-			ChatID  *string `json:"chat_id"`
-			IsPoked bool    `json:"is_poked"`
+			MatchID    *string `json:"match_id"`
+			ChatID     *string `json:"chat_id"`
+			IsPoked    bool    `json:"is_poked"`
+			IsUnlocked bool    `json:"is_unlocked"`
 		}
 
 		var relationResult []RelationData
@@ -108,7 +110,8 @@ func GetUserPublicById(id string, queryUser ...string) (*model.UserPublic, error
 				result := relationResult[0]
 
 				if result.MatchID != nil && *result.MatchID != "" {
-					userPublic.IsLocked = false
+					// Use the actual unlock status from the match
+					userPublic.IsLocked = !result.IsUnlocked
 
 					if result.ChatID != nil {
 						userPublic.ChatID = *result.ChatID
@@ -117,6 +120,13 @@ func GetUserPublicById(id string, queryUser ...string) (*model.UserPublic, error
 
 				userPublic.IsPoked = result.IsPoked
 			}
+		}
+	}
+
+	// Enforce blurred photos if locked
+	if userPublic.IsLocked {
+		if len(user.BlurredPhotos) > 0 {
+			userPublic.Photos = user.BlurredPhotos
 		}
 	}
 

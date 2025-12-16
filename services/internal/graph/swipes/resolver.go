@@ -351,7 +351,7 @@ LIMIT $%d OFFSET $%d
 			}
 		}
 
-		profile := dbProfile.ToUserPublic()
+		profile := dbProfile.ToUserPublicWithLock(true)
 
 		commonInterests := make([]string, 0)
 		if len(row.CommonInterests) > 0 {
