@@ -137,4 +137,7 @@ extend type Mutation {
     verifyEmailLoginCode(email: String!, code: String!): AuthPayload!
     updateMe(input: UpdateUserInput!): User! @auth
     refreshToken: AuthPayload! @auth
+    requestAccountDeletion: Boolean! @auth
+    deleteAccount(confirmationCode: String!): Boolean! @auth
 }
+

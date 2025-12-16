@@ -23,6 +23,13 @@ type AuthPayload struct {
 	User        *models.User `json:"user"`
 }
 
+type BlockedUser struct {
+	ID            string    `json:"id"`
+	UserID        string    `json:"user_id"`
+	BlockedUserID string    `json:"blocked_user_id"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
 type CommentFilterInput struct {
 	PostID        *string    `json:"post_id,omitempty"`
 	UserID        *string    `json:"user_id,omitempty"`

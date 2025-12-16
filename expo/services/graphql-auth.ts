@@ -333,6 +333,40 @@ const GET_VERIFICATION_STATUS_QUERY = gql`
   }
 `;
 
+// ============= Account Deletion =============
+
+const REQUEST_ACCOUNT_DELETION_MUTATION = gql`
+  mutation RequestAccountDeletion {
+    requestAccountDeletion
+  }
+`;
+
+const DELETE_ACCOUNT_MUTATION = gql`
+  mutation DeleteAccount($confirmationCode: String!) {
+    deleteAccount(confirmationCode: $confirmationCode)
+  }
+`;
+
+// ============= User Blocking =============
+
+const BLOCK_USER_MUTATION = gql`
+  mutation BlockUser($userId: String!) {
+    blockUser(userId: $userId)
+  }
+`;
+
+const UNBLOCK_USER_MUTATION = gql`
+  mutation UnblockUser($userId: String!) {
+    unblockUser(userId: $userId)
+  }
+`;
+
+const IS_USER_BLOCKED_QUERY = gql`
+  query IsUserBlocked($userId: String!) {
+    isUserBlocked(userId: $userId)
+  }
+`;
+
 // ============= Types =============
 
 export interface CreateUserInput {
@@ -827,6 +861,116 @@ class GraphQLAuthService {
     } catch (error) {
       console.error("Get Verification Status Error:", error);
       const message = error instanceof Error ? error.message : "Failed to get status";
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * Request account deletion - sends confirmation code to user's email
+   */
+  async requestAccountDeletion(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await graphqlClient
+        .mutation(REQUEST_ACCOUNT_DELETION_MUTATION, {})
+        .toPromise();
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      return { success: result.data.requestAccountDeletion };
+    } catch (error) {
+      console.error("Request Account Deletion Error:", error);
+      const message = error instanceof Error ? error.message : "Failed to request deletion";
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * Delete account with confirmation code
+   */
+  async deleteAccount(confirmationCode: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await graphqlClient
+        .mutation(DELETE_ACCOUNT_MUTATION, { confirmationCode })
+        .toPromise();
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      if (result.data.deleteAccount) {
+        // Clear all stored data
+        await this.signOut();
+      }
+
+      return { success: result.data.deleteAccount };
+    } catch (error) {
+      console.error("Delete Account Error:", error);
+      const message = error instanceof Error ? error.message : "Failed to delete account";
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * Block a user
+   */
+  async blockUser(userId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await graphqlClient
+        .mutation(BLOCK_USER_MUTATION, { userId })
+        .toPromise();
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      return { success: result.data.blockUser };
+    } catch (error) {
+      console.error("Block User Error:", error);
+      const message = error instanceof Error ? error.message : "Failed to block user";
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * Unblock a user
+   */
+  async unblockUser(userId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await graphqlClient
+        .mutation(UNBLOCK_USER_MUTATION, { userId })
+        .toPromise();
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      return { success: result.data.unblockUser };
+    } catch (error) {
+      console.error("Unblock User Error:", error);
+      const message = error instanceof Error ? error.message : "Failed to unblock user";
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * Check if a user is blocked
+   */
+  async isUserBlocked(userId: string): Promise<{ success: boolean; isBlocked?: boolean; error?: string }> {
+    try {
+      const result = await graphqlClient
+        .query(IS_USER_BLOCKED_QUERY, { userId })
+        .toPromise();
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      return { success: true, isBlocked: result.data.isUserBlocked };
+    } catch (error) {
+      console.error("Is User Blocked Error:", error);
+      const message = error instanceof Error ? error.message : "Failed to check blocked status";
       return { success: false, error: message };
     }
   }

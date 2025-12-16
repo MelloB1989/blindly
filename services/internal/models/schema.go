@@ -132,3 +132,12 @@ type UserVerification struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type BlockedUser struct {
+	TableName     string    `karma_table:"blocked_users" json:"-"`
+	Id            string    `json:"id" karma:"primary"`
+	UserId        string    `json:"user_id"`
+	BlockedUserId string    `json:"blocked_user_id"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+

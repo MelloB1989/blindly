@@ -19,7 +19,10 @@ import { Button } from "../../components/ui/Button";
 import { Settings, LogOut, X } from "lucide-react-native";
 
 // New Components
-import { ProfileHeader, VerificationStatus } from "../../components/profile/ProfileHeader";
+import {
+  ProfileHeader,
+  VerificationStatus,
+} from "../../components/profile/ProfileHeader";
 import { CompletionMeter } from "../../components/profile/CompletionMeter";
 import { BioSection } from "../../components/profile/BioSection";
 import { PhotoGrid } from "../../components/profile/PhotoGrid";
@@ -76,7 +79,8 @@ export default function ProfileScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>("none");
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationStatus>("none");
 
   const fetchProfile = async () => {
     try {
@@ -86,15 +90,18 @@ export default function ProfileScreen() {
 
         // Also fetch verification status if user is not verified
         if (!result.user.is_verified) {
-          const verificationResult = await graphqlAuthService.getVerificationStatus();
+          const verificationResult =
+            await graphqlAuthService.getVerificationStatus();
           if (verificationResult.success && verificationResult.status) {
             // Map backend status to UI status
             const statusMap: Record<string, VerificationStatus> = {
-              "PENDING": "pending",
-              "APPROVED": "approved",
-              "REJECTED": "rejected",
+              PENDING: "pending",
+              APPROVED: "approved",
+              REJECTED: "rejected",
             };
-            setVerificationStatus(statusMap[verificationResult.status] || "none");
+            setVerificationStatus(
+              statusMap[verificationResult.status] || "none",
+            );
           }
         } else {
           setVerificationStatus("approved");
@@ -285,22 +292,139 @@ export default function ProfileScreen() {
           presentationStyle="pageSheet"
         >
           <GradientBackground>
-            <View className="flex-1 p-6">
-              <View className="flex-row justify-between items-center mb-8">
-                <Typography variant="h1" className="text-white">
-                  Settings
-                </Typography>
-                <Pressable
-                  onPress={() => setShowSettings(false)}
-                  className="p-2 bg-white/10 rounded-full"
-                >
-                  <X size={24} color="white" />
-                </Pressable>
+            <SafeAreaView className="flex-1">
+              <View className="flex-1 p-6">
+                <View className="flex-row justify-between items-center mb-8">
+                  <Typography variant="h1" className="text-white">
+                    Settings
+                  </Typography>
+                  <Pressable
+                    onPress={() => setShowSettings(false)}
+                    className="p-2 bg-white/10 rounded-full"
+                  >
+                    <X size={24} color="white" />
+                  </Pressable>
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {/* Account Section */}
+                  <Typography
+                    variant="h3"
+                    className="text-white/40 text-xs uppercase tracking-wider mb-3"
+                  >
+                    Account
+                  </Typography>
+
+                  <Pressable
+                    onPress={() =>
+                      Linking.openURL(
+                        "https://blindly.mellob.in/docs/legal/privacy",
+                      )
+                    }
+                    className="bg-white/5 border border-white/10 rounded-xl p-4 mb-2 flex-row justify-between items-center"
+                  >
+                    <Typography className="text-white">
+                      Privacy Policy
+                    </Typography>
+                    <Typography className="text-white/40">→</Typography>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() =>
+                      Linking.openURL(
+                        "https://blindly.mellob.in/docs/legal/terms",
+                      )
+                    }
+                    className="bg-white/5 border border-white/10 rounded-xl p-4 mb-2 flex-row justify-between items-center"
+                  >
+                    <Typography className="text-white">
+                      Terms of Service
+                    </Typography>
+                    <Typography className="text-white/40">→</Typography>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() =>
+                      Linking.openURL("mailto:support@blindly.mellob.in")
+                    }
+                    className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6 flex-row justify-between items-center"
+                  >
+                    <Typography className="text-white">
+                      Contact Support
+                    </Typography>
+                    <Typography className="text-white/40">→</Typography>
+                  </Pressable>
+
+                  {/* Danger Zone */}
+                  <Typography
+                    variant="h3"
+                    className="text-red-400/60 text-xs uppercase tracking-wider mb-3"
+                  >
+                    Danger Zone
+                  </Typography>
+
+                  <Pressable
+                    onPress={() => {
+                      Alert.alert(
+                        "Delete Account",
+                        "This will permanently delete your account and all associated data. This action cannot be undone.\n\nYou will receive a confirmation code via email to complete the deletion.",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          {
+                            text: "Continue",
+                            style: "destructive",
+                            onPress: async () => {
+                              try {
+                                // Request account deletion - will send confirmation code
+                                const result =
+                                  await graphqlAuthService.requestAccountDeletion();
+                                if (result.success) {
+                                  Alert.alert(
+                                    "Check Your Email",
+                                    "We've sent a confirmation code to your email. Enter it on the deletion page to complete the process.",
+                                    [
+                                      {
+                                        text: "Open Deletion Page",
+                                        onPress: () =>
+                                          Linking.openURL(
+                                            "https://blindly.mellob.in/delete-account",
+                                          ),
+                                      },
+                                    ],
+                                  );
+                                } else {
+                                  Alert.alert(
+                                    "Error",
+                                    result.error ||
+                                      "Failed to request account deletion",
+                                  );
+                                }
+                              } catch (error) {
+                                Alert.alert(
+                                  "Error",
+                                  "Something went wrong. Please try again.",
+                                );
+                              }
+                            },
+                          },
+                        ],
+                      );
+                    }}
+                    className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex-row justify-between items-center"
+                  >
+                    <View>
+                      <Typography className="text-red-400 font-semibold">
+                        Delete Account
+                      </Typography>
+                      <Typography className="text-red-400/60 text-xs mt-1">
+                        Permanently remove all data
+                      </Typography>
+                    </View>
+                    <Typography className="text-red-400/40">→</Typography>
+                  </Pressable>
+                </ScrollView>
               </View>
-              <Typography className="text-white/60">
-                Settings functionality coming soon.
-              </Typography>
-            </View>
+            </SafeAreaView>
           </GradientBackground>
         </Modal>
 

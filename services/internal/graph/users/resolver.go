@@ -7,12 +7,15 @@ import (
 	"blindly/internal/graph/directives"
 	"blindly/internal/graph/model"
 	"blindly/internal/helpers/users"
+	"blindly/internal/mailer"
 	"blindly/internal/models"
 	"context"
 	"errors"
 	"fmt"
 
 	"github.com/MelloB1989/karma/config"
+	"github.com/MelloB1989/karma/database"
+	"github.com/MelloB1989/karma/utils"
 )
 
 type Resolver struct{}
@@ -176,4 +179,98 @@ func (r *Resolver) User(ctx context.Context, id string) (*model.UserPublic, erro
 	}
 
 	return fu, nil
+}
+
+// RequestAccountDeletion initiates account deletion by sending a confirmation code to the user's email
+func (r *Resolver) RequestAccountDeletion(ctx context.Context) (bool, error) {
+	claims, ae, err := directives.GetAuthClaims(ctx)
+	if err != nil {
+		ae.SendRequestError(anal.UNAUTHORIZED_401, err)
+		return false, fmt.Errorf("unauthorized: %w", err)
+	}
+
+	user, err := users.GetUserById(claims.UserID)
+	if err != nil {
+		return false, err
+	}
+
+	// Generate a 6-digit confirmation code
+	code := utils.GenerateOTP()
+
+	// Store code in Redis with 15 min expiry (using user ID as key)
+	redisClient := utils.RedisConnect()
+	redisKey := fmt.Sprintf("account_deletion:%s", claims.UserID)
+	err = redisClient.Set(ctx, redisKey, code, 15*60*1000000000).Err() // 15 minutes in nanoseconds
+	if err != nil {
+		return false, fmt.Errorf("failed to store deletion code: %w", err)
+	}
+
+	// Send email with confirmation code
+	if err := mailer.AccountDeletion(user.Email, code).Send(); err != nil {
+		fmt.Printf("Warning: failed to send deletion email to %s: %v\n", user.Email, err)
+		// Don't fail the request if email fails - code is still stored in Redis
+	}
+
+	return true, nil
+}
+
+// DeleteAccount permanently deletes the user's account and all associated data
+func (r *Resolver) DeleteAccount(ctx context.Context, confirmationCode string) (bool, error) {
+	claims, ae, err := directives.GetAuthClaims(ctx)
+	if err != nil {
+		ae.SendRequestError(anal.UNAUTHORIZED_401, err)
+		return false, fmt.Errorf("unauthorized: %w", err)
+	}
+
+	// Verify the confirmation code
+	redisClient := utils.RedisConnect()
+	redisKey := fmt.Sprintf("account_deletion:%s", claims.UserID)
+	storedCode, err := redisClient.Get(ctx, redisKey).Result()
+	if err != nil {
+		return false, fmt.Errorf("no deletion request found or code expired")
+	}
+
+	if storedCode != confirmationCode {
+		return false, fmt.Errorf("invalid confirmation code")
+	}
+
+	// Delete user data from all tables using raw SQL
+	db, err := database.PostgresConn()
+	if err != nil {
+		return false, fmt.Errorf("database connection failed: %w", err)
+	}
+
+	tables := []string{
+		"posts",
+		"comments",
+		"swipes",
+		"reports",
+		"user_profile_activities",
+		"user_verifications",
+		"blocked_users",
+		"user_files",
+		"aichat_chats",
+	}
+
+	for _, table := range tables {
+		query := fmt.Sprintf("DELETE FROM %s WHERE user_id = $1", table)
+		_, err := db.Exec(query, claims.UserID)
+		if err != nil {
+			fmt.Printf("Warning: failed to delete from %s: %v\n", table, err)
+		}
+	}
+
+	// Delete matches where user is either party
+	_, _ = db.Exec("DELETE FROM matches WHERE she_id = $1 OR he_id = $1", claims.UserID)
+
+	// Delete the user record
+	_, err = db.Exec("DELETE FROM users WHERE id = $1", claims.UserID)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	// Delete Redis code
+	redisClient.Del(ctx, redisKey)
+
+	return true, nil
 }

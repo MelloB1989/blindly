@@ -9,11 +9,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Pressable,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
-import { Button } from "../../components/ui/Button";
 import {
   ChevronLeft,
   Mail,
@@ -31,17 +31,28 @@ import {
 import { useStore } from "../../store/useStore";
 import { GradientBackground } from "../../components/ui/GradientBackground";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, { FadeInDown, FadeInUp, FadeIn } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeIn,
+} from "react-native-reanimated";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 // Step indicator component
-const StepIndicator = ({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) => (
+const StepIndicator = ({
+  currentStep,
+  totalSteps,
+}: {
+  currentStep: number;
+  totalSteps: number;
+}) => (
   <View className="flex-row justify-center mb-6 gap-2">
     {Array.from({ length: totalSteps }).map((_, index) => (
       <View
         key={index}
-        className={`h-1 rounded-full ${index <= currentStep ? "bg-primary" : "bg-white/20"
-          }`}
+        className={`h-1 rounded-full ${
+          index <= currentStep ? "bg-primary" : "bg-white/20"
+        }`}
         style={{ width: index <= currentStep ? 32 : 24 }}
       />
     ))}
@@ -76,7 +87,10 @@ const PasswordStrength = ({ password }: { password: string }) => {
             key={level}
             className="flex-1 h-1 rounded-full"
             style={{
-              backgroundColor: level <= strength.level ? strength.color : "rgba(255,255,255,0.1)",
+              backgroundColor:
+                level <= strength.level
+                  ? strength.color
+                  : "rgba(255,255,255,0.1)",
             }}
           />
         ))}
@@ -103,6 +117,7 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const genderOptions = [
     { value: "male", label: "Male", emoji: "👨" },
@@ -132,7 +147,10 @@ export default function SignupScreen() {
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
     return age;
@@ -147,8 +165,9 @@ export default function SignupScreen() {
     if (password !== confirmPassword) return "Passwords do not match";
     if (!dob) return "Date of birth is required";
     if (!gender) return "Please select your gender";
-
     if (calculateAge(dob) < 18) return "You must be 18 or older to sign up";
+    if (!acceptedTerms)
+      return "You must accept the Terms of Service and Privacy Policy";
 
     return null;
   };
@@ -183,8 +202,8 @@ export default function SignupScreen() {
           hobbies: result.user.hobbies || [],
           personalityTraits: result.user.personality_traits
             ? Object.fromEntries(
-              result.user.personality_traits.map((t) => [t.key, t.value]),
-            )
+                result.user.personality_traits.map((t) => [t.key, t.value]),
+              )
             : {},
           photos: result.user.photos || [],
           isVerified: result.user.is_verified,
@@ -283,12 +302,18 @@ export default function SignupScreen() {
                       First Name
                     </Typography>
                     <View
-                      className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${focusedField === "firstName"
+                      className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
+                        focusedField === "firstName"
                           ? "border-primary"
                           : "border-white/[0.06]"
-                        }`}
+                      }`}
                     >
-                      <User size={18} color={focusedField === "firstName" ? "#8A3CFF" : "#6B6B80"} />
+                      <User
+                        size={18}
+                        color={
+                          focusedField === "firstName" ? "#8A3CFF" : "#6B6B80"
+                        }
+                      />
                       <TextInput
                         className="flex-1 ml-3 text-white text-base"
                         placeholder="First"
@@ -300,9 +325,7 @@ export default function SignupScreen() {
                         autoCapitalize="words"
                         autoComplete="given-name"
                       />
-                      {firstName.trim() && (
-                        <Check size={16} color="#47FFA8" />
-                      )}
+                      {firstName.trim() && <Check size={16} color="#47FFA8" />}
                     </View>
                   </View>
 
@@ -311,10 +334,11 @@ export default function SignupScreen() {
                       Last Name
                     </Typography>
                     <View
-                      className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${focusedField === "lastName"
+                      className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
+                        focusedField === "lastName"
                           ? "border-primary"
                           : "border-white/[0.06]"
-                        }`}
+                      }`}
                     >
                       <TextInput
                         className="flex-1 text-white text-base"
@@ -327,9 +351,7 @@ export default function SignupScreen() {
                         autoCapitalize="words"
                         autoComplete="family-name"
                       />
-                      {lastName.trim() && (
-                        <Check size={16} color="#47FFA8" />
-                      )}
+                      {lastName.trim() && <Check size={16} color="#47FFA8" />}
                     </View>
                   </View>
                 </Animated.View>
@@ -343,12 +365,16 @@ export default function SignupScreen() {
                     Email
                   </Typography>
                   <View
-                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${focusedField === "email"
+                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
+                      focusedField === "email"
                         ? "border-primary"
                         : "border-white/[0.06]"
-                      }`}
+                    }`}
                   >
-                    <Mail size={18} color={focusedField === "email" ? "#8A3CFF" : "#6B6B80"} />
+                    <Mail
+                      size={18}
+                      color={focusedField === "email" ? "#8A3CFF" : "#6B6B80"}
+                    />
                     <TextInput
                       className="flex-1 ml-3 text-white text-base"
                       placeholder="Enter your email"
@@ -377,15 +403,18 @@ export default function SignupScreen() {
                   </Typography>
                   <Pressable
                     onPress={() => setShowDatePicker(true)}
-                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${showDatePicker
-                        ? "border-primary"
-                        : "border-white/[0.06]"
-                      }`}
+                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
+                      showDatePicker ? "border-primary" : "border-white/[0.06]"
+                    }`}
                   >
-                    <Calendar size={18} color={showDatePicker ? "#8A3CFF" : "#6B6B80"} />
+                    <Calendar
+                      size={18}
+                      color={showDatePicker ? "#8A3CFF" : "#6B6B80"}
+                    />
                     <Typography
-                      className={`flex-1 ml-3 text-base ${dob ? "text-white" : "text-white/30"
-                        }`}
+                      className={`flex-1 ml-3 text-base ${
+                        dob ? "text-white" : "text-white/30"
+                      }`}
                     >
                       {dob ? formatDate(dob) : "Select your birthday"}
                     </Typography>
@@ -447,12 +476,15 @@ export default function SignupScreen() {
                           style={{ borderRadius: 12 }}
                         >
                           <View
-                            className={`py-4 rounded-xl items-center justify-center border ${gender === option.value
+                            className={`py-4 rounded-xl items-center justify-center border ${
+                              gender === option.value
                                 ? "border-primary"
                                 : "border-white/[0.06]"
-                              }`}
+                            }`}
                           >
-                            <Typography className="text-2xl mb-1">{option.emoji}</Typography>
+                            <Typography className="text-2xl mb-1">
+                              {option.emoji}
+                            </Typography>
                             <Typography
                               variant="label"
                               className={
@@ -479,12 +511,18 @@ export default function SignupScreen() {
                     Password
                   </Typography>
                   <View
-                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${focusedField === "password"
+                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
+                      focusedField === "password"
                         ? "border-primary"
                         : "border-white/[0.06]"
-                      }`}
+                    }`}
                   >
-                    <Lock size={18} color={focusedField === "password" ? "#8A3CFF" : "#6B6B80"} />
+                    <Lock
+                      size={18}
+                      color={
+                        focusedField === "password" ? "#8A3CFF" : "#6B6B80"
+                      }
+                    />
                     <TextInput
                       className="flex-1 ml-3 text-white text-base"
                       placeholder="At least 8 characters"
@@ -519,14 +557,22 @@ export default function SignupScreen() {
                     Confirm Password
                   </Typography>
                   <View
-                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${focusedField === "confirmPassword"
+                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
+                      focusedField === "confirmPassword"
                         ? "border-primary"
                         : confirmPassword && password === confirmPassword
                           ? "border-[#47FFA8]"
                           : "border-white/[0.06]"
-                      }`}
+                    }`}
                   >
-                    <Lock size={18} color={focusedField === "confirmPassword" ? "#8A3CFF" : "#6B6B80"} />
+                    <Lock
+                      size={18}
+                      color={
+                        focusedField === "confirmPassword"
+                          ? "#8A3CFF"
+                          : "#6B6B80"
+                      }
+                    />
                     <TextInput
                       className="flex-1 ml-3 text-white text-base"
                       placeholder="Confirm your password"
@@ -545,9 +591,7 @@ export default function SignupScreen() {
                 </Animated.View>
 
                 {/* Create Account Button */}
-                <Animated.View
-                  entering={FadeInUp.duration(600).delay(800)}
-                >
+                <Animated.View entering={FadeInUp.duration(600).delay(800)}>
                   <View className="overflow-hidden rounded-2xl">
                     <LinearGradient
                       colors={
@@ -587,20 +631,68 @@ export default function SignupScreen() {
                 <TouchableOpacity
                   onPress={() => router.push("/(auth)/login" as Href)}
                 >
-                  <Typography variant="body" className="text-primary font-semibold">
+                  <Typography
+                    variant="body"
+                    className="text-primary font-semibold"
+                  >
                     Sign In
                   </Typography>
                 </TouchableOpacity>
               </Animated.View>
 
-              {/* Terms */}
-              <Typography
-                variant="caption"
-                className="text-center mt-6 text-white/30"
+              {/* Terms Acceptance Checkbox */}
+              <Animated.View
+                entering={FadeInUp.duration(600).delay(850)}
+                className="mt-6"
               >
-                By creating an account, you agree to our Terms of Service and
-                Privacy Policy.
-              </Typography>
+                <Pressable
+                  onPress={() => setAcceptedTerms(!acceptedTerms)}
+                  className="flex-row items-start gap-3"
+                >
+                  <View
+                    className={`w-6 h-6 rounded-md border-2 items-center justify-center mt-0.5 ${
+                      acceptedTerms
+                        ? "bg-primary border-primary"
+                        : "bg-transparent border-white/30"
+                    }`}
+                  >
+                    {acceptedTerms && <Check size={14} color="white" />}
+                  </View>
+                  <View className="flex-1">
+                    <Typography
+                      variant="body"
+                      className="text-white/70 text-sm leading-5"
+                    >
+                      I agree to the{" "}
+                      <Typography
+                        variant="body"
+                        className="text-primary font-semibold text-sm"
+                        onPress={() =>
+                          Linking.openURL(
+                            "https://blindly.mellob.in/docs/legal/terms",
+                          )
+                        }
+                      >
+                        Terms of Service
+                      </Typography>{" "}
+                      and{" "}
+                      <Typography
+                        variant="body"
+                        className="text-primary font-semibold text-sm"
+                        onPress={() =>
+                          Linking.openURL(
+                            "https://blindly.mellob.in/docs/legal/privacy",
+                          )
+                        }
+                      >
+                        Privacy Policy
+                      </Typography>
+                      . I understand there is zero tolerance for objectionable
+                      content or abusive behavior.
+                    </Typography>
+                  </View>
+                </Pressable>
+              </Animated.View>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

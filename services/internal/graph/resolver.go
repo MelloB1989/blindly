@@ -1,6 +1,7 @@
 package graph
 
 import (
+	blockedusers "blindly/internal/graph/blocked_users"
 	"blindly/internal/graph/chats"
 	"blindly/internal/graph/community"
 	profileactivities "blindly/internal/graph/profile_activities"
@@ -18,6 +19,7 @@ type Resolver struct {
 	CommunityResolver       *community.Resolver
 	ReportResolver          *reports.Resolver
 	VerificationResolver    *verifications.Resolver
+	BlockedUsersResolver    *blockedusers.Resolver
 }
 
 func NewResolver() *Resolver {
@@ -29,5 +31,6 @@ func NewResolver() *Resolver {
 		CommunityResolver:       community.NewResolver(),
 		ReportResolver:          reports.NewResolver(),
 		VerificationResolver:    verifications.NewResolver(),
+		BlockedUsersResolver:    blockedusers.NewResolver(),
 	}
 }

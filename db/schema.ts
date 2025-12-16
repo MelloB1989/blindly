@@ -1,15 +1,10 @@
 import {
   pgTable,
-  uniqueIndex,
-  pgEnum,
   varchar,
   timestamp,
   integer,
-  bigint,
   text,
-  serial,
   json,
-  unique,
   boolean,
   index,
 } from "drizzle-orm/pg-core";
@@ -142,4 +137,11 @@ export const user_verifications = pgTable("user_verifications", {
   status: varchar("status").notNull(), // "pending", "verified", "failed"
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const blocked_users = pgTable("blocked_users", {
+  id: varchar("id").primaryKey().notNull(),
+  user_id: varchar("user_id").notNull(),
+  blocked_user_id: varchar("blocked_user_id").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
 });

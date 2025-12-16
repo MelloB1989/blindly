@@ -41,6 +41,16 @@ func (r *mutationResolver) RefreshToken(ctx context.Context) (*model.AuthPayload
 	return r.UserResolver.RefreshToken(ctx)
 }
 
+// RequestAccountDeletion is the resolver for the requestAccountDeletion field.
+func (r *mutationResolver) RequestAccountDeletion(ctx context.Context) (bool, error) {
+	return r.UserResolver.RequestAccountDeletion(ctx)
+}
+
+// DeleteAccount is the resolver for the deleteAccount field.
+func (r *mutationResolver) DeleteAccount(ctx context.Context, confirmationCode string) (bool, error) {
+	return r.UserResolver.DeleteAccount(ctx, confirmationCode)
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*models.User, error) {
 	return r.UserResolver.Me(ctx)
