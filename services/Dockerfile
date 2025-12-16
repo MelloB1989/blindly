@@ -33,8 +33,9 @@ WORKDIR /app
 # Copy built binary from builder stage
 COPY --from=builder /build/blindly .
 
-# Copy .env file from root context
+# Copy .env file from root context and set ENVIRONMENT to empty for production
 COPY .env* ./
+RUN if [ -f .env ]; then sed -i 's/^ENVIRONMENT="DEV"/ENVIRONMENT=""/' .env; fi
 
 RUN chmod +x blindly
 
