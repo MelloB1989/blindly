@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/MelloB1989/karma/database"
@@ -242,16 +243,16 @@ func (r *Resolver) Recommendations(ctx context.Context, cursor *string, limit *i
 	// Apply gender filter (default to opposite gender)
 	if filter != nil && filter.Gender != nil && *filter.Gender != "" {
 		whereConditions = append(whereConditions, fmt.Sprintf("u.gender = $%d", argIndex))
-		args = append(args, *filter.Gender)
+		args = append(args, strings.ToUpper(*filter.Gender))
 		argIndex++
 	} else if currentUserGender != "" {
 		// Default: show opposite gender
 		var targetGender string
 		switch currentUserGender {
-		case "male":
-			targetGender = "female"
-		case "female":
-			targetGender = "male"
+		case string(models.MALE):
+			targetGender = string(models.FEMALE)
+		case string(models.FEMALE):
+			targetGender = string(models.MALE)
 		default:
 			// For "other" or unknown, show all genders (no filter)
 			targetGender = ""

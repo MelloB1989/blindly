@@ -3,12 +3,13 @@ import {
   View,
   StatusBar,
   Pressable,
-  Dimensions,
   Modal,
   ScrollView,
   Alert,
   Image,
   ActivityIndicator,
+  Share,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Href } from "expo-router";
@@ -30,10 +31,9 @@ import {
   Calendar,
   Check,
   RefreshCw,
+  Share2,
 } from "lucide-react-native";
 import { GradientBackground } from "../../components/ui/GradientBackground";
-
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 // Filter options
 const AGE_RANGES = [
@@ -52,8 +52,8 @@ const DISTANCE_OPTIONS = [
 ];
 
 const GENDER_OPTIONS = [
-  { label: "Women", value: "female" },
-  { label: "Men", value: "male" },
+  { label: "Women", value: "FEMALE" },
+  { label: "Men", value: "MALE" },
   { label: "Everyone", value: "" },
 ];
 
@@ -91,21 +91,23 @@ export default function SwipeScreen() {
 
   // Filter states - initialize from store filter if exists
   const [selectedGender, setSelectedGender] = useState<string | null>(
-    filter?.gender ?? null
+    filter?.gender ?? null,
   );
-  const [selectedAgeRange, setSelectedAgeRange] = useState<number | null>(() => {
-    if (filter?.min_age && filter?.max_age) {
-      return AGE_RANGES.findIndex(
-        (r) => r.min === filter.min_age && r.max === filter.max_age
-      );
-    }
-    return null;
-  });
+  const [selectedAgeRange, setSelectedAgeRange] = useState<number | null>(
+    () => {
+      if (filter?.min_age && filter?.max_age) {
+        return AGE_RANGES.findIndex(
+          (r) => r.min === filter.min_age && r.max === filter.max_age,
+        );
+      }
+      return null;
+    },
+  );
   const [selectedDistance, setSelectedDistance] = useState<number>(
-    filter?.max_distance_km ?? 25
+    filter?.max_distance_km ?? 25,
   );
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(
-    filter?.verified_only ?? false
+    filter?.verified_only ?? false,
   );
 
   // Initial load
@@ -223,6 +225,30 @@ export default function SwipeScreen() {
     );
   }, []);
 
+  const handleAppInvite = async () => {
+    try {
+      const result = await Share.share(
+        {
+          title: "Blindly — Meet the person first. Looks later.",
+          message:
+            Platform.OS === "android"
+              ? "Blindly is a personality-first dating app. Meet people through hobbies and conversation before photos. Join here: https://blindly.mellob.in"
+              : "Blindly is a personality-first dating app. Meet people through hobbies and conversation before photos.",
+          url: "https://blindly.mellob.in",
+        },
+        {
+          dialogTitle: "Invite friends to Blindly",
+        },
+      );
+
+      if (result.action === Share.sharedAction) {
+        // Tracking
+      }
+    } catch (error) {
+      console.error("Error sharing Blindly link:", error);
+    }
+  };
+
   const handleReport = useCallback((profile: SwipeCardProfile) => {
     const confirmReport = () => {
       Alert.alert(
@@ -255,7 +281,9 @@ export default function SwipeScreen() {
 
   const handleAskAi = useCallback(
     (profile: SwipeCardProfile) => {
-      router.push(`/(tabs)/maytri?profileName=${profile.firstName}&profileId=${profile.id}` as Href);
+      router.push(
+        `/(tabs)/maytri?profileName=${profile.firstName}&profileId=${profile.id}` as Href,
+      );
     },
     [router],
   );
@@ -401,21 +429,23 @@ export default function SwipeScreen() {
               <Animated.View
                 entering={BounceIn.duration(400)}
                 exiting={FadeOut.duration(200)}
-                className={`px-10 py-6 border-4 rounded-3xl transform -rotate-12 ${feedback.type === "like"
-                  ? "border-[#14D679] bg-[#14D679]/20"
-                  : feedback.type === "pass"
-                    ? "border-[#FF4C61] bg-[#FF4C61]/20"
-                    : "border-[#6A1BFF] bg-[#6A1BFF]/20"
-                  }`}
+                className={`px-10 py-6 border-4 rounded-3xl transform -rotate-12 ${
+                  feedback.type === "like"
+                    ? "border-[#14D679] bg-[#14D679]/20"
+                    : feedback.type === "pass"
+                      ? "border-[#FF4C61] bg-[#FF4C61]/20"
+                      : "border-[#6A1BFF] bg-[#6A1BFF]/20"
+                }`}
               >
                 <Typography
                   variant="h1"
-                  className={`text-5xl font-black uppercase tracking-widest ${feedback.type === "like"
-                    ? "text-[#14D679]"
-                    : feedback.type === "pass"
-                      ? "text-[#FF4C61]"
-                      : "text-[#6A1BFF]"
-                    }`}
+                  className={`text-5xl font-black uppercase tracking-widest ${
+                    feedback.type === "like"
+                      ? "text-[#14D679]"
+                      : feedback.type === "pass"
+                        ? "text-[#FF4C61]"
+                        : "text-[#6A1BFF]"
+                  }`}
                 >
                   {feedback.text}
                 </Typography>
@@ -431,7 +461,8 @@ export default function SwipeScreen() {
                     key={profile.id}
                     profile={{
                       ...profile,
-                      aiSummary: profileSummaries[profile.id] || profile.aiSummary,
+                      aiSummary:
+                        profileSummaries[profile.id] || profile.aiSummary,
                     }}
                     index={index}
                     isFirst={index === 0}
@@ -467,12 +498,24 @@ export default function SwipeScreen() {
               >
                 {hasMore
                   ? "Finding more people for you..."
-                  : "You've seen everyone nearby. Check back later!"}
+                  : "You've seen everyone nearby. Check back later or help Blindly grow by sharing the app with your friends!"}
               </Typography>
               <Button variant="primary" onPress={handleRefresh}>
                 <View className="flex-row items-center gap-2">
                   <RefreshCw size={18} color="#FFFFFF" />
                   <Typography className="text-white">Refresh</Typography>
+                </View>
+              </Button>
+              <Button
+                className="my-4"
+                variant="secondary"
+                onPress={handleAppInvite}
+              >
+                <View className="flex-row items-center gap-2">
+                  <Share2 size={18} color="#FFFFFF" />
+                  <Typography className="text-white">
+                    Invite More People to Blindly!
+                  </Typography>
                 </View>
               </Button>
             </View>
@@ -592,7 +635,9 @@ export default function SwipeScreen() {
                   <Chip
                     key={option.value || "everyone"}
                     label={option.label}
-                    variant={selectedGender === option.value ? "primary" : "outline"}
+                    variant={
+                      selectedGender === option.value ? "primary" : "outline"
+                    }
                     selected={selectedGender === option.value}
                     onPress={() => setSelectedGender(option.value)}
                   />
@@ -648,10 +693,11 @@ export default function SwipeScreen() {
                     </Typography>
                   </View>
                   <View
-                    className={`w-6 h-6 rounded-md items-center justify-center ${showVerifiedOnly
-                      ? "bg-primary"
-                      : "bg-surface border border-muted/30"
-                      }`}
+                    className={`w-6 h-6 rounded-md items-center justify-center ${
+                      showVerifiedOnly
+                        ? "bg-primary"
+                        : "bg-surface border border-muted/30"
+                    }`}
                   >
                     {showVerifiedOnly && <Check size={16} color="#FFFFFF" />}
                   </View>
