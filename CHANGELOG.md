@@ -1,5 +1,17 @@
 # blindly
 
+## 0.6.6
+
+### Patch Changes
+
+- add: app invite functionality fix: wrong gender strings, added standardization (4e2766a)
+- fix: set ENVIRONMENT="" in .env for Docker builds (47684f5)
+- fix: pass git version to Docker build and copy .env file (078339e)
+- enhance: add filters to recommendation system (2c5be51)
+- fix: vercel.json for SPA path rewrites (763c220)
+
+_Released: 2025-12-16_
+
 ## 0.6.5
 
 ### Patch Changes
