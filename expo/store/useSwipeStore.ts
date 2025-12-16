@@ -6,9 +6,19 @@ import { UserPublic } from "../services/chat-service";
 
 // ============= GraphQL Documents =============
 
+// ============= Filter Type =============
+
+export interface RecommendationFilter {
+    gender?: string;
+    min_age?: number;
+    max_age?: number;
+    max_distance_km?: number;
+    verified_only?: boolean;
+}
+
 const GET_RECOMMENDATIONS = gql`
-  query GetRecommendations($cursor: String, $limit: Int) {
-    recommendations(cursor: $cursor, limit: $limit) {
+  query GetRecommendations($cursor: String, $limit: Int, $filter: RecommendationFilter) {
+    recommendations(cursor: $cursor, limit: $limit, filter: $filter) {
       items {
         profile {
           id
@@ -214,9 +224,11 @@ interface SwipeState {
     cursor: string | null;
     hasMore: boolean;
     lastFetched: number | null;
+    filter: RecommendationFilter | null;
 
     // Actions
     fetchRecommendations: (cursor?: string) => Promise<void>;
+    setFilter: (filter: RecommendationFilter | null) => void;
     loadMore: () => Promise<void>;
     refresh: () => Promise<void>;
     swipe: (
@@ -242,6 +254,7 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
     cursor: null,
     hasMore: true,
     lastFetched: null,
+    filter: null,
 
     // Fetch recommendations
     fetchRecommendations: async (cursor?: string) => {
@@ -256,8 +269,9 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
         });
 
         try {
+            const { filter } = get();
             const result = await graphqlClient
-                .query(GET_RECOMMENDATIONS, { cursor, limit: 20 })
+                .query(GET_RECOMMENDATIONS, { cursor, limit: 20, filter })
                 .toPromise();
 
             if (result.error) {
@@ -314,10 +328,11 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
         });
 
         try {
+            const { filter } = get();
             const result = await graphqlClient
                 .query(
                     GET_RECOMMENDATIONS,
-                    { limit: 20 },
+                    { limit: 20, filter },
                     { requestPolicy: "network-only" }
                 )
                 .toPromise();
@@ -398,6 +413,9 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
 
     // Clear error
     clearError: () => set({ error: null }),
+
+    // Set filter
+    setFilter: (filter) => set({ filter }),
 
     // Reset store
     reset: () =>

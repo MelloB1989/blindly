@@ -198,7 +198,7 @@ func (r *Resolver) createMatchAndChat(userID1, userID2 string) (*models.Match, e
 	return match, nil
 }
 
-func (r *Resolver) Recommendations(ctx context.Context, cursor *string, limit *int32) (*model.RecommendationsResult, error) {
+func (r *Resolver) Recommendations(ctx context.Context, cursor *string, limit *int32, filter *model.RecommendationFilter) (*model.RecommendationsResult, error) {
 	claims, ae, err := directives.GetAuthClaims(ctx)
 	if err != nil {
 		ae.SendRequestError(anal.UNAUTHORIZED_401, err)
@@ -222,7 +222,80 @@ func (r *Resolver) Recommendations(ctx context.Context, cursor *string, limit *i
 	}
 	defer db.Close()
 
-	query := `
+	// Get current user's gender for default opposite gender filter
+	var currentUserGender string
+	err = db.QueryRow("SELECT gender FROM users WHERE id = $1", claims.UserID).Scan(&currentUserGender)
+	if err != nil {
+		log.Printf("[WARN] Could not fetch current user gender: %v", err)
+	}
+
+	// Build dynamic WHERE clause based on filters
+	whereConditions := []string{
+		"u.id != $1",
+		"NOT EXISTS (SELECT 1 FROM swipes s WHERE s.user_id = $1 AND s.target_id = u.id)",
+		"NOT EXISTS (SELECT 1 FROM matches m WHERE (m.she_id = $1 AND m.he_id = u.id) OR (m.she_id = u.id AND m.he_id = $1))",
+		"NOT EXISTS (SELECT 1 FROM blocked_users b WHERE (b.user_id = $1 AND b.blocked_user_id = u.id) OR (b.user_id = u.id AND b.blocked_user_id = $1))",
+	}
+	args := []any{claims.UserID}
+	argIndex := 2 // $1 is already used for claims.UserID
+
+	// Apply gender filter (default to opposite gender)
+	if filter != nil && filter.Gender != nil && *filter.Gender != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("u.gender = $%d", argIndex))
+		args = append(args, *filter.Gender)
+		argIndex++
+	} else if currentUserGender != "" {
+		// Default: show opposite gender
+		var targetGender string
+		switch currentUserGender {
+		case "male":
+			targetGender = "female"
+		case "female":
+			targetGender = "male"
+		default:
+			// For "other" or unknown, show all genders (no filter)
+			targetGender = ""
+		}
+		if targetGender != "" {
+			whereConditions = append(whereConditions, fmt.Sprintf("u.gender = $%d", argIndex))
+			args = append(args, targetGender)
+			argIndex++
+		}
+	}
+
+	// Apply age filter (min_age)
+	if filter != nil && filter.MinAge != nil {
+		whereConditions = append(whereConditions, fmt.Sprintf("EXTRACT(YEAR FROM AGE(NOW(), u.dob)) >= $%d", argIndex))
+		args = append(args, *filter.MinAge)
+		argIndex++
+	}
+
+	// Apply age filter (max_age)
+	if filter != nil && filter.MaxAge != nil {
+		whereConditions = append(whereConditions, fmt.Sprintf("EXTRACT(YEAR FROM AGE(NOW(), u.dob)) <= $%d", argIndex))
+		args = append(args, *filter.MaxAge)
+		argIndex++
+	}
+
+	// Apply verified only filter
+	if filter != nil && filter.VerifiedOnly != nil && *filter.VerifiedOnly {
+		whereConditions = append(whereConditions, "u.is_verified = true")
+	}
+
+	// TODO: Add distance filter when location is implemented
+	// if filter != nil && filter.MaxDistanceKm != nil { ... }
+
+	// Build full query
+	whereClause := ""
+	for i, cond := range whereConditions {
+		if i == 0 {
+			whereClause = "WHERE " + cond
+		} else {
+			whereClause += " AND " + cond
+		}
+	}
+
+	query := fmt.Sprintf(`
 SELECT
 	row_to_json(u) AS profile,
 	(RANDOM() * 100)::float AS match_score,
@@ -230,16 +303,16 @@ SELECT
 	'[]'::json AS common_interests,
 	NULL::float AS distance_km
 FROM users u
-WHERE u.id != $1
-  AND NOT EXISTS (SELECT 1 FROM swipes s WHERE s.user_id = $1 AND s.target_id = u.id)
-  AND NOT EXISTS (SELECT 1 FROM matches m WHERE (m.she_id = $1 AND m.he_id = u.id) OR (m.she_id = u.id AND m.he_id = $1))
+%s
 ORDER BY u.created_at DESC
-LIMIT $2 OFFSET $3
-`
+LIMIT $%d OFFSET $%d
+`, whereClause, argIndex, argIndex+1)
 
-	log.Printf("[DEBUG] Recommendations query for user: %s, limit: %d, offset: %d", claims.UserID, queryLimit+1, offset)
+	args = append(args, queryLimit+1, offset)
 
-	rows, err := db.Query(query, claims.UserID, queryLimit+1, offset)
+	log.Printf("[DEBUG] Recommendations query for user: %s, limit: %d, offset: %d, filter: %+v", claims.UserID, queryLimit+1, offset, filter)
+
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		log.Printf("[ERROR] Query error: %v", err)
 		return nil, fmt.Errorf("failed to fetch recommendations: %w", err)

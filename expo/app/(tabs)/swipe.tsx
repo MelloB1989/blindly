@@ -51,6 +51,12 @@ const DISTANCE_OPTIONS = [
   { label: "50+ km", value: 50 },
 ];
 
+const GENDER_OPTIONS = [
+  { label: "Women", value: "female" },
+  { label: "Men", value: "male" },
+  { label: "Everyone", value: "" },
+];
+
 export default function SwipeScreen() {
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
@@ -64,7 +70,6 @@ export default function SwipeScreen() {
     text: string;
   } | null>(null);
 
-  // Use Zustand store
   const {
     profiles,
     currentIndex,
@@ -77,15 +82,31 @@ export default function SwipeScreen() {
     refresh,
     swipe,
     loadMore,
+    setFilter,
+    filter,
   } = useSwipeStore();
 
   // AI Store for profile summaries
   const { profileSummaries, fetchProfileSummary } = useAIStore();
 
-  // Filter states
-  const [selectedAgeRange, setSelectedAgeRange] = useState<number | null>(null);
-  const [selectedDistance, setSelectedDistance] = useState<number>(25);
-  const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
+  // Filter states - initialize from store filter if exists
+  const [selectedGender, setSelectedGender] = useState<string | null>(
+    filter?.gender ?? null
+  );
+  const [selectedAgeRange, setSelectedAgeRange] = useState<number | null>(() => {
+    if (filter?.min_age && filter?.max_age) {
+      return AGE_RANGES.findIndex(
+        (r) => r.min === filter.min_age && r.max === filter.max_age
+      );
+    }
+    return null;
+  });
+  const [selectedDistance, setSelectedDistance] = useState<number>(
+    filter?.max_distance_km ?? 25
+  );
+  const [showVerifiedOnly, setShowVerifiedOnly] = useState(
+    filter?.verified_only ?? false
+  );
 
   // Initial load
   useEffect(() => {
@@ -257,18 +278,42 @@ export default function SwipeScreen() {
   };
 
   const applyFilters = () => {
-    // TODO: Apply filters via API params
-    console.log("Applying filters:", {
-      ageRange: selectedAgeRange !== null ? AGE_RANGES[selectedAgeRange] : null,
-      distance: selectedDistance,
-      verifiedOnly: showVerifiedOnly,
-    });
+    // Build filter object
+    const newFilter: {
+      gender?: string;
+      min_age?: number;
+      max_age?: number;
+      max_distance_km?: number;
+      verified_only?: boolean;
+    } = {};
+
+    // Gender filter (empty string means "Everyone" - use server default)
+    if (selectedGender && selectedGender !== "") {
+      newFilter.gender = selectedGender;
+    }
+
+    // Age range filter
+    if (selectedAgeRange !== null) {
+      newFilter.min_age = AGE_RANGES[selectedAgeRange].min;
+      newFilter.max_age = AGE_RANGES[selectedAgeRange].max;
+    }
+
+    // Distance filter (optional, requires location)
+    // newFilter.max_distance_km = selectedDistance;
+
+    // Verified only filter
+    if (showVerifiedOnly) {
+      newFilter.verified_only = true;
+    }
+
+    // Set filter in store and refresh
+    setFilter(Object.keys(newFilter).length > 0 ? newFilter : null);
     setShowFilters(false);
-    // Refetch with filters
     handleRefresh();
   };
 
   const resetFilters = () => {
+    setSelectedGender(null);
     setSelectedAgeRange(null);
     setSelectedDistance(25);
     setShowVerifiedOnly(false);
@@ -532,6 +577,30 @@ export default function SwipeScreen() {
                   />
                 ))}
               </View>
+            </View>
+
+            {/* Gender Preference */}
+            <View className="mb-8">
+              <View className="flex-row items-center mb-4">
+                <Users size={20} color="#7C3AED" />
+                <Typography variant="h3" className="ml-2">
+                  Show Me
+                </Typography>
+              </View>
+              <View className="flex-row flex-wrap gap-3">
+                {GENDER_OPTIONS.map((option) => (
+                  <Chip
+                    key={option.value || "everyone"}
+                    label={option.label}
+                    variant={selectedGender === option.value ? "primary" : "outline"}
+                    selected={selectedGender === option.value}
+                    onPress={() => setSelectedGender(option.value)}
+                  />
+                ))}
+              </View>
+              <Typography variant="caption" color="muted" className="mt-2">
+                Default: Opposite gender based on your profile
+              </Typography>
             </View>
 
             {/* Distance */}

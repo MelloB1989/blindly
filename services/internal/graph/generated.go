@@ -217,7 +217,7 @@ type ComplexityRoot struct {
 		Me                        func(childComplexity int) int
 		MySwipes                  func(childComplexity int) int
 		ProfileActivities         func(childComplexity int, class *model.ActivityClass) int
-		Recommendations           func(childComplexity int, cursor *string, limit *int32) int
+		Recommendations           func(childComplexity int, cursor *string, limit *int32, filter *model.RecommendationFilter) int
 		User                      func(childComplexity int, id string) int
 	}
 
@@ -382,7 +382,7 @@ type QueryResolver interface {
 	GetComment(ctx context.Context, commentID string) (*models.Comment, error)
 	GetTrendingPosts(ctx context.Context, timeWindow *int32, limit *int32, cursor *string) (*model.PostsConnection, error)
 	ProfileActivities(ctx context.Context, class *model.ActivityClass) ([]*models.UserProfileActivity, error)
-	Recommendations(ctx context.Context, cursor *string, limit *int32) (*model.RecommendationsResult, error)
+	Recommendations(ctx context.Context, cursor *string, limit *int32, filter *model.RecommendationFilter) (*model.RecommendationsResult, error)
 	MySwipes(ctx context.Context) ([]*model.SwipedProfile, error)
 	Me(ctx context.Context) (*models.User, error)
 	User(ctx context.Context, id string) (*model.UserPublic, error)
@@ -1256,7 +1256,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Recommendations(childComplexity, args["cursor"].(*string), args["limit"].(*int32)), true
+		return e.complexity.Query.Recommendations(childComplexity, args["cursor"].(*string), args["limit"].(*int32), args["filter"].(*model.RecommendationFilter)), true
 	case "Query.user":
 		if e.complexity.Query.User == nil {
 			break
@@ -1740,6 +1740,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputMediaInput,
 		ec.unmarshalInputPersonalityTraitInput,
 		ec.unmarshalInputPostFilterInput,
+		ec.unmarshalInputRecommendationFilter,
 		ec.unmarshalInputSortInput,
 		ec.unmarshalInputUpdateCommentInput,
 		ec.unmarshalInputUpdatePostInput,
@@ -2277,6 +2278,11 @@ func (ec *executionContext) field_Query_recommendations_args(ctx context.Context
 		return nil, err
 	}
 	args["limit"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalORecommendationFilter2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐRecommendationFilter)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg2
 	return args, nil
 }
 
@@ -6742,7 +6748,7 @@ func (ec *executionContext) _Query_recommendations(ctx context.Context, field gr
 		ec.fieldContext_Query_recommendations,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Recommendations(ctx, fc.Args["cursor"].(*string), fc.Args["limit"].(*int32))
+			return ec.resolvers.Query().Recommendations(ctx, fc.Args["cursor"].(*string), fc.Args["limit"].(*int32), fc.Args["filter"].(*model.RecommendationFilter))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -11525,6 +11531,61 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRecommendationFilter(ctx context.Context, obj any) (model.RecommendationFilter, error) {
+	var it model.RecommendationFilter
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"gender", "min_age", "max_age", "max_distance_km", "verified_only"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "gender":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Gender = data
+		case "min_age":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("min_age"))
+			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinAge = data
+		case "max_age":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("max_age"))
+			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaxAge = data
+		case "max_distance_km":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("max_distance_km"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaxDistanceKm = data
+		case "verified_only":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("verified_only"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VerifiedOnly = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSortInput(ctx context.Context, obj any) (model.SortInput, error) {
 	var it model.SortInput
 	asMap := map[string]any{}
@@ -16027,6 +16088,14 @@ func (ec *executionContext) unmarshalOPostFilterInput2ᚖblindlyᚋinternalᚋgr
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputPostFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalORecommendationFilter2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐRecommendationFilter(ctx context.Context, v any) (*model.RecommendationFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputRecommendationFilter(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

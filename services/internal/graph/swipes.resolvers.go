@@ -17,8 +17,8 @@ func (r *mutationResolver) Swipe(ctx context.Context, targetID string, actionTyp
 }
 
 // Recommendations is the resolver for the recommendations field.
-func (r *queryResolver) Recommendations(ctx context.Context, cursor *string, limit *int32) (*model.RecommendationsResult, error) {
-	return r.SwipesResolver.Recommendations(ctx, cursor, limit)
+func (r *queryResolver) Recommendations(ctx context.Context, cursor *string, limit *int32, filter *model.RecommendationFilter) (*model.RecommendationsResult, error) {
+	return r.SwipesResolver.Recommendations(ctx, cursor, limit, filter)
 }
 
 // MySwipes is the resolver for the mySwipes field.

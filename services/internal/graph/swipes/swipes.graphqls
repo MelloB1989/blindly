@@ -43,8 +43,17 @@ type RecommendationsResult {
     fetched_at: Time! # timestamp for consistency/debug
 }
 
+# Filter input for recommendations
+input RecommendationFilter {
+    gender: String            # Target gender: "male", "female", "other" (defaults to opposite of user)
+    min_age: Int              # Minimum age (calculated from dob)
+    max_age: Int              # Maximum age
+    max_distance_km: Float    # Maximum distance in km (requires location)
+    verified_only: Boolean    # Only show verified profiles
+}
+
 extend type Query {
-    recommendations(cursor: String, limit: Int = 20): RecommendationsResult!
+    recommendations(cursor: String, limit: Int = 20, filter: RecommendationFilter): RecommendationsResult!
         @auth
     mySwipes: [SwipedProfile!]! @auth
 }
@@ -52,3 +61,4 @@ extend type Query {
 extend type Mutation {
     swipe(target_id: String!, action_type: SwipeType!): SwipeResponse! @auth
 }
+

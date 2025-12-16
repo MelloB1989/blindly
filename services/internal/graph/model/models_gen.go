@@ -137,6 +137,14 @@ type PostsConnection struct {
 type Query struct {
 }
 
+type RecommendationFilter struct {
+	Gender        *string  `json:"gender,omitempty"`
+	MinAge        *int32   `json:"min_age,omitempty"`
+	MaxAge        *int32   `json:"max_age,omitempty"`
+	MaxDistanceKm *float64 `json:"max_distance_km,omitempty"`
+	VerifiedOnly  *bool    `json:"verified_only,omitempty"`
+}
+
 type RecommendationsResult struct {
 	Items      []*RecommendedProfile `json:"items"`
 	NextCursor *string               `json:"next_cursor,omitempty"`
