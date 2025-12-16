@@ -118,6 +118,10 @@ func (d *DBUserProfile) ToUserPublicWithLock(isLocked bool) *model.UserPublic {
 	up := d.ToUserPublic()
 	if isLocked && len(d.BlurredPhotos) > 0 {
 		up.Photos = EmptyIfNil(d.BlurredPhotos)
+		// Also blur the PFP
+		if len(d.BlurredPhotos) > 0 {
+			up.Pfp = d.BlurredPhotos[0]
+		}
 	}
 	return up
 }

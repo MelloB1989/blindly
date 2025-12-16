@@ -127,6 +127,8 @@ func GetUserPublicById(id string, queryUser ...string) (*model.UserPublic, error
 	if userPublic.IsLocked {
 		if len(user.BlurredPhotos) > 0 {
 			userPublic.Photos = user.BlurredPhotos
+			// Also blur the PFP
+			userPublic.Pfp = user.BlurredPhotos[0]
 		}
 	}
 
