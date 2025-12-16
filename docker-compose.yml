@@ -52,10 +52,10 @@ services:
 
   backend:
     build:
-      context: ./services
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/Dockerfile
       args:
-        - BUILDPLATFORM=linux/amd64
+        - VERSION=${VERSION:-dev}
     container_name: blindly-backend
     restart: unless-stopped
     ports:

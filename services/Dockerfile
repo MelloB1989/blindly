@@ -1,6 +1,8 @@
 # Build stage
 FROM golang:1.24-alpine AS builder
 
+ARG VERSION=dev
+
 RUN apk --no-cache add \
     ca-certificates \
     tzdata \
@@ -9,14 +11,14 @@ RUN apk --no-cache add \
 WORKDIR /build
 
 # Copy go mod files first for better caching
-COPY go.mod go.sum ./
+COPY services/go.mod services/go.sum ./
 RUN go mod download
 
 # Copy source code
-COPY . .
+COPY services/ .
 
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o blindly .
+# Build the binary with version
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s -X main.Version=${VERSION}" -o blindly .
 
 # Runtime stage
 FROM alpine:latest
@@ -30,6 +32,9 @@ WORKDIR /app
 
 # Copy built binary from builder stage
 COPY --from=builder /build/blindly .
+
+# Copy .env file from root context
+COPY .env* ./
 
 RUN chmod +x blindly
 
