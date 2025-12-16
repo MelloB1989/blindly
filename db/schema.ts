@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   user_prompts: json("user_prompts").default([]),
   personality_traits: json("personality_traits").default({}),
   photos: json("photos").default([]),
+  blurred_photos: json("blurred_photos").default([]),
   is_verified: boolean("is_verified").default(false),
   address: json("address").notNull().default({}),
   extra: json("extra").default({}),
@@ -37,6 +38,8 @@ export const matches = pgTable("matches", {
   score: integer("score").notNull(),
   post_unlock_rating: json("post_unlock_rating").default({}),
   is_unlocked: boolean("is_unlocked").default(false),
+  she_messages: integer("she_messages").default(0),
+  he_messages: integer("he_messages").default(0),
   matched_at: timestamp("matched_at").defaultNow().notNull(),
 });
 

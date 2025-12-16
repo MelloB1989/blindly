@@ -57,6 +57,7 @@ type DBUserProfile struct {
 	UserPrompts       []string              `json:"user_prompts"`
 	PersonalityTraits map[string]int        `json:"personality_traits"`
 	Photos            []string              `json:"photos"`
+	BlurredPhotos     []string              `json:"blurred_photos"`
 	IsVerified        bool                  `json:"is_verified"`
 	Extra             *models.ExtraMetadata `json:"extra"`
 	CreatedAt         FlexibleTime          `json:"created_at"`
@@ -111,6 +112,16 @@ func (d *DBUserProfile) ToUserPublic() *model.UserPublic {
 	}
 }
 
+// ToUserPublicWithLock returns UserPublic with appropriate photos based on lock status
+// If locked, returns blurred photos; if unlocked, returns original photos
+func (d *DBUserProfile) ToUserPublicWithLock(isLocked bool) *model.UserPublic {
+	up := d.ToUserPublic()
+	if isLocked && len(d.BlurredPhotos) > 0 {
+		up.Photos = EmptyIfNil(d.BlurredPhotos)
+	}
+	return up
+}
+
 func EmptyIfNil(s []string) []string {
 	if s == nil {
 		return []string{}
@@ -141,6 +152,8 @@ type DBMatch struct {
 	Score            int                     `json:"score"`
 	PostUnlockRating models.PostUnlockRating `json:"post_unlock_rating"`
 	IsUnlocked       bool                    `json:"is_unlocked"`
+	SheMessages      int                     `json:"she_messages"`
+	HeMessages       int                     `json:"he_messages"`
 	MatchedAt        FlexibleTime            `json:"matched_at"`
 }
 
@@ -152,6 +165,8 @@ func (d *DBMatch) ToMatch() models.Match {
 		Score:            d.Score,
 		PostUnlockRating: d.PostUnlockRating,
 		IsUnlocked:       d.IsUnlocked,
+		SheMessages:      d.SheMessages,
+		HeMessages:       d.HeMessages,
 		MatchedAt:        d.MatchedAt.Time(),
 	}
 }

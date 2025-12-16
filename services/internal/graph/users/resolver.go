@@ -4,14 +4,17 @@ import (
 	"blindly/internal/anal"
 	"blindly/internal/auth"
 	"blindly/internal/auth/workos"
+	"blindly/internal/blurer"
 	"blindly/internal/graph/directives"
 	"blindly/internal/graph/model"
 	"blindly/internal/helpers/users"
 	"blindly/internal/mailer"
 	"blindly/internal/models"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/MelloB1989/karma/config"
 	"github.com/MelloB1989/karma/database"
@@ -103,6 +106,28 @@ func (r *Resolver) UpdateMe(ctx context.Context, input model.UpdateUserInput) (*
 	}
 	if len(input.Photos) > 0 {
 		user.Photos = input.Photos
+		// Sync pfp with first photo
+		user.Pfp = input.Photos[0]
+		// Generate blurred versions in background
+		go func(photos []string, userId string) {
+			blurred, err := blurer.BlurPhotos(photos, userId)
+			if err != nil {
+				log.Printf("[WARN] Failed to blur photos: %v", err)
+				return
+			}
+			// Update blurred photos in DB
+			db, dbErr := database.PostgresConn()
+			if dbErr != nil {
+				log.Printf("[ERROR] Failed to connect to database for blur update: %v", dbErr)
+				return
+			}
+			defer db.Close()
+			blurredJSON, _ := json.Marshal(blurred)
+			_, err = db.Exec("UPDATE users SET blurred_photos = $1 WHERE id = $2", blurredJSON, userId)
+			if err != nil {
+				log.Printf("[ERROR] Failed to update blurred photos: %v", err)
+			}
+		}(input.Photos, claims.UserID)
 	}
 	if len(input.PersonalityTraits) > 0 {
 		pt := make(map[string]int)

@@ -26,6 +26,7 @@ FROM alpine:latest
 RUN apk --no-cache add \
     ca-certificates \
     tzdata \
+    ffmpeg \
     && rm -rf /var/cache/apk/*
 
 WORKDIR /app

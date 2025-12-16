@@ -55,9 +55,10 @@ func (r *Resolver) GetMyConnections(ctx context.Context) ([]*model.Connection, e
     ELSE (c.messages::jsonb -> (jsonb_array_length(c.messages::jsonb) - 1)) ->> 'content'
   END AS last_message,
 
+  -- Percentage based on minimum messages from both parties (unlock at 50 each)
   (
     LEAST(
-      (COALESCE(jsonb_array_length(c.messages::jsonb), 0)::float / 500.0) * 100.0,
+      (LEAST(COALESCE(m.she_messages, 0), COALESCE(m.he_messages, 0))::float / 50.0) * 100.0,
       100.0
     )
   ) AS percentage_complete,

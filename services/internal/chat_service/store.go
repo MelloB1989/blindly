@@ -177,7 +177,78 @@ func (s *Store) SendMessage(msg *models.Message) error {
 		return fmt.Errorf("redis pipeline failed: %w", err)
 	}
 
+	// Increment message counter for sender and check for auto-unlock
+	go s.incrementMessageCountAndCheckUnlock(msg.SenderId)
+
 	return s.scheduleFlush()
+}
+
+// incrementMessageCountAndCheckUnlock increments the message counter for the sender
+// and auto-unlocks the match if both parties have sent enough messages
+func (s *Store) incrementMessageCountAndCheckUnlock(senderId string) {
+	const unlockThreshold = 50 // Messages required from each party
+
+	chat, err := s.GetChat()
+	if err != nil {
+		log.Printf("[ERROR] Failed to get chat for message counter: %v", err)
+		return
+	}
+
+	matchORM := orm.Load(&models.Match{})
+	defer matchORM.Close()
+
+	var matches []models.Match
+	if err := matchORM.GetByFieldEquals("Id", chat.MatchId).Scan(&matches); err != nil {
+		log.Printf("[ERROR] Failed to get match for message counter: %v", err)
+		return
+	}
+	if len(matches) == 0 {
+		log.Printf("[ERROR] Match not found for chat: %s", s.chatId)
+		return
+	}
+
+	match := matches[0]
+
+	// Already unlocked
+	if match.IsUnlocked {
+		return
+	}
+
+	// Determine which counter to increment
+	var counterColumn string
+	var newCount int
+	var otherCount int
+
+	if senderId == match.SheId {
+		counterColumn = "she_messages"
+		newCount = match.SheMessages + 1
+		otherCount = match.HeMessages
+	} else if senderId == match.HeId {
+		counterColumn = "he_messages"
+		newCount = match.HeMessages + 1
+		otherCount = match.SheMessages
+	} else {
+		log.Printf("[WARN] Sender %s not a participant of match %s", senderId, match.Id)
+		return
+	}
+
+	// Check if should unlock
+	shouldUnlock := newCount >= unlockThreshold && otherCount >= unlockThreshold
+
+	// Build and execute update query
+	var result interface{}
+	if shouldUnlock {
+		result = matchORM.QueryRaw(
+			fmt.Sprintf("UPDATE matches SET %s = %s + 1, is_unlocked = true WHERE id = $1", counterColumn, counterColumn),
+			match.Id,
+		)
+	} else {
+		result = matchORM.QueryRaw(
+			fmt.Sprintf("UPDATE matches SET %s = %s + 1 WHERE id = $1", counterColumn, counterColumn),
+			match.Id,
+		)
+	}
+	_ = result
 }
 
 func (s *Store) GetMessages(limit int, beforeId string) ([]models.Message, error) {

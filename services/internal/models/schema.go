@@ -21,6 +21,7 @@ type User struct {
 	UserPrompts       []string       `json:"user_prompts" db:"user_prompts"`
 	PersonalityTraits map[string]int `json:"personality_traits" db:"personality_traits"` // 1-5
 	Photos            []string       `json:"photos" db:"photos"`
+	BlurredPhotos     []string       `json:"blurred_photos" db:"blurred_photos"`
 	IsVerified        bool           `json:"is_verified"`
 	Address           Address        `json:"address" db:"address"`
 	Extra             ExtraMetadata  `json:"extra" db:"extra"`
@@ -36,6 +37,8 @@ type Match struct {
 	Score            int              `json:"score"`
 	PostUnlockRating PostUnlockRating `json:"post_unlock_rating" db:"post_unlock_rating"`
 	IsUnlocked       bool             `json:"is_unlocked"`
+	SheMessages      int              `json:"she_messages"`
+	HeMessages       int              `json:"he_messages"`
 	MatchedAt        time.Time        `json:"matched_at"`
 }
 
@@ -140,4 +143,3 @@ type BlockedUser struct {
 	BlockedUserId string    `json:"blocked_user_id"`
 	CreatedAt     time.Time `json:"created_at"`
 }
-
