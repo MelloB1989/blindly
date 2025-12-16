@@ -1,5 +1,15 @@
 # blindly
 
+## 0.6.5
+
+### Patch Changes
+
+- feat: Apple App Store compliance (Guidelines 5.1.1, 1.2, 5.1.1v) (e9698b4)
+- add(docs): legal/csae (45ba148)
+- add: Readme, new app logo (640ef6c)
+
+_Released: 2025-12-16_
+
 ## 0.6.4
 
 ### Patch Changes
