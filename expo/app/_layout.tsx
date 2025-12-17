@@ -14,6 +14,8 @@ import { useStore } from "../store/useStore";
 import { graphqlAuthService } from "../services/graphql-auth";
 import apiService from "../services/api";
 import { setAccessToken as setGraphQLToken } from "../services/graphql-client";
+import { PostHogProvider } from "posthog-react-native";
+import { config } from "@/constants/config";
 
 // Custom dark theme matching our design system
 const BlindlyDarkTheme = {
@@ -58,8 +60,8 @@ function RootLayoutNav() {
             hobbies: result.user.hobbies || [],
             personalityTraits: result.user.personality_traits
               ? Object.fromEntries(
-                result.user.personality_traits.map((t) => [t.key, t.value]),
-              )
+                  result.user.personality_traits.map((t) => [t.key, t.value]),
+                )
               : {},
             photos: result.user.photos || [],
             isVerified: result.user.is_verified,
@@ -281,10 +283,17 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={BlindlyDarkTheme}>
-        <RootLayoutNav />
-        <StatusBar style="light" />
-      </ThemeProvider>
+      <PostHogProvider
+        apiKey={config.posthog_api_key}
+        options={{
+          host: config.posthog_host_url,
+        }}
+      >
+        <ThemeProvider value={BlindlyDarkTheme}>
+          <RootLayoutNav />
+          <StatusBar style="light" />
+        </ThemeProvider>
+      </PostHogProvider>
     </GestureHandlerRootView>
   );
 }

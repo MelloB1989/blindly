@@ -59,6 +59,11 @@ func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) 
 		return nil, err
 	}
 
+	go func() {
+		ae.SetProperty(anal.POST_ID, post.Id)
+		ae.SendEvent(anal.POST_CREATED)
+	}()
+
 	return post, nil
 }
 
@@ -158,6 +163,12 @@ func (r *Resolver) CreateComment(ctx context.Context, input model.CreateCommentI
 	if err := community.IncrementPostCommentCount(input.PostID); err != nil {
 		return nil, err
 	}
+
+	go func() {
+		ae.SetProperty(anal.COMMENT_ID, comment.Id)
+		ae.SetProperty(anal.POST_ID, input.PostID)
+		ae.SendEvent(anal.COMMENT_CREATED)
+	}()
 
 	return comment, nil
 }

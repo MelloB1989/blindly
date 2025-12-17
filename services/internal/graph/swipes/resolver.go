@@ -133,6 +133,17 @@ func (r *Resolver) Swipe(ctx context.Context, targetID string, actionType models
 		}
 	}
 
+	go func() {
+		ae.SetProperty(anal.TARGET_USER_ID, targetID)
+		ae.SetProperty(anal.SWIPE_TYPE, actionType)
+		ae.SendEvent(anal.SWIPE_ACTION)
+
+		if response.Match != nil {
+			ae.SetProperty(anal.MATCH_ID, response.Match.Id)
+			ae.SendEvent(anal.MATCH_CREATED)
+		}
+	}()
+
 	return response, nil
 }
 

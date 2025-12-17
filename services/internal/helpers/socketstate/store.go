@@ -1,6 +1,7 @@
 package socketstate
 
 import (
+	"blindly/internal/anal"
 	"context"
 	"fmt"
 	"time"
@@ -34,6 +35,21 @@ func (s *PublicUserState) GetOnlineStatus() (bool, error) {
 
 func (s *PublicUserState) SetOnlineStatus(status bool) error {
 	ctx := context.Background()
+
+	// Check previous status to avoid duplicate events
+	prevStatus, _ := s.redis.Get(ctx, fmt.Sprintf("user:%s:online", s.uid)).Bool()
+
+	if prevStatus != status {
+		go func() {
+			analyticsClient := anal.CreateAnalytics(s.uid)
+			if status {
+				analyticsClient.SendEvent(anal.USER_ONLINE)
+			} else {
+				analyticsClient.SendEvent(anal.USER_OFFLINE)
+			}
+		}()
+	}
+
 	if status {
 		return s.redis.Set(ctx, fmt.Sprintf("user:%s:online", s.uid), "true", time.Minute*6).Err()
 	}

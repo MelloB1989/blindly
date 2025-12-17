@@ -28,21 +28,45 @@ func NewResolver() *Resolver {
 }
 
 func (r *Resolver) CreateUser(ctx context.Context, input model.CreateUserInput) (*model.AuthPayload, error) {
+	var payload *model.AuthPayload
+	var err error
+
 	switch config.GetEnvRaw("BLINDLY_AUTH_SERVICE") {
 	case "workos":
-		return workos.NewWorkosAuth().CreateUser(input)
+		payload, err = workos.NewWorkosAuth().CreateUser(input)
 	default:
 		return nil, fmt.Errorf("invalid auth service")
 	}
+
+	if err == nil && payload != nil && payload.User != nil {
+		go func() {
+			analyticsClient := anal.CreateAnalytics(payload.User.Id)
+			analyticsClient.SendEvent(anal.USER_SIGNUP)
+		}()
+	}
+
+	return payload, err
 }
 
 func (r *Resolver) LoginWithPassword(ctx context.Context, email string, password string) (*model.AuthPayload, error) {
+	var payload *model.AuthPayload
+	var err error
+
 	switch config.GetEnvRaw("BLINDLY_AUTH_SERVICE") {
 	case "workos":
-		return workos.NewWorkosAuth().LoginWithPassword(email, password)
+		payload, err = workos.NewWorkosAuth().LoginWithPassword(email, password)
 	default:
 		return nil, fmt.Errorf("invalid auth service")
 	}
+
+	if err == nil && payload != nil && payload.User != nil {
+		go func() {
+			analyticsClient := anal.CreateAnalytics(payload.User.Id)
+			analyticsClient.SendEvent(anal.USER_LOGIN)
+		}()
+	}
+
+	return payload, err
 }
 
 func (r *Resolver) RequestEmailLoginCode(ctx context.Context, email string) (bool, error) {

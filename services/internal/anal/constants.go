@@ -15,6 +15,16 @@ const (
 	UNAUTHORIZED_401 Events = "unauthorized_401"
 	SERVER_ERROR_500 Events = "server_error_500"
 
+	// User interaction events
+	USER_POKED        Events = "user_poked"
+	CHAT_MESSAGE_SENT Events = "chat_message_sent"
+	SWIPE_ACTION      Events = "swipe_action"
+	MATCH_CREATED     Events = "match_created"
+	POST_CREATED      Events = "post_created"
+	COMMENT_CREATED   Events = "comment_created"
+	USER_ONLINE       Events = "user_online"
+	USER_OFFLINE      Events = "user_offline"
+
 	// DB issues
 	DB_CONNECTION_ISSUE Events = "db_connection_issue"
 )
@@ -33,6 +43,14 @@ const (
 	USER_IP      Properties = "user_ip"
 	USER_COUNTRY Properties = "user_country"
 	USER_CITY    Properties = "user_city"
+
+	// Action specific
+	TARGET_USER_ID Properties = "target_uid"
+	MESSAGE_TYPE   Properties = "message_type"
+	SWIPE_TYPE     Properties = "swipe_type"
+	MATCH_ID       Properties = "match_id"
+	POST_ID        Properties = "post_id"
+	COMMENT_ID     Properties = "comment_id"
 
 	// Errors
 	ERROR_LIST        Properties = "$exception_list"

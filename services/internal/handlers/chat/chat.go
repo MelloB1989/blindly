@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"blindly/internal/anal"
 	chatservice "blindly/internal/chat_service"
 	"blindly/internal/models"
 	"encoding/json"
@@ -405,6 +406,15 @@ func WSHandler(c *websocket.Conn) {
 					Event: errorEvent,
 					Error: err.Error(),
 				})
+			} else {
+				go func() {
+					if c.Locals("analytics") != nil {
+						if ae, ok := c.Locals("analytics").(*anal.AnalyticsEngine); ok {
+							ae.SetProperty(anal.MESSAGE_TYPE, incoming.Message.Type)
+							ae.SendEvent(anal.CHAT_MESSAGE_SENT)
+						}
+					}
+				}()
 			}
 		case messageUpdated:
 			if incoming.Message == nil || incoming.Message.Id == nil {

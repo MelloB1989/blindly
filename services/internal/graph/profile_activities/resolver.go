@@ -56,6 +56,13 @@ func (r *Resolver) CreateProfileActivity(ctx context.Context, typeArg models.Act
 		return nil, fmt.Errorf("failed to create profile activity: %w", err)
 	}
 
+	if typeArg == models.POKE {
+		go func() {
+			ae.SetProperty(anal.TARGET_USER_ID, targetUserID)
+			ae.SendEvent(anal.USER_POKED)
+		}()
+	}
+
 	return profileActivity, nil
 }
 
