@@ -1,12 +1,12 @@
-import React, { useEffect, useCallback, useState } from "react";
-import { View, ActivityIndicator, StyleSheet, Dimensions } from "react-native";
+import React, { useEffect, useCallback, useState, useMemo, useRef } from "react";
+import { View, ActivityIndicator, StyleSheet, Animated } from "react-native";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack, useRouter, useSegments, Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
+import { useVideoPlayer, VideoView } from "expo-video";
 import "react-native-reanimated";
 import "../global.css";
 
@@ -16,6 +16,9 @@ import apiService from "../services/api";
 import { setAccessToken as setGraphQLToken } from "../services/graphql-client";
 import { PostHogProvider } from "posthog-react-native";
 import { config } from "@/constants/config";
+
+// Import the video asset
+const splashVideoSource = require("../assets/splash1.mp4");
 
 // Custom dark theme matching our design system
 const BlindlyDarkTheme = {
@@ -60,8 +63,8 @@ function RootLayoutNav() {
             hobbies: result.user.hobbies || [],
             personalityTraits: result.user.personality_traits
               ? Object.fromEntries(
-                  result.user.personality_traits.map((t) => [t.key, t.value]),
-                )
+                result.user.personality_traits.map((t) => [t.key, t.value]),
+              )
               : {},
             photos: result.user.photos || [],
             isVerified: result.user.is_verified,
@@ -213,11 +216,111 @@ function RootLayoutNav() {
   );
 }
 
-// Prevent splash screen from auto-hiding
-SplashScreen.preventAutoHideAsync();
+// Prevent native splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* reloading the app might trigger some race conditions, ignore them */
+});
+
+function SplashVideo({
+  onLoaded,
+  onFinish,
+}: {
+  onLoaded: () => void;
+  onFinish: () => void;
+}) {
+  const hasCalledLoaded = useRef(false);
+
+  const player = useVideoPlayer(splashVideoSource, (p) => {
+    p.loop = false;
+    p.play();
+  });
+
+  useEffect(() => {
+    // Call onLoaded once player is ready
+    if (!hasCalledLoaded.current) {
+      hasCalledLoaded.current = true;
+      onLoaded();
+    }
+
+    const subscription = player.addListener("playToEnd", () => {
+      onFinish();
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [player, onLoaded, onFinish]);
+
+  return (
+    <VideoView
+      player={player}
+      style={StyleSheet.absoluteFill}
+      contentFit="cover"
+      nativeControls={false}
+    />
+  );
+}
+
+function AnimatedSplashScreen({ children }: { children: React.ReactNode }) {
+  const animation = useMemo(() => new Animated.Value(1), []);
+  const [isAppReady, setAppReady] = useState(false);
+  const [isSplashVideoComplete, setSplashVideoComplete] = useState(false);
+  const [isSplashAnimationComplete, setAnimationComplete] = useState(false);
+
+  useEffect(() => {
+    if (isAppReady && isSplashVideoComplete) {
+      Animated.timing(animation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => setAnimationComplete(true));
+    }
+  }, [isAppReady, isSplashVideoComplete, animation]);
+
+  const onVideoLoaded = useCallback(async () => {
+    try {
+      // Hide native splash screen once video is loaded
+      await SplashScreen.hideAsync();
+    } catch (e) {
+      // Ignore errors
+    } finally {
+      setAppReady(true);
+    }
+  }, []);
+
+  const videoElement = useMemo(() => {
+    return (
+      <SplashVideo
+        onLoaded={onVideoLoaded}
+        onFinish={() => {
+          setSplashVideoComplete(true);
+        }}
+      />
+    );
+  }, [onVideoLoaded]);
+
+  return (
+    <View style={{ flex: 1 }}>
+      {isAppReady && children}
+      {!isSplashAnimationComplete && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: "#0B0223",
+              opacity: animation,
+            },
+          ]}
+        >
+          {videoElement}
+        </Animated.View>
+      )}
+    </View>
+  );
+}
 
 export default function RootLayout() {
-  const [showSplashVideo, setShowSplashVideo] = useState(true);
   const [fontsLoaded, fontError] = useFonts({
     // Lexend fonts
     "Lexend-Thin": require("../assets/fonts/Lexend/static/Lexend-Thin.ttf"),
@@ -240,73 +343,27 @@ export default function RootLayout() {
     "Nunito-Black": require("../assets/fonts/Nunito/static/Nunito-Black.ttf"),
   });
 
-  // Hide native splash once video is ready to play
-  useEffect(() => {
-    if (showSplashVideo) {
-      SplashScreen.hideAsync();
-    }
-  }, [showSplashVideo]);
-
-  const handleVideoEnd = useCallback((status: AVPlaybackStatus) => {
-    if (status.isLoaded && status.didJustFinish) {
-      setShowSplashVideo(false);
-    }
-  }, []);
-
-  // Show video splash screen
-  if (showSplashVideo) {
-    return (
-      <View style={splashStyles.container}>
-        <Video
-          source={require("../assets/splash1.mp4")}
-          style={splashStyles.video}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay
-          volume={1.0}
-          isMuted={false}
-          isLooping={false}
-          onPlaybackStatusUpdate={handleVideoEnd}
-        />
-        <StatusBar style="light" />
-      </View>
-    );
-  }
-
-  // Show loading indicator while fonts load
+  // Show nothing while fonts load - the splash video will be covering anyway
   if (!fontsLoaded && !fontError) {
-    return (
-      <View style={splashStyles.container}>
-        <ActivityIndicator size="large" color="#6A1BFF" />
-      </View>
-    );
+    return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <PostHogProvider
-        apiKey={config.posthog_api_key}
-        options={{
-          host: config.posthog_host_url,
-        }}
-      >
-        <ThemeProvider value={BlindlyDarkTheme}>
-          <RootLayoutNav />
-          <StatusBar style="light" />
-        </ThemeProvider>
-      </PostHogProvider>
-    </GestureHandlerRootView>
+    <AnimatedSplashScreen>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <PostHogProvider
+          apiKey={config.posthog_api_key}
+          options={{
+            host: config.posthog_host_url,
+          }}
+        >
+          <ThemeProvider value={BlindlyDarkTheme}>
+            <RootLayoutNav />
+            <StatusBar style="light" />
+          </ThemeProvider>
+        </PostHogProvider>
+      </GestureHandlerRootView>
+    </AnimatedSplashScreen>
   );
 }
 
-const splashStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0B0223",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  video: {
-    width: Dimensions.get("window").width,
-    height: Dimensions.get("window").height,
-  },
-});

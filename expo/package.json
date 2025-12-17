@@ -22,7 +22,6 @@
     "expo-application": "~7.0.8",
     "expo-audio": "~1.0.16",
     "expo-auth-session": "~7.0.10",
-    "expo-av": "~16.0.8",
     "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.11",
     "expo-device": "~8.0.10",
