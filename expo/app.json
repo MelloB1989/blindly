@@ -2,7 +2,7 @@
   "expo": {
     "name": "Blindly",
     "slug": "blindly",
-    "version": "0.6.7",
+    "version": "0.6.8",
     "orientation": "portrait",
     "icon": "./assets/main-dark.png",
     "scheme": "blindly",
@@ -11,7 +11,7 @@
     "ios": {
       "icon": "./assets/blindly.icon",
       "supportsTablet": true,
-      "buildNumber": "0.6.7",
+      "buildNumber": "0.6.8",
       "bundleIdentifier": "com.mellob.blindly",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -30,7 +30,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 6007,
+      "versionCode": 6008,
       "package": "com.mellob.blindly",
       "permissions": [
         "android.permission.RECORD_AUDIO",

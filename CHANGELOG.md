@@ -1,5 +1,13 @@
 # blindly
 
+## 0.6.8
+
+### Patch Changes
+
+- feat: add and capture events for analytiics, posthog (56fe2f7)
+
+_Released: 2025-12-17_
+
 ## 0.6.7
 
 ### Patch Changes
