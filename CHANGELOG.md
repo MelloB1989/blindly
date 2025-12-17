@@ -1,5 +1,16 @@
 # blindly
 
+## 0.6.7
+
+### Patch Changes
+
+- feat: splash animation fix: ai summary issue fix: blur pfp (d384bf2)
+- fix: enforce blurred PFP for locked profiles (60baa2d)
+- fix: enforce strict photo blur for matched/locked profiles and recommendations (045a6f4)
+- feat: implement photo blur and improved unlock security fixes (9ea3c3a)
+
+_Released: 2025-12-17_
+
 ## 0.6.6
 
 ### Patch Changes

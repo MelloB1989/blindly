@@ -1,6 +1,6 @@
 {
   "name": "blindly",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "scripts": {
     "release:patch": "node ./scripts/release.js patch",
     "release:minor": "node ./scripts/release.js minor",
