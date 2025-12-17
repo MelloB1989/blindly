@@ -8,6 +8,7 @@ import (
 	"blindly/internal/models"
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/MelloB1989/karma/config"
 	"github.com/workos/workos-go/v4/pkg/usermanagement"
@@ -41,7 +42,7 @@ func (*WorkosAuth) CreateUser(u model.CreateUserInput) (*model.AuthPayload, erro
 		Id:        user.ID,
 		Pfp:       user.ProfilePictureURL,
 		Email:     u.Email,
-		Gender:    u.Gender,
+		Gender:    strings.ToUpper(u.Gender),
 		FirstName: u.FirstName,
 		LastName:  u.LastName,
 		Dob:       u.Dob,
