@@ -99,7 +99,7 @@ input CreateUserInput {
     first_name: String!
     last_name: String!
     dob: Time!
-    gender: String
+    gender: String!
     pfp: String
     bio: String
     hobbies: [String!]
@@ -140,4 +140,3 @@ extend type Mutation {
     requestAccountDeletion: Boolean! @auth
     deleteAccount(confirmationCode: String!): Boolean! @auth
 }
-

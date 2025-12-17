@@ -122,14 +122,12 @@ export default function SwipeScreen() {
     loadMore();
   }, [currentIndex, profiles.length, loadMore]);
 
-  // Fetch AI summaries for visible profiles
+  // Fetch AI summary only for the current (top) profile
   useEffect(() => {
-    const visibleProfiles = profiles.slice(currentIndex, currentIndex + 3);
-    visibleProfiles.forEach((profile) => {
-      if (!profileSummaries[profile.id]) {
-        fetchProfileSummary(profile.id);
-      }
-    });
+    const currentProfile = profiles[currentIndex];
+    if (currentProfile && !profileSummaries[currentProfile.id]) {
+      fetchProfileSummary(currentProfile.id);
+    }
   }, [currentIndex, profiles, profileSummaries, fetchProfileSummary]);
 
   const handleSwipeLeft = useCallback(
@@ -227,19 +225,22 @@ export default function SwipeScreen() {
 
   const handleAppInvite = async () => {
     try {
-      const result = await Share.share(
-        {
-          title: "Blindly — Meet the person first. Looks later.",
-          message:
-            Platform.OS === "android"
-              ? "Blindly is a personality-first dating app. Meet people through hobbies and conversation before photos. Join here: https://blindly.mellob.in"
-              : "Blindly is a personality-first dating app. Meet people through hobbies and conversation before photos.",
-          url: "https://blindly.mellob.in",
-        },
-        {
-          dialogTitle: "Invite friends to Blindly",
-        },
-      );
+      const shareContent =
+        Platform.OS === "android"
+          ? {
+            message:
+              "Blindly is a personality-first dating app. Meet people through hobbies and conversation before photos. Join here: https://blindly.mellob.in",
+          }
+          : {
+            title: "Blindly — Meet the person first. Looks later.",
+            message:
+              "Blindly is a personality-first dating app. Meet people through hobbies and conversation before photos.",
+            url: "https://blindly.mellob.in",
+          };
+
+      const result = await Share.share(shareContent, {
+        dialogTitle: "Invite friends to Blindly",
+      });
 
       if (result.action === Share.sharedAction) {
         // Tracking
@@ -429,23 +430,21 @@ export default function SwipeScreen() {
               <Animated.View
                 entering={BounceIn.duration(400)}
                 exiting={FadeOut.duration(200)}
-                className={`px-10 py-6 border-4 rounded-3xl transform -rotate-12 ${
-                  feedback.type === "like"
-                    ? "border-[#14D679] bg-[#14D679]/20"
-                    : feedback.type === "pass"
-                      ? "border-[#FF4C61] bg-[#FF4C61]/20"
-                      : "border-[#6A1BFF] bg-[#6A1BFF]/20"
-                }`}
+                className={`px-10 py-6 border-4 rounded-3xl transform -rotate-12 ${feedback.type === "like"
+                  ? "border-[#14D679] bg-[#14D679]/20"
+                  : feedback.type === "pass"
+                    ? "border-[#FF4C61] bg-[#FF4C61]/20"
+                    : "border-[#6A1BFF] bg-[#6A1BFF]/20"
+                  }`}
               >
                 <Typography
                   variant="h1"
-                  className={`text-5xl font-black uppercase tracking-widest ${
-                    feedback.type === "like"
-                      ? "text-[#14D679]"
-                      : feedback.type === "pass"
-                        ? "text-[#FF4C61]"
-                        : "text-[#6A1BFF]"
-                  }`}
+                  className={`text-5xl font-black uppercase tracking-widest ${feedback.type === "like"
+                    ? "text-[#14D679]"
+                    : feedback.type === "pass"
+                      ? "text-[#FF4C61]"
+                      : "text-[#6A1BFF]"
+                    }`}
                 >
                   {feedback.text}
                 </Typography>
@@ -693,11 +692,10 @@ export default function SwipeScreen() {
                     </Typography>
                   </View>
                   <View
-                    className={`w-6 h-6 rounded-md items-center justify-center ${
-                      showVerifiedOnly
-                        ? "bg-primary"
-                        : "bg-surface border border-muted/30"
-                    }`}
+                    className={`w-6 h-6 rounded-md items-center justify-center ${showVerifiedOnly
+                      ? "bg-primary"
+                      : "bg-surface border border-muted/30"
+                      }`}
                   >
                     {showVerifiedOnly && <Check size={16} color="#FFFFFF" />}
                   </View>

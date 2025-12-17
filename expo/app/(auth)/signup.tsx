@@ -50,9 +50,8 @@ const StepIndicator = ({
     {Array.from({ length: totalSteps }).map((_, index) => (
       <View
         key={index}
-        className={`h-1 rounded-full ${
-          index <= currentStep ? "bg-primary" : "bg-white/20"
-        }`}
+        className={`h-1 rounded-full ${index <= currentStep ? "bg-primary" : "bg-white/20"
+          }`}
         style={{ width: index <= currentStep ? 32 : 24 }}
       />
     ))}
@@ -202,8 +201,8 @@ export default function SignupScreen() {
           hobbies: result.user.hobbies || [],
           personalityTraits: result.user.personality_traits
             ? Object.fromEntries(
-                result.user.personality_traits.map((t) => [t.key, t.value]),
-              )
+              result.user.personality_traits.map((t) => [t.key, t.value]),
+            )
             : {},
           photos: result.user.photos || [],
           isVerified: result.user.is_verified,
@@ -302,11 +301,10 @@ export default function SignupScreen() {
                       First Name
                     </Typography>
                     <View
-                      className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
-                        focusedField === "firstName"
+                      className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${focusedField === "firstName"
                           ? "border-primary"
                           : "border-white/[0.06]"
-                      }`}
+                        }`}
                     >
                       <User
                         size={18}
@@ -334,11 +332,10 @@ export default function SignupScreen() {
                       Last Name
                     </Typography>
                     <View
-                      className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
-                        focusedField === "lastName"
+                      className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${focusedField === "lastName"
                           ? "border-primary"
                           : "border-white/[0.06]"
-                      }`}
+                        }`}
                     >
                       <TextInput
                         className="flex-1 text-white text-base"
@@ -365,11 +362,10 @@ export default function SignupScreen() {
                     Email
                   </Typography>
                   <View
-                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
-                      focusedField === "email"
+                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${focusedField === "email"
                         ? "border-primary"
                         : "border-white/[0.06]"
-                    }`}
+                      }`}
                   >
                     <Mail
                       size={18}
@@ -403,18 +399,16 @@ export default function SignupScreen() {
                   </Typography>
                   <Pressable
                     onPress={() => setShowDatePicker(true)}
-                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
-                      showDatePicker ? "border-primary" : "border-white/[0.06]"
-                    }`}
+                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${showDatePicker ? "border-primary" : "border-white/[0.06]"
+                      }`}
                   >
                     <Calendar
                       size={18}
                       color={showDatePicker ? "#8A3CFF" : "#6B6B80"}
                     />
                     <Typography
-                      className={`flex-1 ml-3 text-base ${
-                        dob ? "text-white" : "text-white/30"
-                      }`}
+                      className={`flex-1 ml-3 text-base ${dob ? "text-white" : "text-white/30"
+                        }`}
                     >
                       {dob ? formatDate(dob) : "Select your birthday"}
                     </Typography>
@@ -476,11 +470,10 @@ export default function SignupScreen() {
                           style={{ borderRadius: 12 }}
                         >
                           <View
-                            className={`py-4 rounded-xl items-center justify-center border ${
-                              gender === option.value
+                            className={`py-4 rounded-xl items-center justify-center border ${gender === option.value
                                 ? "border-primary"
                                 : "border-white/[0.06]"
-                            }`}
+                              }`}
                           >
                             <Typography className="text-2xl mb-1">
                               {option.emoji}
@@ -511,11 +504,10 @@ export default function SignupScreen() {
                     Password
                   </Typography>
                   <View
-                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
-                      focusedField === "password"
+                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${focusedField === "password"
                         ? "border-primary"
                         : "border-white/[0.06]"
-                    }`}
+                      }`}
                   >
                     <Lock
                       size={18}
@@ -557,13 +549,12 @@ export default function SignupScreen() {
                     Confirm Password
                   </Typography>
                   <View
-                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${
-                      focusedField === "confirmPassword"
+                    className={`flex-row items-center bg-[#1A0138]/80 rounded-xl px-4 py-3.5 border ${focusedField === "confirmPassword"
                         ? "border-primary"
                         : confirmPassword && password === confirmPassword
                           ? "border-[#47FFA8]"
                           : "border-white/[0.06]"
-                    }`}
+                      }`}
                   >
                     <Lock
                       size={18}
@@ -650,11 +641,10 @@ export default function SignupScreen() {
                   className="flex-row items-start gap-3"
                 >
                   <View
-                    className={`w-6 h-6 rounded-md border-2 items-center justify-center mt-0.5 ${
-                      acceptedTerms
+                    className={`w-6 h-6 rounded-md border-2 items-center justify-center mt-0.5 ${acceptedTerms
                         ? "bg-primary border-primary"
-                        : "bg-transparent border-white/30"
-                    }`}
+                        : "bg-white/10 border-white/50"
+                      }`}
                   >
                     {acceptedTerms && <Check size={14} color="white" />}
                   </View>

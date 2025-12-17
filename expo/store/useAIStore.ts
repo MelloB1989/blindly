@@ -309,30 +309,34 @@ export const useAIStore = create<AIStore>()(
 
             // Profile summaries
             fetchProfileSummary: async (userId) => {
-                const { profileSummaries } = get();
+                const { profileSummaries, loadingProfileSummary } = get();
 
                 // Check cache first
                 if (profileSummaries[userId]) {
                     return;
                 }
 
-                set({ loadingProfileSummary: userId });
+                // Avoid duplicate requests for the same user
+                if (loadingProfileSummary === userId) {
+                    return;
+                }
 
-                let summaryText = "";
+                set({ loadingProfileSummary: userId });
 
                 await aiService.getProfileSummary(
                     userId,
                     (chunk) => {
-                        summaryText += chunk;
-                    },
-                    (fullText) => {
+                        // Update store on each chunk for real-time streaming effect
                         set((state) => ({
                             profileSummaries: {
                                 ...state.profileSummaries,
-                                [userId]: fullText,
+                                [userId]: (state.profileSummaries[userId] || "") + chunk,
                             },
-                            loadingProfileSummary: null,
                         }));
+                    },
+                    (_fullText) => {
+                        // Finalize loading state (summary already built from chunks)
+                        set({ loadingProfileSummary: null });
                     },
                     (error) => {
                         console.error("[AI Store] Profile summary error:", error);
@@ -478,9 +482,9 @@ export const useAIStore = create<AIStore>()(
         {
             name: "blindly-ai-storage",
             storage: createJSONStorage(() => AsyncStorage),
-            partialize: (state) => ({
-                // Only persist profile summaries (chats are fetched from server)
-                profileSummaries: state.profileSummaries,
+            partialize: (_state) => ({
+                // Don't persist profileSummaries to prevent stale cache issues
+                // Summaries will be fetched fresh each session
             }),
         },
     ),

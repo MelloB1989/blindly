@@ -41,6 +41,7 @@ func (*WorkosAuth) CreateUser(u model.CreateUserInput) (*model.AuthPayload, erro
 		Id:        user.ID,
 		Pfp:       user.ProfilePictureURL,
 		Email:     u.Email,
+		Gender:    u.Gender,
 		FirstName: u.FirstName,
 		LastName:  u.LastName,
 		Dob:       u.Dob,

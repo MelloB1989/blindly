@@ -8,8 +8,14 @@ import {
   Heart,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  // Use insets.bottom for devices with gesture navigation (provides proper padding)
+  // Use minimum of 16 for devices without gestures (navigation buttons)
+  const bottomPadding = Math.max(insets.bottom, 16);
+
   return (
     <Tabs
       screenOptions={{
@@ -18,9 +24,9 @@ export default function TabLayout() {
           backgroundColor: "transparent",
           borderTopColor: "rgba(255, 255, 255, 0.05)",
           borderTopWidth: 1,
-          height: 88,
+          height: 60 + bottomPadding,
           paddingTop: 8,
-          paddingBottom: 28,
+          paddingBottom: bottomPadding,
         },
         tabBarBackground: () => (
           <LinearGradient

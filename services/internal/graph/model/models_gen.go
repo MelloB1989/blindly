@@ -80,7 +80,7 @@ type CreateUserInput struct {
 	FirstName   string        `json:"first_name"`
 	LastName    string        `json:"last_name"`
 	Dob         time.Time     `json:"dob"`
-	Gender      *string       `json:"gender,omitempty"`
+	Gender      string        `json:"gender"`
 	Pfp         *string       `json:"pfp,omitempty"`
 	Bio         *string       `json:"bio,omitempty"`
 	Hobbies     []string      `json:"hobbies,omitempty"`

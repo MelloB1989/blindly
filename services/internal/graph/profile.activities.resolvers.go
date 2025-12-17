@@ -33,9 +33,9 @@ func (r *userProfileActivityResolver) TargetUser(ctx context.Context, obj *model
 		return nil, fmt.Errorf("unauthorized: %w", err)
 	}
 	if claims.UserID == obj.TargetId {
-		return users.GetUserPublicById(obj.UserId)
+		return users.GetUserPublicById(obj.UserId, claims.UserID)
 	}
-	return users.GetUserPublicById(obj.TargetId)
+	return users.GetUserPublicById(obj.TargetId, claims.UserID)
 }
 
 // Class is the resolver for the class field.

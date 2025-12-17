@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, ScrollView, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, Href } from "expo-router";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
@@ -9,9 +9,11 @@ import { ONBOARDING_QUESTIONS } from "../../constants/mockData";
 import { useStore } from "../../store/useStore";
 import { ChevronLeft } from "lucide-react-native";
 import { graphqlAuthService } from "../../services/graphql-auth";
+import { GradientBackground } from "../../components/ui/GradientBackground";
 
 export default function PersonalityScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const {
     updateOnboardingData,
     onboardingData,
@@ -24,17 +26,17 @@ export default function PersonalityScreen() {
   const [answers, setAnswers] = useState<Record<number, number>>(
     onboardingData.personalityTraits
       ? Object.entries(onboardingData.personalityTraits).reduce(
-          (acc, [key, value]) => {
-            const questionIndex = ONBOARDING_QUESTIONS.findIndex(
-              (q) => q.question === key,
-            );
-            if (questionIndex !== -1) {
-              acc[ONBOARDING_QUESTIONS[questionIndex].id] = value;
-            }
-            return acc;
-          },
-          {} as Record<number, number>,
-        )
+        (acc, [key, value]) => {
+          const questionIndex = ONBOARDING_QUESTIONS.findIndex(
+            (q) => q.question === key,
+          );
+          if (questionIndex !== -1) {
+            acc[ONBOARDING_QUESTIONS[questionIndex].id] = value;
+          }
+          return acc;
+        },
+        {} as Record<number, number>,
+      )
       : {},
   );
   const [isLoading, setIsLoading] = useState(false);
@@ -155,8 +157,8 @@ export default function PersonalityScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1">
+    <GradientBackground>
+      <View className="flex-1" style={{ paddingTop: insets.top }}>
         {/* Header */}
         <View className="px-6 py-4">
           {/* Back Button & Progress Indicators */}
@@ -203,7 +205,7 @@ export default function PersonalityScreen() {
 
         <ScrollView
           className="flex-1 px-6"
-          contentContainerStyle={{ paddingVertical: 16, paddingBottom: 120 }}
+          contentContainerStyle={{ paddingVertical: 16, paddingBottom: 140 + insets.bottom }}
           showsVerticalScrollIndicator={false}
         >
           {ONBOARDING_QUESTIONS.map((q, index) => (
@@ -221,7 +223,10 @@ export default function PersonalityScreen() {
         </ScrollView>
 
         {/* Footer */}
-        <View className="absolute bottom-0 left-0 right-0 p-6 border-t border-surface-elevated bg-background">
+        <View
+          className="absolute bottom-0 left-0 right-0 p-6 border-t border-surface-elevated bg-background"
+          style={{ paddingBottom: Math.max(insets.bottom, 16) + 8 }}
+        >
           <Button
             variant="primary"
             size="lg"
@@ -244,6 +249,6 @@ export default function PersonalityScreen() {
           </Button>
         </View>
       </View>
-    </SafeAreaView>
+    </GradientBackground>
   );
 }

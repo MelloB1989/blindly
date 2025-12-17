@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "icon": "./assets/blindly.icon",
       "supportsTablet": true,
       "buildNumber": "0.6.6",
       "bundleIdentifier": "com.mellob.blindly",

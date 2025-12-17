@@ -115,13 +115,15 @@ ORDER BY m.matched_at DESC;
 		}
 
 		var profile *model.UserPublic
+		// Determine lock status from match (locked = not unlocked)
+		isLocked := !match.IsUnlocked
 		if len(rrow.ProfileJSON) > 0 {
 			var dbProfile shared.DBUserProfile
 			if err := json.Unmarshal(rrow.ProfileJSON, &dbProfile); err != nil {
 				log.Printf("unmarshal profile json error: %v", err)
 				return nil, fmt.Errorf("unmarshal profile json error: %w", err)
 			}
-			profile = dbProfile.ToUserPublic()
+			profile = dbProfile.ToUserPublicWithLock(isLocked)
 		}
 
 		lastMsg := ""

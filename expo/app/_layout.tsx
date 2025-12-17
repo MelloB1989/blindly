@@ -1,11 +1,12 @@
-import React, { useEffect, useCallback } from "react";
-import { View, ActivityIndicator } from "react-native";
+import React, { useEffect, useCallback, useState } from "react";
+import { View, ActivityIndicator, StyleSheet, Dimensions } from "react-native";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack, useRouter, useSegments, Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
+import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
 import "react-native-reanimated";
 import "../global.css";
 
@@ -57,8 +58,8 @@ function RootLayoutNav() {
             hobbies: result.user.hobbies || [],
             personalityTraits: result.user.personality_traits
               ? Object.fromEntries(
-                  result.user.personality_traits.map((t) => [t.key, t.value]),
-                )
+                result.user.personality_traits.map((t) => [t.key, t.value]),
+              )
               : {},
             photos: result.user.photos || [],
             isVerified: result.user.is_verified,
@@ -214,6 +215,7 @@ function RootLayoutNav() {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [showSplashVideo, setShowSplashVideo] = useState(true);
   const [fontsLoaded, fontError] = useFonts({
     // Lexend fonts
     "Lexend-Thin": require("../assets/fonts/Lexend/static/Lexend-Thin.ttf"),
@@ -236,22 +238,42 @@ export default function RootLayout() {
     "Nunito-Black": require("../assets/fonts/Nunito/static/Nunito-Black.ttf"),
   });
 
+  // Hide native splash once video is ready to play
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (showSplashVideo) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
+  }, [showSplashVideo]);
 
+  const handleVideoEnd = useCallback((status: AVPlaybackStatus) => {
+    if (status.isLoaded && status.didJustFinish) {
+      setShowSplashVideo(false);
+    }
+  }, []);
+
+  // Show video splash screen
+  if (showSplashVideo) {
+    return (
+      <View style={splashStyles.container}>
+        <Video
+          source={require("../assets/splash1.mp4")}
+          style={splashStyles.video}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay
+          volume={1.0}
+          isMuted={false}
+          isLooping={false}
+          onPlaybackStatusUpdate={handleVideoEnd}
+        />
+        <StatusBar style="light" />
+      </View>
+    );
+  }
+
+  // Show loading indicator while fonts load
   if (!fontsLoaded && !fontError) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#0B0223",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
+      <View style={splashStyles.container}>
         <ActivityIndicator size="large" color="#6A1BFF" />
       </View>
     );
@@ -266,3 +288,16 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+const splashStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#0B0223",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  video: {
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").height,
+  },
+});
