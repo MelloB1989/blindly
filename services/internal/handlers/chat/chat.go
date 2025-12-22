@@ -3,6 +3,7 @@ package chat
 import (
 	"blindly/internal/anal"
 	chatservice "blindly/internal/chat_service"
+	"blindly/internal/helpers/notifications"
 	"blindly/internal/models"
 	"encoding/json"
 	"fmt"
@@ -415,6 +416,16 @@ func WSHandler(c *websocket.Conn) {
 						}
 					}
 				}()
+				// Send email notification to the other participant
+				go func(senderID string, messageContent string) {
+					participants := store.GetParticipants()
+					for _, participantID := range participants {
+						if participantID != senderID {
+							notifications.SendNewMessageNotification(participantID, senderID, messageContent)
+							break
+						}
+					}
+				}(userId, userMgs.Content)
 			}
 		case messageUpdated:
 			if incoming.Message == nil || incoming.Message.Id == nil {

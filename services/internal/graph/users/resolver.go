@@ -162,6 +162,44 @@ func (r *Resolver) UpdateMe(ctx context.Context, input model.UpdateUserInput) (*
 		}
 		user.PersonalityTraits = pt
 	}
+	if input.Extra != nil {
+		if input.Extra.School != nil {
+			user.Extra.School = *input.Extra.School
+		}
+		if input.Extra.Work != nil {
+			user.Extra.Work = *input.Extra.Work
+		}
+		if len(input.Extra.LookingFor) > 0 {
+			user.Extra.LookingFor = input.Extra.LookingFor
+		}
+		if input.Extra.Zodiac != nil {
+			user.Extra.Zodiac = *input.Extra.Zodiac
+		}
+		if len(input.Extra.Languages) > 0 {
+			user.Extra.Languages = input.Extra.Languages
+		}
+		if input.Extra.Excercise != nil {
+			user.Extra.Excercise = *input.Extra.Excercise
+		}
+		if input.Extra.Drinking != nil {
+			user.Extra.Drinking = *input.Extra.Drinking
+		}
+		if input.Extra.Smoking != nil {
+			user.Extra.Smoking = *input.Extra.Smoking
+		}
+		if input.Extra.Kids != nil {
+			user.Extra.Kids = *input.Extra.Kids
+		}
+		if input.Extra.Religion != nil {
+			user.Extra.Religion = *input.Extra.Religion
+		}
+		if input.Extra.Ethnicity != nil {
+			user.Extra.Ethnicity = *input.Extra.Ethnicity
+		}
+		if input.Extra.Sexuality != nil {
+			user.Extra.Sexuality = *input.Extra.Sexuality
+		}
+	}
 
 	return users.UpdateUser(*user)
 }

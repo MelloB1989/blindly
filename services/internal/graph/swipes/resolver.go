@@ -5,6 +5,7 @@ import (
 	"blindly/internal/graph/directives"
 	"blindly/internal/graph/model"
 	"blindly/internal/graph/shared"
+	"blindly/internal/helpers/notifications"
 	"blindly/internal/models"
 	"context"
 	"database/sql"
@@ -64,6 +65,8 @@ func (r *Resolver) Swipe(ctx context.Context, targetID string, actionType models
 				Type:     models.SUPERLIKE,
 			}
 			activity.CreateActivity()
+			// Send superlike email notification
+			notifications.SendSuperlikeNotification(targetID, claims.UserID)
 		}
 	}()
 
@@ -130,6 +133,8 @@ func (r *Resolver) Swipe(ctx context.Context, targetID string, actionType models
 			}
 			response.Match = match
 			log.Printf("[DEBUG] Match created: %+v", match)
+			// Send match email notifications to both users
+			notifications.SendMatchNotification(claims.UserID, targetID)
 		}
 	}
 

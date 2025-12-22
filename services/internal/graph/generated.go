@@ -1737,6 +1737,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreatePostInput,
 		ec.unmarshalInputCreateReportInput,
 		ec.unmarshalInputCreateUserInput,
+		ec.unmarshalInputExtraMetadataInput,
 		ec.unmarshalInputMediaInput,
 		ec.unmarshalInputPersonalityTraitInput,
 		ec.unmarshalInputPostFilterInput,
@@ -11373,6 +11374,110 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputExtraMetadataInput(ctx context.Context, obj any) (model.ExtraMetadataInput, error) {
+	var it model.ExtraMetadataInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"school", "work", "looking_for", "zodiac", "languages", "excercise", "drinking", "smoking", "kids", "religion", "ethnicity", "sexuality"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "school":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("school"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.School = data
+		case "work":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("work"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Work = data
+		case "looking_for":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("looking_for"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LookingFor = data
+		case "zodiac":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("zodiac"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Zodiac = data
+		case "languages":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("languages"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Languages = data
+		case "excercise":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("excercise"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Excercise = data
+		case "drinking":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("drinking"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Drinking = data
+		case "smoking":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("smoking"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Smoking = data
+		case "kids":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kids"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Kids = data
+		case "religion":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("religion"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Religion = data
+		case "ethnicity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ethnicity"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Ethnicity = data
+		case "sexuality":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sexuality"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Sexuality = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputMediaInput(ctx context.Context, obj any) (model.MediaInput, error) {
 	var it model.MediaInput
 	asMap := map[string]any{}
@@ -11702,7 +11807,7 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"first_name", "last_name", "dob", "pfp", "bio", "gender", "hobbies", "interests", "user_prompts", "personality_traits", "photos", "is_verified", "address"}
+	fieldsInOrder := [...]string{"first_name", "last_name", "dob", "pfp", "bio", "gender", "hobbies", "interests", "user_prompts", "personality_traits", "photos", "is_verified", "address", "extra"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -11800,6 +11905,13 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 				return it, err
 			}
 			it.Address = data
+		case "extra":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extra"))
+			data, err := ec.unmarshalOExtraMetadataInput2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐExtraMetadataInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Extra = data
 		}
 	}
 
@@ -15947,6 +16059,14 @@ func (ec *executionContext) marshalOExtraMetadata2ᚖblindlyᚋinternalᚋmodels
 		return graphql.Null
 	}
 	return ec._ExtraMetadata(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOExtraMetadataInput2ᚖblindlyᚋinternalᚋgraphᚋmodelᚐExtraMetadataInput(ctx context.Context, v any) (*model.ExtraMetadataInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputExtraMetadataInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOFloat2ᚕfloat64ᚄ(ctx context.Context, v any) ([]float64, error) {

@@ -93,6 +93,21 @@ input AddressInput {
     country: String!
 }
 
+input ExtraMetadataInput {
+    school: String
+    work: String
+    looking_for: [String!]
+    zodiac: String
+    languages: [String!]
+    excercise: String
+    drinking: String
+    smoking: String
+    kids: String
+    religion: String
+    ethnicity: String
+    sexuality: String
+}
+
 input CreateUserInput {
     email: String!
     password: String! # used only for password-based signup (WorkOS or your own flow)
@@ -123,6 +138,7 @@ input UpdateUserInput {
     photos: [String!]
     is_verified: Boolean
     address: AddressInput
+    extra: ExtraMetadataInput
 }
 
 extend type Query {

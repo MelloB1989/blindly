@@ -90,6 +90,21 @@ type CreateUserInput struct {
 	Address     *AddressInput `json:"address,omitempty"`
 }
 
+type ExtraMetadataInput struct {
+	School     *string  `json:"school,omitempty"`
+	Work       *string  `json:"work,omitempty"`
+	LookingFor []string `json:"looking_for,omitempty"`
+	Zodiac     *string  `json:"zodiac,omitempty"`
+	Languages  []string `json:"languages,omitempty"`
+	Excercise  *string  `json:"excercise,omitempty"`
+	Drinking   *string  `json:"drinking,omitempty"`
+	Smoking    *string  `json:"smoking,omitempty"`
+	Kids       *string  `json:"kids,omitempty"`
+	Religion   *string  `json:"religion,omitempty"`
+	Ethnicity  *string  `json:"ethnicity,omitempty"`
+	Sexuality  *string  `json:"sexuality,omitempty"`
+}
+
 type MediaInput struct {
 	ID        string    `json:"id"`
 	URL       string    `json:"url"`
@@ -201,6 +216,7 @@ type UpdateUserInput struct {
 	Photos            []string                 `json:"photos,omitempty"`
 	IsVerified        *bool                    `json:"is_verified,omitempty"`
 	Address           *AddressInput            `json:"address,omitempty"`
+	Extra             *ExtraMetadataInput      `json:"extra,omitempty"`
 }
 
 type UserPublic struct {

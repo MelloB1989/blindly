@@ -4,6 +4,7 @@ import (
 	"blindly/internal/anal"
 	"blindly/internal/graph/directives"
 	"blindly/internal/graph/model"
+	"blindly/internal/helpers/notifications"
 	"blindly/internal/models"
 	"context"
 	"fmt"
@@ -61,6 +62,13 @@ func (r *Resolver) CreateProfileActivity(ctx context.Context, typeArg models.Act
 			ae.SetProperty(anal.TARGET_USER_ID, targetUserID)
 			ae.SendEvent(anal.USER_POKED)
 		}()
+		// Send poke email notification
+		notifications.SendPokeNotification(targetUserID, claims.UserID)
+	}
+
+	if typeArg == models.PROFILE_VIEW {
+		// Send profile viewed email notification
+		notifications.SendProfileViewedNotification(targetUserID, claims.UserID)
 	}
 
 	return profileActivity, nil
