@@ -5,6 +5,7 @@ import (
 	"blindly/internal/graph/directives"
 	"blindly/internal/graph/model"
 	"blindly/internal/helpers/notifications"
+	"blindly/internal/helpers/users"
 	"blindly/internal/models"
 	"context"
 	"fmt"
@@ -98,24 +99,50 @@ ORDER BY created_at DESC
 		return nil, fmt.Errorf("failed to fetch profile activities: %w", err)
 	}
 
+	// Helper function to check if the related user exists
+	userExists := func(a *models.UserProfileActivity) bool {
+		if a == nil {
+			return false
+		}
+		// Determine which user ID to check based on the activity
+		var userIdToCheck string
+		if claims.UserID == a.TargetId {
+			userIdToCheck = a.UserId
+		} else {
+			userIdToCheck = a.TargetId
+		}
+		_, err := users.GetUserById(userIdToCheck)
+		return err == nil
+	}
+
 	if class == nil {
 		if all == nil {
 			return []*models.UserProfileActivity{}, nil
 		}
-		return all, nil
+		// Filter out activities where the related user doesn't exist
+		var validActivities []*models.UserProfileActivity
+		for _, a := range all {
+			if userExists(a) {
+				validActivities = append(validActivities, a)
+			}
+		}
+		if validActivities == nil {
+			return []*models.UserProfileActivity{}, nil
+		}
+		return validActivities, nil
 	}
 
 	var filtered []*models.UserProfileActivity
 	switch *class {
 	case model.ActivityClassReceived:
 		for _, a := range all {
-			if a.TargetId == claims.UserID {
+			if a.TargetId == claims.UserID && userExists(a) {
 				filtered = append(filtered, a)
 			}
 		}
 	case model.ActivityClassSent:
 		for _, a := range all {
-			if a.UserId == claims.UserID {
+			if a.UserId == claims.UserID && userExists(a) {
 				filtered = append(filtered, a)
 			}
 		}
