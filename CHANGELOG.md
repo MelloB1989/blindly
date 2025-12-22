@@ -1,5 +1,15 @@
 # blindly
 
+## 0.6.9
+
+### Patch Changes
+
+- feat: add email notifications (8159998)
+- fix: Gender string (cc3af00)
+- fix: splash screen issue, removed legacy expo-av package (17f41ec)
+
+_Released: 2025-12-22_
+
 ## 0.6.8
 
 ### Patch Changes
