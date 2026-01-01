@@ -13,8 +13,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   // Use insets.bottom for devices with gesture navigation (provides proper padding)
-  // Use minimum of 16 for devices without gestures (navigation buttons)
-  const bottomPadding = Math.max(insets.bottom, 16);
+  // Use minimum of 48 for devices without gestures (3-button navigation on older Android)
+  // Some Android versions with 3-button nav report insets.bottom as 0 or very small
+  const bottomPadding = Math.max(insets.bottom, 48);
 
   return (
     <Tabs

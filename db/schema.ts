@@ -14,6 +14,8 @@ export const users = pgTable("users", {
   first_name: varchar("first_name").notNull(),
   last_name: varchar("last_name").notNull(),
   email: varchar("email").notNull(),
+  username: varchar("username"),
+  phone: varchar("phone").notNull(),
   dob: timestamp("dob").notNull(),
   gender: varchar("gender").notNull(),
   pfp: varchar("pfp").default(""),

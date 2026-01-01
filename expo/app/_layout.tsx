@@ -36,7 +36,7 @@ const BlindlyDarkTheme = {
 function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
-  const { isAuthenticated, isLoading, setAuthLoading, login, accessToken } =
+  const { isAuthenticated, isLoading, setAuthLoading, login, logout, accessToken } =
     useStore();
 
   // Memoized login handler
@@ -81,6 +81,8 @@ function RootLayoutNav() {
         }
       } catch (error) {
         console.error("Failed to restore session:", error);
+        // Session restoration failed, clear auth state
+        logout();
       } finally {
         setAuthLoading(false);
       }
@@ -129,8 +131,9 @@ function RootLayoutNav() {
             router.replace("/(tabs)/swipe" as Href);
           }
         } else {
-          // No user data, go to hobbies as fallback
-          router.replace("/(auth)/hobbies" as Href);
+          // No user data means session is invalid - logout and redirect to welcome
+          logout();
+          router.replace("/(auth)/welcome" as Href);
         }
       };
 
