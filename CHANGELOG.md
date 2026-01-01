@@ -1,5 +1,14 @@
 # blindly
 
+## 0.6.10
+
+### Patch Changes
+
+- feat: Enhance session management with logout on invalid state, add `username` and `phone` to user schema, and increase tab bar bottom padding. (e8a9ff9)
+- bug fix: ignore deleted users (f8ac6d5)
+
+_Released: 2026-01-01_
+
 ## 0.6.9
 
 ### Patch Changes
