@@ -32,13 +32,10 @@ import Animated, {
 import {
   ChevronLeft,
   Send,
-  Sparkles,
   Lock,
   Unlock,
   MoreVertical,
-  Star,
 } from "lucide-react-native";
-import { AI_RIZZ_SUGGESTIONS } from "../../constants/mockData";
 import {
   chatService,
   ChatWebSocket,
@@ -47,6 +44,9 @@ import {
 } from "../../services/chat-service";
 import { getCurrentUserId } from "../../utils/jwt";
 import * as ChatDB from "../../services/chat-db";
+import { AIReplyButton, AIReplyModal, useAIReplies } from "../../components/chat/AIReplyButton";
+import { MiniStreak } from "../../components/ui/StreakBadge";
+import { useSubscriptionStore } from "../../store/useSubscriptionStore";
 
 const getDayLabel = (dateString: string) => {
   const date = new Date(dateString);
@@ -107,9 +107,6 @@ export default function ChatDetailScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [connection, setConnection] = useState<Connection | null>(null);
   const [inputText, setInputText] = useState("");
-  const [showAiSuggestions, setShowAiSuggestions] = useState(false);
-  const [isLoadingAi, setIsLoadingAi] = useState(false);
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [isConnecting, setIsConnecting] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
@@ -117,6 +114,12 @@ export default function ChatDetailScreen() {
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [hasShownRating, setHasShownRating] = useState(false);
   const wasUnlockedRef = useRef(false);
+
+  // AI Reply modal hook
+  const { isModalVisible, openModal, closeModal, canUse: canUseAI, remaining: aiRemaining } = useAIReplies(chatId || "");
+
+  // Subscription state for AI replies
+  const { canUseAIReplies, aiRepliesRemaining } = useSubscriptionStore();
 
   // Initialize user ID
   useEffect(() => {
@@ -412,14 +415,9 @@ export default function ChatDetailScreen() {
     setIsLoadingMore(false);
   }, [isLoadingMore, hasMoreMessages, messages, chatId]);
 
-  const handleAiSuggest = useCallback(() => {
-    setShowAiSuggestions(true);
-    setIsLoadingAi(true);
-    setTimeout(() => {
-      const shuffled = [...AI_RIZZ_SUGGESTIONS].sort(() => 0.5 - Math.random());
-      setAiSuggestions(shuffled.slice(0, 3));
-      setIsLoadingAi(false);
-    }, 800);
+  // Handle AI reply selection
+  const handleSelectAIReply = useCallback((reply: string) => {
+    setInputText(reply);
   }, []);
 
   const newestSeenIndex = React.useMemo(() => {
@@ -622,6 +620,13 @@ export default function ChatDetailScreen() {
                       className={`w-2.5 h-2.5 rounded-full bg-[#14D679] ${"" /*shadow-[0_0_8px_#14D679]*/}`}
                     />
                   )}
+                  {/* Streak Badge - shows if streak exists */}
+                  {connection.match.streak_count > 0 && (
+                    <MiniStreak
+                      count={connection.match.streak_count}
+                      isAtRisk={connection.match.streak_at_risk}
+                    />
+                  )}
                 </View>
                 <View className="flex-row items-center mt-0.5">
                   {isUnlocked ? (
@@ -707,12 +712,11 @@ export default function ChatDetailScreen() {
 
           <View className="px-4 py-3 border-t border-white/5 bg-black/40 backdrop-blur-xl pb-6">
             <View className="flex-row items-center gap-3">
-              <Pressable
-                onPress={handleAiSuggest}
-                className="w-11 h-11 rounded-full bg-[#FFD166]/10 items-center justify-center active:bg-[#FFD166]/20 border border-[#FFD166]/20"
-              >
-                <Sparkles size={20} color="#FFD166" />
-              </Pressable>
+              <AIReplyButton
+                onPress={openModal}
+                disabled={!canUseAI}
+                remaining={aiRepliesRemaining === -1 ? undefined : aiRepliesRemaining}
+              />
 
               <View className="flex-1 flex-row items-center bg-white/5 rounded-3xl px-5 py-2 border border-white/10 focus:border-[#6A1BFF]/50 shadow-inner">
                 <TextInput
@@ -750,6 +754,14 @@ export default function ChatDetailScreen() {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      {/* AI Reply Modal */}
+      <AIReplyModal
+        visible={isModalVisible}
+        onClose={closeModal}
+        onSelectReply={handleSelectAIReply}
+        chatId={chatId || ""}
+      />
     </GradientBackground>
   );
 }

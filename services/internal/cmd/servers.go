@@ -3,8 +3,10 @@ package cmd
 import (
 	"blindly/internal/constants"
 	"blindly/internal/graph"
+	"blindly/internal/helpers/subscriptions"
 	"blindly/internal/routes"
 	"context"
+	"log"
 	"net/http"
 	"slices"
 	"strings"
@@ -21,6 +23,17 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/vektah/gqlparser/v2/ast"
 )
+
+func init() {
+	// Seed default subscription plans on startup
+	go func() {
+		// Wait a bit for database connection to be ready
+		time.Sleep(3 * time.Second)
+		if err := subscriptions.SeedDefaultPlans(); err != nil {
+			log.Printf("[Subscriptions] Failed to seed default plans: %v", err)
+		}
+	}()
+}
 
 func StartGoFiber(ctx context.Context) {
 	godotenv.Load()

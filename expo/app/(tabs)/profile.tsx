@@ -16,7 +16,8 @@ import { authService } from "../../services/auth";
 import { GradientBackground } from "../../components/ui/GradientBackground";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
-import { Settings, LogOut, X } from "lucide-react-native";
+import { Settings, LogOut, X, Crown, Sparkles } from "lucide-react-native";
+import { useSubscriptionStore } from "../../store/useSubscriptionStore";
 
 // New Components
 import {
@@ -82,6 +83,10 @@ export default function ProfileScreen() {
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus>("none");
 
+  // Subscription state
+  const { isSubscribed, currentPlanId, getCurrentPlan, fetchSubscriptionStatus } = useSubscriptionStore();
+  const currentPlan = getCurrentPlan();
+
   const fetchProfile = async () => {
     try {
       const result = await graphqlAuthService.getMe();
@@ -115,6 +120,7 @@ export default function ProfileScreen() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchProfile();
+    await fetchSubscriptionStatus();
     setIsRefreshing(false);
   };
 
@@ -240,6 +246,68 @@ export default function ProfileScreen() {
             </View>
           )}
 
+          {/* Subscription Section */}
+          <View className="px-6 mb-6">
+            <Pressable
+              onPress={() => router.push("/subscription")}
+              className={`p-4 rounded-xl flex-row items-center justify-between ${
+                isSubscribed
+                  ? "bg-gradient-to-r from-amber-500/20 to-purple-500/20 border border-amber-500/40"
+                  : "bg-purple-500/20 border border-purple-500/40"
+              }`}
+              style={{
+                backgroundColor: isSubscribed ? "rgba(255, 209, 102, 0.15)" : "rgba(124, 58, 237, 0.15)",
+                borderColor: isSubscribed ? "rgba(255, 209, 102, 0.4)" : "rgba(124, 58, 237, 0.4)",
+                borderWidth: 1,
+              }}
+            >
+              <View className="flex-row items-center gap-3">
+                {isSubscribed ? (
+                  <View
+                    className="w-10 h-10 rounded-full items-center justify-center"
+                    style={{ backgroundColor: "rgba(255, 209, 102, 0.2)" }}
+                  >
+                    <Crown size={20} color="#FFD166" />
+                  </View>
+                ) : (
+                  <View
+                    className="w-10 h-10 rounded-full items-center justify-center"
+                    style={{ backgroundColor: "rgba(124, 58, 237, 0.2)" }}
+                  >
+                    <Sparkles size={20} color="#7C3AED" />
+                  </View>
+                )}
+                <View>
+                  <Typography
+                    variant="h3"
+                    className="text-white text-base mb-0.5"
+                  >
+                    {isSubscribed ? currentPlan?.name || "Premium" : "Upgrade to Premium"}
+                  </Typography>
+                  <Typography variant="caption" className="text-white/60">
+                    {isSubscribed
+                      ? "Manage your subscription"
+                      : "Unlimited likes, AI replies & more"}
+                  </Typography>
+                </View>
+              </View>
+              <View
+                className="px-3 py-1.5 rounded-full"
+                style={{
+                  backgroundColor: isSubscribed ? "#FFD166" : "#7C3AED",
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  className="font-bold"
+                  style={{ color: isSubscribed ? "#000" : "#fff" }}
+                >
+                  {isSubscribed ? "Manage" : "Upgrade"}
+                </Typography>
+              </View>
+            </Pressable>
+          </View>
+
           <BioSection
             bio={displayUser.bio}
             isOwnProfile
@@ -307,6 +375,35 @@ export default function ProfileScreen() {
                 </View>
 
                 <ScrollView showsVerticalScrollIndicator={false}>
+                  {/* Subscription Section in Settings */}
+                  <Typography
+                    variant="h3"
+                    className="text-white/40 text-xs uppercase tracking-wider mb-3"
+                  >
+                    Subscription
+                  </Typography>
+
+                  <Pressable
+                    onPress={() => {
+                      setShowSettings(false);
+                      router.push("/subscription");
+                    }}
+                    className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6 flex-row justify-between items-center"
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <Crown size={20} color={isSubscribed ? "#FFD166" : "#7C3AED"} />
+                      <View>
+                        <Typography className="text-white">
+                          {isSubscribed ? currentPlan?.name || "Premium Plan" : "Upgrade to Premium"}
+                        </Typography>
+                        <Typography className="text-white/40 text-xs">
+                          {isSubscribed ? "View & manage subscription" : "Get unlimited features"}
+                        </Typography>
+                      </View>
+                    </View>
+                    <Typography className="text-white/40">→</Typography>
+                  </Pressable>
+
                   {/* Account Section */}
                   <Typography
                     variant="h3"

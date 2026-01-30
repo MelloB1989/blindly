@@ -117,6 +117,9 @@ export interface Match {
     post_unlock_rating: PostUnlockRating;
     is_unlocked: boolean;
     matched_at: string;
+    // Streak data (optional - populated when available)
+    streak_count?: number;
+    streak_at_risk?: boolean;
 }
 
 export interface Chat {

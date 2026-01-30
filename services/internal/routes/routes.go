@@ -4,6 +4,7 @@ import (
 	"blindly/internal/handlers/ai"
 	"blindly/internal/handlers/chat"
 	"blindly/internal/handlers/fs"
+	"blindly/internal/handlers/webhooks"
 	"blindly/internal/middlewares"
 
 	"github.com/gofiber/fiber/v2"
@@ -33,6 +34,9 @@ func Routes() *fiber.App {
 	aiRoutes := v1.Group("/ai")
 	aiRoutes.Get("/summarize_profile/:userId", middlewares.IsUserVerified, ai.GetProfileSummary)
 	aiRoutes.Get("/chat", middlewares.IsWebsocketVerified, websocket.New(ai.AIChatHandler))
+
+	// Register webhook routes for payment providers
+	webhooks.RegisterWebhookRoutes(app)
 
 	return app
 }

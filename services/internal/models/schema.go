@@ -25,8 +25,18 @@ type User struct {
 	IsVerified        bool           `json:"is_verified"`
 	Address           Address        `json:"address" db:"address"`
 	Extra             ExtraMetadata  `json:"extra" db:"extra"`
-	CreatedAt         time.Time      `json:"created_at"`
-	UpdatedAt         time.Time      `json:"updated_at"`
+	// Admin & subscription fields
+	Role               string    `json:"role"` // "user", "admin", "moderator"
+	IsBanned           bool      `json:"is_banned"`
+	SubscriptionPlanId string    `json:"subscription_plan_id"`
+	// AI usage tracking
+	AiRepliesUsedToday int       `json:"ai_replies_used_today"`
+	LastAiReset        time.Time `json:"last_ai_reset"`
+	// Swipe tracking
+	SwipesToday    int       `json:"swipes_today"`
+	LastSwipeReset time.Time `json:"last_swipe_reset"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 type Match struct {
@@ -39,7 +49,14 @@ type Match struct {
 	IsUnlocked       bool             `json:"is_unlocked"`
 	SheMessages      int              `json:"she_messages"`
 	HeMessages       int              `json:"he_messages"`
-	MatchedAt        time.Time        `json:"matched_at"`
+	// Unlock request flow
+	UnlockRequestedBy string     `json:"unlock_requested_by"`
+	UnlockRequestedAt *time.Time `json:"unlock_requested_at"`
+	UnlockAcceptedAt  *time.Time `json:"unlock_accepted_at"`
+	// Date status
+	IsDate     bool      `json:"is_date"`     // both rated >= 8
+	IsArchived bool      `json:"is_archived"` // one rated < 8 or blocked
+	MatchedAt  time.Time `json:"matched_at"`
 }
 
 type Chat struct {
@@ -142,4 +159,87 @@ type BlockedUser struct {
 	UserId        string    `json:"user_id"`
 	BlockedUserId string    `json:"blocked_user_id"`
 	CreatedAt     time.Time `json:"created_at"`
+}
+
+// ==================== Push Notifications ====================
+
+type UserPushToken struct {
+	TableName string    `karma_table:"user_push_tokens" json:"-"`
+	Id        string    `json:"id" karma:"primary"`
+	UserId    string    `json:"user_id"`
+	Token     string    `json:"token"`
+	Platform  string    `json:"platform"` // "ios", "android", "web"
+	DeviceId  string    `json:"device_id"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// ==================== Subscriptions ====================
+
+type SubscriptionFeatures struct {
+	SeeWhoLiked       bool `json:"see_who_liked"`
+	PriorityMatching  bool `json:"priority_matching"`
+	ProfileBoost      bool `json:"profile_boost"`
+	AdvancedFilters   bool `json:"advanced_filters"`
+	VerifiedPriority  bool `json:"verified_priority"`
+	UnlimitedRewinds  bool `json:"unlimited_rewinds"`
+	ReadReceipts      bool `json:"read_receipts"`
+	IncognitoMode     bool `json:"incognito_mode"`
+}
+
+type SubscriptionLimits struct {
+	SwipesPerDay   int `json:"swipes_per_day"`   // -1 for unlimited
+	AiRepliesPerDay int `json:"ai_replies_per_day"` // -1 for unlimited
+	SuperlikesPerDay int `json:"superlikes_per_day"`
+	BoostsPerMonth  int `json:"boosts_per_month"`
+}
+
+type SubscriptionPlan struct {
+	TableName       string               `karma_table:"subscription_plans" json:"-"`
+	Id              string               `json:"id" karma:"primary"` // "free", "plus", "pro", "elite"
+	Name            string               `json:"name"`
+	Description     string               `json:"description"`
+	PriceMonthly    int                  `json:"price_monthly"` // cents
+	PriceYearly     int                  `json:"price_yearly"`  // cents
+	Features        SubscriptionFeatures `json:"features" db:"features"`
+	Limits          SubscriptionLimits   `json:"limits" db:"limits"`
+	DodoProductId   string               `json:"dodo_product_id"`
+	RevcatOfferingId string              `json:"revcat_offering_id"`
+	IsActive        bool                 `json:"is_active"`
+	SortOrder       int                  `json:"sort_order"`
+	CreatedAt       time.Time            `json:"created_at"`
+}
+
+type UserSubscription struct {
+	TableName              string     `karma_table:"user_subscriptions" json:"-"`
+	Id                     string     `json:"id" karma:"primary"`
+	UserId                 string     `json:"user_id"`
+	PlanId                 string     `json:"plan_id"`
+	Status                 string     `json:"status"` // "active", "cancelled", "expired", "paused"
+	Provider               string     `json:"provider"` // "dodo", "revcat", "manual"
+	ProviderSubscriptionId string     `json:"provider_subscription_id"`
+	ProviderCustomerId     string     `json:"provider_customer_id"`
+	CurrentPeriodStart     time.Time  `json:"current_period_start"`
+	CurrentPeriodEnd       time.Time  `json:"current_period_end"`
+	CancelAtPeriodEnd      bool       `json:"cancel_at_period_end"`
+	CancelledAt            *time.Time `json:"cancelled_at"`
+	CreatedAt              time.Time  `json:"created_at"`
+	UpdatedAt              time.Time  `json:"updated_at"`
+}
+
+// ==================== Streaks ====================
+
+type MatchStreak struct {
+	TableName       string     `karma_table:"match_streaks" json:"-"`
+	Id              string     `json:"id" karma:"primary"`
+	MatchId         string     `json:"match_id"`
+	CurrentStreak   int        `json:"current_streak"`
+	LongestStreak   int        `json:"longest_streak"`
+	LastMessageDate *time.Time `json:"last_message_date"`
+	StreakStartDate *time.Time `json:"streak_start_date"`
+	SheLastMessage  *time.Time `json:"she_last_message"`
+	HeLastMessage   *time.Time `json:"he_last_message"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }

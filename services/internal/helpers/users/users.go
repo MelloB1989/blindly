@@ -49,6 +49,30 @@ func GetUserById(id string) (*models.User, error) {
 	return &user, nil
 }
 
+// GetUserByID is an alias for GetUserById
+func GetUserByID(id string) (*models.User, error) {
+	return GetUserById(id)
+}
+
+func GetUserByEmail(email string) (*models.User, error) {
+	usersORM := orm.Load(&models.User{},
+		orm.WithCacheKey(fmt.Sprintf("user-email-%s", email)),
+		orm.WithCacheOn(true),
+		orm.WithCacheTTL(5*time.Minute),
+		orm.WithCacheMethod(config.GetEnvRaw("CACHE_METHOD")),
+	)
+	defer usersORM.Close()
+
+	var u []models.User
+	if err := usersORM.GetByFieldEquals("Email", email).Scan(&u); err != nil {
+		return nil, err
+	}
+	if len(u) == 0 {
+		return nil, fmt.Errorf("user not found")
+	}
+	return &u[0], nil
+}
+
 func GetUserPublicById(id string, queryUser ...string) (*model.UserPublic, error) {
 	usersORM := orm.Load(&models.User{},
 		orm.WithCacheKey(fmt.Sprintf("user-%s", id)),

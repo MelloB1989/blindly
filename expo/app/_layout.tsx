@@ -16,6 +16,8 @@ import apiService from "../services/api";
 import { setAccessToken as setGraphQLToken } from "../services/graphql-client";
 import { PostHogProvider } from "posthog-react-native";
 import { config } from "@/constants/config";
+import { usePushNotifications } from "../services/push-notification-service";
+import { useSubscriptionStore } from "../store/useSubscriptionStore";
 
 // Import the video asset
 const splashVideoSource = require("../assets/splash1.mp4");
@@ -38,6 +40,12 @@ function RootLayoutNav() {
   const segments = useSegments();
   const { isAuthenticated, isLoading, setAuthLoading, login, logout, accessToken } =
     useStore();
+
+  // Push notifications hook
+  usePushNotifications();
+
+  // Subscription store
+  const { fetchSubscriptionStatus, fetchPlans } = useSubscriptionStore();
 
   // Memoized login handler
   const handleLogin = useCallback(
@@ -77,6 +85,10 @@ function RootLayoutNav() {
             handleLogin(userProfile, storedToken);
             apiService.setToken(storedToken);
             await setGraphQLToken(storedToken);
+
+            // Fetch subscription status and plans after successful auth
+            fetchPlans();
+            fetchSubscriptionStatus();
           }
         }
       } catch (error) {
@@ -207,6 +219,13 @@ function RootLayoutNav() {
         options={{
           headerShown: false,
           animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="subscription"
+        options={{
+          headerShown: false,
+          animation: "slide_from_bottom",
         }}
       />
       <Stack.Screen

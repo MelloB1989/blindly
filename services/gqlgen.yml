@@ -85,6 +85,24 @@ models:
   UserVerification:
     model: blindly/internal/models.UserVerification
 
+  # Subscription models
+  SubscriptionPlan:
+    model: blindly/internal/models.SubscriptionPlan
+  SubscriptionFeatures:
+    model: blindly/internal/models.SubscriptionFeatures
+  SubscriptionLimits:
+    model: blindly/internal/models.SubscriptionLimits
+  UserSubscription:
+    model: blindly/internal/models.UserSubscription
+
+  # Push notification models
+  UserPushToken:
+    model: blindly/internal/models.UserPushToken
+
+  # Streak models
+  MatchStreak:
+    model: blindly/internal/models.MatchStreak
+
 directives:
   auth:
     implementation: "directives.AuthDirective"

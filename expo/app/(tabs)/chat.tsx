@@ -36,6 +36,7 @@ import {
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { GradientBackground } from "../../components/ui/GradientBackground";
+import { MiniStreak } from "../../components/ui/StreakBadge";
 
 // Enable LayoutAnimation for Android
 if (
@@ -146,6 +147,12 @@ export default function ChatScreen() {
               <Typography variant="h3" className="text-base">
                 {profile.name}
               </Typography>
+              {item.match.streak_count && item.match.streak_count > 0 && (
+                <MiniStreak
+                  count={item.match.streak_count}
+                  isAtRisk={item.match.streak_at_risk}
+                />
+              )}
               {item.percentage_complete >= 99 && !item.match.is_unlocked && (
                 <Badge
                   label="Can Unlock"

@@ -11,10 +11,96 @@ import (
 	"time"
 )
 
+type AIReply struct {
+	ID   string `json:"id"`
+	Text string `json:"text"`
+	Tone string `json:"tone"`
+}
+
+type AIReplyResponse struct {
+	Replies        []*AIReply `json:"replies"`
+	RemainingToday int32      `json:"remaining_today"`
+}
+
+type AIUsageStatus struct {
+	CanUse         bool       `json:"can_use"`
+	RemainingToday int32      `json:"remaining_today"`
+	ResetsAt       *time.Time `json:"resets_at,omitempty"`
+}
+
 type AddressInput struct {
 	City    string `json:"city"`
 	State   string `json:"state"`
 	Country string `json:"country"`
+}
+
+type AdminReport struct {
+	ID             string     `json:"id"`
+	UserID         string     `json:"user_id"`
+	Reporter       *AdminUser `json:"reporter,omitempty"`
+	TargetID       string     `json:"target_id"`
+	Target         *AdminUser `json:"target,omitempty"`
+	Reason         string     `json:"reason"`
+	AdditionalInfo *string    `json:"additional_info,omitempty"`
+	Media          []string   `json:"media,omitempty"`
+	Status         string     `json:"status"`
+	CreatedAt      time.Time  `json:"created_at"`
+}
+
+type AdminStats struct {
+	TotalUsers           int32                  `json:"total_users"`
+	ActiveUsersToday     int32                  `json:"active_users_today"`
+	ActiveUsersWeek      int32                  `json:"active_users_week"`
+	TotalMatches         int32                  `json:"total_matches"`
+	MatchesToday         int32                  `json:"matches_today"`
+	TotalMessages        int32                  `json:"total_messages"`
+	MessagesToday        int32                  `json:"messages_today"`
+	PendingVerifications int32                  `json:"pending_verifications"`
+	PendingReports       int32                  `json:"pending_reports"`
+	TotalSubscribers     int32                  `json:"total_subscribers"`
+	SubscribersByPlan    []*PlanSubscriberCount `json:"subscribers_by_plan"`
+	RevenueThisMonth     int32                  `json:"revenue_this_month"`
+}
+
+type AdminUser struct {
+	ID                 string     `json:"id"`
+	FirstName          string     `json:"first_name"`
+	LastName           string     `json:"last_name"`
+	Email              string     `json:"email"`
+	Pfp                *string    `json:"pfp,omitempty"`
+	Gender             *string    `json:"gender,omitempty"`
+	IsVerified         bool       `json:"is_verified"`
+	IsBanned           bool       `json:"is_banned"`
+	Role               string     `json:"role"`
+	SubscriptionPlanID *string    `json:"subscription_plan_id,omitempty"`
+	CreatedAt          time.Time  `json:"created_at"`
+	LastActive         *time.Time `json:"last_active,omitempty"`
+}
+
+type AdminUserFilters struct {
+	Search             *string    `json:"search,omitempty"`
+	IsVerified         *bool      `json:"is_verified,omitempty"`
+	IsBanned           *bool      `json:"is_banned,omitempty"`
+	Role               *string    `json:"role,omitempty"`
+	SubscriptionPlanID *string    `json:"subscription_plan_id,omitempty"`
+	CreatedAfter       *time.Time `json:"created_after,omitempty"`
+	CreatedBefore      *time.Time `json:"created_before,omitempty"`
+}
+
+type AdminUserList struct {
+	Users   []*AdminUser `json:"users"`
+	Total   int32        `json:"total"`
+	Page    int32        `json:"page"`
+	PerPage int32        `json:"per_page"`
+}
+
+type AdminVerification struct {
+	ID        string     `json:"id"`
+	UserID    string     `json:"user_id"`
+	User      *AdminUser `json:"user,omitempty"`
+	Media     []string   `json:"media"`
+	Status    string     `json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
 }
 
 // Return value after successful auth
@@ -28,6 +114,12 @@ type BlockedUser struct {
 	UserID        string    `json:"user_id"`
 	BlockedUserID string    `json:"blocked_user_id"`
 	CreatedAt     time.Time `json:"created_at"`
+}
+
+type CheckoutSession struct {
+	CheckoutURL string `json:"checkout_url"`
+	SessionID   string `json:"session_id"`
+	Provider    string `json:"provider"`
 }
 
 type CommentFilterInput struct {
@@ -105,6 +197,26 @@ type ExtraMetadataInput struct {
 	Sexuality  *string  `json:"sexuality,omitempty"`
 }
 
+type GenerateAIRepliesInput struct {
+	ChatID          string  `json:"chat_id"`
+	ContextMessages *int32  `json:"context_messages,omitempty"`
+	Tone            *string `json:"tone,omitempty"`
+}
+
+type MassNotificationInput struct {
+	Title   string   `json:"title"`
+	Body    string   `json:"body"`
+	Segment *string  `json:"segment,omitempty"`
+	UserIds []string `json:"user_ids,omitempty"`
+}
+
+type MassNotificationResult struct {
+	Success     bool    `json:"success"`
+	SentCount   int32   `json:"sent_count"`
+	FailedCount int32   `json:"failed_count"`
+	Message     *string `json:"message,omitempty"`
+}
+
 type MediaInput struct {
 	ID        string    `json:"id"`
 	URL       string    `json:"url"`
@@ -132,6 +244,12 @@ type PersonalityTraitInput struct {
 	Value int32  `json:"value"`
 }
 
+type PlanSubscriberCount struct {
+	PlanID   string `json:"plan_id"`
+	PlanName string `json:"plan_name"`
+	Count    int32  `json:"count"`
+}
+
 type PostFilterInput struct {
 	UserID        *string    `json:"user_id,omitempty"`
 	SearchContent *string    `json:"search_content,omitempty"`
@@ -147,6 +265,11 @@ type PostsConnection struct {
 	Posts      []*models.Post `json:"posts"`
 	PageInfo   *PageInfo      `json:"page_info"`
 	TotalCount int32          `json:"total_count"`
+}
+
+type PushNotificationResult struct {
+	Success bool    `json:"success"`
+	Message *string `json:"message,omitempty"`
 }
 
 type Query struct {
@@ -176,9 +299,22 @@ type RecommendedProfile struct {
 	Reason             *string     `json:"reason,omitempty"`
 }
 
+type RegisterPushTokenInput struct {
+	Token    string  `json:"token"`
+	Platform string  `json:"platform"`
+	DeviceID *string `json:"device_id,omitempty"`
+}
+
 type SortInput struct {
 	Field string    `json:"field"`
 	Order SortOrder `json:"order"`
+}
+
+type StreakMilestone struct {
+	Days       int32      `json:"days"`
+	Emoji      string     `json:"emoji"`
+	Title      string     `json:"title"`
+	AchievedAt *time.Time `json:"achieved_at,omitempty"`
 }
 
 type SwipeResponse struct {
@@ -238,6 +374,23 @@ type UserPublic struct {
 	IsLocked          bool                  `json:"is_locked"`
 	IsPoked           bool                  `json:"is_poked"`
 	ChatID            string                `json:"chat_id"`
+}
+
+type UserStreakStats struct {
+	TotalActiveStreaks int32              `json:"total_active_streaks"`
+	LongestStreakEver  int32              `json:"longest_streak_ever"`
+	CurrentMilestones  []*StreakMilestone `json:"current_milestones"`
+}
+
+type UserSubscriptionStatus struct {
+	PlanID             string                       `json:"plan_id"`
+	Plan               *models.SubscriptionPlan     `json:"plan"`
+	IsSubscribed       bool                         `json:"is_subscribed"`
+	Subscription       *models.UserSubscription     `json:"subscription,omitempty"`
+	Limits             *models.SubscriptionLimits   `json:"limits"`
+	Features           *models.SubscriptionFeatures `json:"features"`
+	SwipesRemaining    int32                        `json:"swipes_remaining"`
+	AiRepliesRemaining int32                        `json:"ai_replies_remaining"`
 }
 
 type UserVerificationInput struct {
