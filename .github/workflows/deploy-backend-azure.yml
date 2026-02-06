@@ -9,19 +9,19 @@ on:
       - "deployment.yaml"
       - ".github/workflows/deploy-backend-azure.yml"
 
-env:
-  ACR_NAME: ${{ vars.ACR_NAME }}
-  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
-  IMAGE_NAME: blindly
-  AKS_RESOURCE_GROUP: ${{ vars.AKS_RESOURCE_GROUP }}
-  AKS_CLUSTER_NAME: ${{ vars.AKS_CLUSTER_NAME }}
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+
+    env:
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+      IMAGE_NAME: blindly
+      AKS_RESOURCE_GROUP: ${{ secrets.AKS_RESOURCE_GROUP }}
+      AKS_CLUSTER_NAME: ${{ secrets.AKS_CLUSTER_NAME }}
 
     steps:
       - name: Checkout code
@@ -48,7 +48,7 @@ jobs:
       # Login to Azure Container Registry
       - name: Login to ACR
         run: |
-          az acr login --name ${{ env.ACR_NAME }}
+          az acr login --name ${{ secrets.ACR_NAME }}
 
       # Install kubelogin for Azure AD authentication
       - name: Install kubelogin
@@ -59,7 +59,7 @@ jobs:
       # Setup kubectl
       - name: Setup kubeconfig
         run: |
-          az aks get-credentials --resource-group ${{ env.AKS_RESOURCE_GROUP }} --name ${{ env.AKS_CLUSTER_NAME }} --overwrite-existing
+          az aks get-credentials --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} --name ${{ secrets.AKS_CLUSTER_NAME }} --overwrite-existing
           kubelogin convert-kubeconfig -l azurecli
           kubectl cluster-info
 
@@ -71,14 +71,14 @@ jobs:
           # Build Docker image from root context (Dockerfile expects services/ path)
           docker build \
             --build-arg VERSION=${{ steps.version.outputs.version }} \
-            -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest \
-            -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${SHA_SHORT} \
+            -t ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest \
+            -t ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${SHA_SHORT} \
             -f services/Dockerfile \
             .
 
           # Push Docker images
-          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${SHA_SHORT}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${SHA_SHORT}
 
           echo "✅ Images pushed successfully"
 
@@ -88,7 +88,7 @@ jobs:
           SHA_SHORT="${{ steps.version.outputs.sha_short }}"
 
           # Apply the deployment with updated image tag
-          sed "s|${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest|${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${SHA_SHORT}|g" \
+          sed "s|${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest|${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${SHA_SHORT}|g" \
             deployment.yaml | kubectl apply -f -
 
           # Wait for rollout to complete
