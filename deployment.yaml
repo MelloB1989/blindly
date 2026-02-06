@@ -14,11 +14,11 @@ spec:
     spec:
       containers:
         - name: blindly
-          image: registry.prod.lyzn.in/blindly
+          image: lyznai.azurecr.io/blindly:latest
           ports:
             - containerPort: 9000
       imagePullSecrets:
-        - name: regcred
+        - name: acr-secret
 ---
 apiVersion: v1
 kind: Service
