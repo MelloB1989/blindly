@@ -1,50 +1,89 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, Image, ActivityIndicator, Alert } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSpring,
-} from 'react-native-reanimated';
-import { Typography } from '../../components/ui/Typography';
-import { Button } from '../../components/ui/Button';
-import { AlertTriangle } from 'lucide-react-native';
-
-// Mock User Data for the reveal
-const REVEALED_USER = {
-  id: 'u2',
-  firstName: 'Jordan',
-  photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
-};
+  withSequence,
+  withDelay,
+  FadeIn,
+  FadeInUp,
+} from "react-native-reanimated";
+import { Typography } from "../../components/ui/Typography";
+import { Button } from "../../components/ui/Button";
+import { GradientBackground } from "../../components/ui/GradientBackground";
+import { LinearGradient } from "expo-linear-gradient";
+import { RatingSlider } from "../../components/rating/RatingSlider";
+import { AlertTriangle, Sparkles, EyeOff, Eye } from "lucide-react-native";
+import { chatService } from "../../services/chat-service";
+import { useStore } from "../../store/useStore";
+import * as Haptics from "expo-haptics";
 
 export default function RevealModal() {
   const router = useRouter();
-  const [step, setStep] = useState<'animating' | 'rating'>('animating');
-  const [rating, setRating] = useState<number | null>(null);
+  const { chatId } = useLocalSearchParams<{ chatId: string }>();
+  const { user } = useStore();
+
+  const [step, setStep] = useState<"loading" | "animating" | "rating">("loading");
+  const [rating, setRating] = useState<number>(0);
+  const [profile, setProfile] = useState<{
+    name: string;
+    photo: string;
+  } | null>(null);
 
   // Animation Values
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.8);
   const blurOpacity = useSharedValue(1);
 
+  // Fetch actual connection data
   useEffect(() => {
-    // Start Reveal Animation sequence
-    const timeout = setTimeout(() => {
-        // Fade out the "lock" overlay
-        blurOpacity.value = withTiming(0, { duration: 800 });
-        // Fade in and scale up the photo
-        opacity.value = withTiming(1, { duration: 800 });
-        scale.value = withSpring(1, { damping: 12 });
+    const fetchConnection = async () => {
+      if (!chatId) {
+        router.back();
+        return;
+      }
 
-        // Transition to rating UI
-        setTimeout(() => {
-            setStep('rating');
-        }, 1200);
-    }, 500);
+      try {
+        const result = await chatService.getMyConnections();
+        if (result.success && result.connections) {
+          const conn = result.connections.find((c) => c.chat.id === chatId);
+          if (conn && conn.match.is_unlocked) {
+            setProfile({
+              name: conn.connection_profile.name,
+              photo: conn.connection_profile.photos?.[0] || conn.connection_profile.pfp,
+            });
+            setStep("animating");
+            startRevealAnimation();
+          } else {
+            Alert.alert("Not Ready", "This match hasn't been unlocked yet.");
+            router.back();
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch connection:", error);
+        router.back();
+      }
+    };
+    fetchConnection();
+  }, [chatId]);
 
-    return () => clearTimeout(timeout);
-  }, []);
+  const startRevealAnimation = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+    setTimeout(() => {
+      blurOpacity.value = withTiming(0, { duration: 1200 });
+      opacity.value = withTiming(1, { duration: 1200 });
+      scale.value = withSpring(1, { damping: 12 });
+
+      setTimeout(() => {
+        setStep("rating");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }, 1500);
+    }, 600);
+  };
 
   const animatedImageStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -57,107 +96,152 @@ export default function RevealModal() {
 
   const handleRating = (score: number) => {
     setRating(score);
+    if (score >= 8) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
   };
 
   const handleSubmit = () => {
-    console.log(`Rated: ${rating}`);
-    router.back();
+    if (rating === 0) {
+      Alert.alert("Select a Rating", "Please select a rating from 1-10 before submitting.");
+      return;
+    }
+
+    // Navigate to the rating modal which handles the full rating flow
+    router.replace({
+      pathname: "/modal/rating",
+      params: { chatId },
+    });
   };
 
-  return (
-    <View className="flex-1 bg-background items-center justify-center px-6">
+  if (step === "loading") {
+    return (
+      <GradientBackground>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#8A3CFF" />
+          <Typography variant="body" className="mt-4 text-white/50">
+            Preparing reveal...
+          </Typography>
+        </View>
+      </GradientBackground>
+    );
+  }
 
-      {/* Reveal Area */}
-      <View className="items-center mb-10 relative">
-        <View className="w-64 h-64 rounded-full bg-surface-elevated items-center justify-center overflow-hidden border-4 border-primary/20 shadow-2xl shadow-primary/20">
+  return (
+    <GradientBackground>
+      <View className="flex-1 items-center justify-center px-6">
+        {/* Reveal Area */}
+        <View className="items-center mb-10 relative">
+          <View
+            className="items-center justify-center overflow-hidden"
+            style={styles.revealCircle}
+          >
             {/* The Revealed Image */}
             <Animated.View style={[StyleSheet.absoluteFill, animatedImageStyle]}>
+              {profile?.photo && (
                 <Image
-                    source={{ uri: REVEALED_USER.photo }}
-                    className="w-full h-full"
-                    resizeMode="cover"
+                  source={{ uri: profile.photo }}
+                  className="w-full h-full"
+                  resizeMode="cover"
                 />
+              )}
             </Animated.View>
 
             {/* The "Locked" Overlay (fading out) */}
-            <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#16161B', alignItems: 'center', justifyContent: 'center' }, animatedBlurStyle]}>
-                <Typography variant="h1" color="muted" className="text-6xl opacity-20">?</Typography>
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                styles.lockOverlay,
+                animatedBlurStyle,
+              ]}
+            >
+              <EyeOff size={40} color="rgba(167,139,250,0.5)" />
             </Animated.View>
-        </View>
+          </View>
 
-        <View className="mt-8 items-center h-20">
-            <Typography variant="h1" className="mb-2 text-3xl">
-                {step === 'animating' ? 'Revealing...' : `It's ${REVEALED_USER.firstName}!`}
+          <View className="mt-6 items-center h-20">
+            <Typography variant="h1" className="mb-2 text-3xl text-white">
+              {step === "animating" ? "Revealing..." : `${profile?.name || "Match"}!`}
             </Typography>
-            {step === 'rating' && (
-                <Typography variant="body" color="muted" className="text-center">
-                    How accurate was your mental image?
+            {step === "rating" && (
+              <View className="flex-row items-center">
+                <Eye size={14} color="#A78BFA" />
+                <Typography variant="body" color="muted" className="text-center ml-1.5">
+                  Photos are now unlocked!
                 </Typography>
+              </View>
             )}
+          </View>
         </View>
+
+        {/* Rating Section */}
+        {step === "rating" && (
+          <Animated.View entering={FadeInUp.duration(600)} className="w-full">
+            <View
+              className="rounded-2xl p-5 mb-4 border"
+              style={{
+                backgroundColor: "rgba(26,1,56,0.8)",
+                borderColor: "rgba(255,255,255,0.08)",
+              }}
+            >
+              <View className="flex-row items-center justify-center mb-2">
+                <Sparkles size={16} color="#FFD166" />
+                <Typography variant="h3" className="text-white ml-2">
+                  Rate to continue
+                </Typography>
+              </View>
+              <Typography variant="caption" className="text-white/40 text-center mb-4">
+                If you both rate 8+, it becomes a Date!
+              </Typography>
+
+              <RatingSlider
+                value={rating}
+                onChange={handleRating}
+              />
+            </View>
+
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full mb-4"
+              disabled={rating === 0}
+              onPress={handleSubmit}
+            >
+              Submit Rating
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full"
+              icon={<AlertTriangle size={16} color="#EF4444" />}
+              onPress={() => {
+                Alert.alert("Report", "This profile will be reviewed by our team.", [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Report", style: "destructive", onPress: () => router.back() },
+                ]);
+              }}
+            >
+              <Typography color="danger">Report Profile</Typography>
+            </Button>
+          </Animated.View>
+        )}
       </View>
-
-      {/* Rating Section */}
-      {step === 'rating' && (
-        <View className="w-full">
-            {/* Numeric Rating 1-10 */}
-            <View className="flex-row flex-wrap justify-center gap-2 mb-8">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                    <Button
-                        key={num}
-                        variant={rating === num ? 'primary' : 'secondary'}
-                        size="sm"
-                        className={`w-10 h-10 px-0 items-center justify-center ${rating === num ? '' : 'bg-surface-elevated'}`}
-                        onPress={() => handleRating(num)}
-                    >
-                        <Typography
-                            variant="label"
-                            color={rating === num ? 'default' : 'muted'}
-                            className="font-bold"
-                        >
-                            {num}
-                        </Typography>
-                    </Button>
-                ))}
-            </View>
-
-            {/* Explanation for 7 threshold */}
-            <View className="h-20 mb-4">
-                {rating !== null && (
-                    <View className="bg-surface-elevated p-4 rounded-xl border border-white/5">
-                        <Typography variant="caption" color="ai" className="mb-1 font-bold uppercase tracking-wider">
-                            {rating >= 7 ? "High Match!" : "Feedback Recorded"}
-                        </Typography>
-                        <Typography variant="caption" color="muted">
-                            {rating >= 7
-                                ? "Great! We'll show you more people like this."
-                                : "Thanks. We'll refine your recommendations to match your taste."
-                            }
-                        </Typography>
-                    </View>
-                )}
-            </View>
-
-            <Button
-                variant="primary"
-                size="lg"
-                className="w-full mb-4"
-                disabled={rating === null}
-                onPress={handleSubmit}
-            >
-                Continue Chatting
-            </Button>
-
-            <Button
-                variant="ghost"
-                className="w-full"
-                icon={<AlertTriangle size={16} color="#EF4444" />}
-                onPress={() => console.log("Report")}
-            >
-                <Typography color="danger">Report Profile</Typography>
-            </Button>
-        </View>
-      )}
-    </View>
+    </GradientBackground>
   );
 }
+
+const styles = StyleSheet.create({
+  revealCircle: {
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: "#16161B",
+    borderWidth: 4,
+    borderColor: "rgba(124,58,237,0.3)",
+  },
+  lockOverlay: {
+    backgroundColor: "#110827",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

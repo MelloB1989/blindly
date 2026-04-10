@@ -33,6 +33,9 @@ import {
   ArrowDownLeft,
   RefreshCw,
   X,
+  Sparkles,
+  Flame,
+  Camera,
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { GradientBackground } from "../../components/ui/GradientBackground";
@@ -188,18 +191,38 @@ export default function ChatScreen() {
           {/* Unlock Progress */}
           {!item.match.is_unlocked && (
             <View
-              className="mt-3 p-2 rounded-lg border border-white/5"
+              className="mt-3 p-3 rounded-xl border border-white/5"
               style={{ backgroundColor: "rgba(30,22,54,0.55)" }}
             >
               {/* Header */}
               <View className="flex-row items-center justify-between mb-2">
                 <View className="flex-row items-center gap-1.5">
-                  <Lock size={12} color="#8E8AA8" />
+                  {progressPercent >= 99 ? (
+                    <Camera size={12} color="#14D679" />
+                  ) : progressPercent >= 50 ? (
+                    <Sparkles size={12} color="#A78BFA" />
+                  ) : (
+                    <Lock size={12} color="#8E8AA8" />
+                  )}
                   <Typography
                     variant="caption"
-                    className="font-medium text-[#CFCBDF]"
+                    className="font-medium"
+                    style={{
+                      color:
+                        progressPercent >= 99
+                          ? "#14D679"
+                          : progressPercent >= 50
+                          ? "#C4B5FD"
+                          : "#CFCBDF",
+                    }}
                   >
-                    Unlock Photos
+                    {progressPercent >= 99
+                      ? "Ready to reveal photos!"
+                      : progressPercent >= 75
+                      ? "Almost there!"
+                      : progressPercent >= 50
+                      ? "Halfway to photo reveal"
+                      : "Chat to unlock photos"}
                   </Typography>
                 </View>
 
@@ -208,7 +231,9 @@ export default function ChatScreen() {
                   className="font-bold"
                   style={{
                     color:
-                      item.percentage_complete >= 1 ? "#A78BFA" : "#6E6A85",
+                      progressPercent >= 99
+                        ? "#14D679"
+                        : progressPercent >= 1 ? "#A78BFA" : "#6E6A85",
                   }}
                 >
                   {progressPercent}%
@@ -217,7 +242,7 @@ export default function ChatScreen() {
 
               {/* Progress Bar */}
               <View
-                className="h-1.5 rounded-full overflow-hidden"
+                className="h-2 rounded-full overflow-hidden"
                 style={{ backgroundColor: "#1C1433" }}
               >
                 <View
@@ -225,12 +250,43 @@ export default function ChatScreen() {
                   style={{
                     width: `${Math.min(progressPercent, 100)}%`,
                     backgroundColor:
-                      item.percentage_complete >= 1
+                      progressPercent >= 99
+                        ? "#14D679"
+                        : progressPercent >= 75
+                        ? "#A78BFA"
+                        : progressPercent >= 50
                         ? "#7C3AED"
-                        : "rgba(124,58,237,0.45)",
+                        : "rgba(124,58,237,0.5)",
                   }}
                 />
+                {/* Milestone markers */}
+                {[25, 50, 75].map((mark) => (
+                  <View
+                    key={mark}
+                    className="absolute top-0 bottom-0 w-px"
+                    style={{
+                      left: `${mark}%`,
+                      backgroundColor:
+                        progressPercent >= mark
+                          ? "rgba(255,255,255,0.15)"
+                          : "rgba(255,255,255,0.05)",
+                    }}
+                  />
+                ))}
               </View>
+
+              {/* Milestone hint */}
+              {progressPercent < 99 && progressPercent > 0 && (
+                <Typography variant="caption" className="text-white/25 mt-1.5 text-[10px]">
+                  {progressPercent < 25
+                    ? "Keep chatting! Both of you need to send messages"
+                    : progressPercent < 50
+                    ? "Great start! Keep the conversation going"
+                    : progressPercent < 75
+                    ? "You're doing great! Photos reveal soon"
+                    : "So close! Just a few more messages"}
+                </Typography>
+              )}
             </View>
           )}
         </View>
@@ -617,17 +673,34 @@ const EmptyState = ({
   actionLabel = "Start Swiping",
 }: EmptyStateProps) => (
   <View className="flex-1 items-center justify-center px-8 py-16">
-    <View className="w-20 h-20 rounded-full bg-surface-elevated items-center justify-center mb-4">
-      <Icon size={40} color="#7C3AED" />
+    <View
+      className="w-20 h-20 rounded-full items-center justify-center mb-4 border"
+      style={{
+        backgroundColor: "rgba(124,58,237,0.1)",
+        borderColor: "rgba(124,58,237,0.2)",
+      }}
+    >
+      <Icon size={36} color="#7C3AED" />
     </View>
-    <Typography variant="h2" className="text-center mb-2">
+    <Typography variant="h2" className="text-center mb-2 text-white">
       {title}
     </Typography>
-    <Typography variant="body" color="muted" className="text-center mb-6">
+    <Typography variant="body" color="muted" className="text-center mb-2 leading-5">
       {message}
     </Typography>
+    {title === "No Conversations Yet" && (
+      <View
+        className="flex-row items-center px-4 py-2 rounded-full mb-4 mt-1"
+        style={{ backgroundColor: "rgba(253,230,138,0.08)" }}
+      >
+        <Sparkles size={12} color="#FFD166" />
+        <Typography variant="caption" className="text-[#FFD166] ml-1.5 text-[11px]">
+          Match → Chat → Unlock Photos → Rate → Date!
+        </Typography>
+      </View>
+    )}
     {action && (
-      <Button variant="primary" onPress={action}>
+      <Button variant="primary" onPress={action} className="mt-2">
         {actionLabel}
       </Button>
     )}

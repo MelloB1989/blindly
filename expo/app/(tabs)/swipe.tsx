@@ -19,8 +19,10 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Chip } from "../../components/ui/Chip";
 import { SwipeCard, SwipeCardProfile } from "../../components/ui/SwipeCard";
+import { MatchCelebration } from "../../components/match/MatchCelebration";
 import { useSwipeStore } from "../../store/useSwipeStore";
 import { useAIStore } from "../../store/useAIStore";
+import { useStore } from "../../store/useStore";
 import {
   X,
   Heart,
@@ -69,6 +71,15 @@ export default function SwipeScreen() {
     type: "like" | "pass" | "superlike";
     text: string;
   } | null>(null);
+
+  // Match celebration state
+  const [matchData, setMatchData] = useState<{
+    visible: boolean;
+    theirName: string;
+    theirPhoto?: string;
+  }>({ visible: false, theirName: "" });
+
+  const { user } = useStore();
 
   const {
     profiles,
@@ -154,17 +165,11 @@ export default function SwipeScreen() {
       // Submit to API via store
       const result = await swipe(profile.id, "LIKE");
       if (result.success && result.isMatch) {
-        Alert.alert(
-          "It's a Match! 🎉",
-          `You and ${profile.firstName} liked each other! Start chatting to unlock photos.`,
-          [
-            {
-              text: "Start Chatting",
-              onPress: () => router.push("/(tabs)/chat" as Href),
-            },
-            { text: "Keep Swiping" },
-          ],
-        );
+        setMatchData({
+          visible: true,
+          theirName: profile.firstName,
+          theirPhoto: profile.photos?.[0],
+        });
       } else if (!result.success) {
         console.error("Failed to submit swipe:", result.error);
       }
@@ -181,17 +186,11 @@ export default function SwipeScreen() {
       // Submit to API via store
       const result = await swipe(profile.id, "SUPERLIKE");
       if (result.success && result.isMatch) {
-        Alert.alert(
-          "Super Like Match! ⭐",
-          `${profile.firstName} also likes you! You're now matched.`,
-          [
-            {
-              text: "Start Chatting",
-              onPress: () => router.push("/(tabs)/chat" as Href),
-            },
-            { text: "Keep Swiping" },
-          ],
-        );
+        setMatchData({
+          visible: true,
+          theirName: profile.firstName,
+          theirPhoto: profile.photos?.[0],
+        });
       } else if (result.success) {
         Alert.alert(
           "Super Like Sent! ⭐",
@@ -573,6 +572,22 @@ export default function SwipeScreen() {
           </View>
         )}
       </SafeAreaView>
+
+      {/* Match Celebration Modal */}
+      <MatchCelebration
+        visible={matchData.visible}
+        myPhoto={user?.photos?.[0]}
+        myName={user?.firstName || "You"}
+        theirPhoto={matchData.theirPhoto}
+        theirName={matchData.theirName}
+        onStartChatting={() => {
+          setMatchData({ visible: false, theirName: "" });
+          router.push("/(tabs)/chat" as Href);
+        }}
+        onKeepSwiping={() => {
+          setMatchData({ visible: false, theirName: "" });
+        }}
+      />
 
       {/* Filters Modal */}
       <Modal

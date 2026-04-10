@@ -40,6 +40,10 @@ import {
   X,
   Calendar,
   Check,
+  EyeOff,
+  Fingerprint,
+  Brain,
+  Star,
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -374,17 +378,46 @@ export default function UserProfileScreen() {
                     height: "100%",
                   }}
                 />
-                <View className="bg-black/60 p-6 rounded-2xl items-center border border-white/10">
-                  <Lock size={32} color="#A6A6B2" />
-                  <Typography variant="h3" className="text-center mb-1 mt-3 text-white">
-                    Profile Locked
+                {/* Personality-first overlay when locked */}
+                <LinearGradient
+                  colors={["rgba(17,8,39,0.7)", "rgba(30,10,74,0.85)", "rgba(17,8,39,0.95)"]}
+                  style={{
+                    position: "absolute",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                />
+                <View className="items-center px-8">
+                  {/* Mystery avatar */}
+                  <View
+                    className="w-24 h-24 rounded-full items-center justify-center mb-4"
+                    style={{
+                      backgroundColor: "rgba(124,58,237,0.15)",
+                      borderWidth: 2,
+                      borderColor: "rgba(124,58,237,0.3)",
+                    }}
+                  >
+                    <Fingerprint size={40} color="#A78BFA" />
+                  </View>
+                  <Typography variant="h3" className="text-center mb-1 text-white text-lg font-bold">
+                    Personality First
                   </Typography>
                   <Typography
                     variant="body"
-                    className="text-white/50 text-center"
+                    className="text-white/50 text-center text-sm leading-5 mb-4"
                   >
-                    Match or chat to unlock photos
+                    Get to know {user.name} through their personality.{"\n"}
+                    Photos reveal after matching & chatting.
                   </Typography>
+                  <View
+                    className="flex-row items-center px-4 py-2 rounded-full"
+                    style={{ backgroundColor: "rgba(253,230,138,0.08)" }}
+                  >
+                    <EyeOff size={12} color="#FFD166" />
+                    <Typography variant="caption" className="text-[#FFD166] ml-1.5 text-[11px]">
+                      Privacy protected until you both agree
+                    </Typography>
+                  </View>
                 </View>
               </View>
             )}
@@ -455,22 +488,65 @@ export default function UserProfileScreen() {
         <View className="px-4 py-6 gap-5 pb-32">
           {/* AI Summary Section */}
           <Animated.View entering={FadeInDown.duration(300).delay(50)}>
-            <Card variant="elevated" padding="md" className="bg-gradient-to-r from-[#7C3AED]/20 to-[#6A1BFF]/10 border border-[#7C3AED]/30">
+            <Card variant="elevated" padding="md" className="border" style={{ backgroundColor: "rgba(124,58,237,0.08)", borderColor: "rgba(124,58,237,0.2)" }}>
               <View className="flex-row items-start gap-3">
                 <View className="w-8 h-8 rounded-full bg-[#7C3AED]/30 items-center justify-center">
                   <Sparkles size={16} color="#7C3AED" />
                 </View>
                 <View className="flex-1">
-                  <Typography variant="label" className="text-[#7C3AED] mb-1">
+                  <Typography variant="label" className="text-[#A78BFA] mb-1 text-xs">
                     AI Summary
                   </Typography>
-                  <Typography variant="body" className="text-white/80 leading-relaxed">
+                  <Typography variant="body" className="text-white/80 leading-relaxed text-sm">
                     {aiSummary}
                   </Typography>
                 </View>
               </View>
             </Card>
           </Animated.View>
+
+          {/* Personality Traits (visual) */}
+          {user.personality_traits && user.personality_traits.length > 0 && (
+            <Animated.View entering={FadeInDown.duration(300).delay(75)}>
+              <View className="flex-row items-center mb-3 gap-2">
+                <Brain size={14} color="#A78BFA" />
+                <Typography variant="h3" className="text-white text-sm">
+                  Personality
+                </Typography>
+              </View>
+              <View className="flex-row flex-wrap gap-2">
+                {user.personality_traits.map((trait) => (
+                  <View
+                    key={trait.key}
+                    className="px-3 py-2 rounded-xl border"
+                    style={{
+                      backgroundColor: "rgba(124,58,237,0.08)",
+                      borderColor: "rgba(124,58,237,0.2)",
+                    }}
+                  >
+                    <Typography variant="caption" className="text-[#C4B5FD] text-xs font-medium mb-1">
+                      {trait.key}
+                    </Typography>
+                    <View className="flex-row gap-0.5">
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <View
+                          key={level}
+                          className="h-1.5 rounded-full"
+                          style={{
+                            width: 16,
+                            backgroundColor:
+                              level <= trait.value
+                                ? "#A78BFA"
+                                : "rgba(255,255,255,0.08)",
+                          }}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </Animated.View>
+          )}
 
           {/* Bio */}
           {user.bio && (
@@ -678,11 +754,13 @@ export default function UserProfileScreen() {
               </Typography>
             </Pressable>
           ) : (
-            <View className="flex-1 flex-row items-center justify-center gap-2 bg-white/10 rounded-xl py-3.5 opacity-60">
-              <Lock size={18} color="#A6A6B2" />
-              <Typography variant="label" className="text-white/50">
-                Unlock to Message
-              </Typography>
+            <View className="flex-1">
+              <View className="flex-row items-center justify-center gap-2 rounded-xl py-3.5 border" style={{ backgroundColor: "rgba(124,58,237,0.1)", borderColor: "rgba(124,58,237,0.25)" }}>
+                <EyeOff size={16} color="#A78BFA" />
+                <Typography variant="label" className="text-[#A78BFA] font-medium">
+                  Match to unlock
+                </Typography>
+              </View>
             </View>
           )}
 

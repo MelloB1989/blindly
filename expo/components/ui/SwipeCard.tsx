@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Dimensions, StyleSheet, View, Image, Pressable } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -8,9 +8,13 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
+  withRepeat,
+  withSequence,
   Extrapolation,
+  Easing,
 } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { Typography } from "./Typography";
 import { Chip } from "./Chip";
 import { Badge } from "./Badge";
@@ -36,6 +40,10 @@ import {
   Church,
   Users,
   Dumbbell,
+  Eye,
+  EyeOff,
+  Fingerprint,
+  Brain,
 } from "lucide-react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -337,155 +345,163 @@ export function SwipeCard({
 
         {/* Card Content */}
         <Animated.ScrollView
-          className="flex-1 bg-[#1D0F45] rounded-[32px] overflow-hidden border-[3px] border-white/20"
+          className="flex-1 rounded-[32px] overflow-hidden"
+          style={{ backgroundColor: "#110827" }}
           showsVerticalScrollIndicator={false}
           scrollEnabled={isFirst}
           nestedScrollEnabled
         >
-          {/* Photo Section with Blur */}
-          <View className="relative h-48 bg-surface">
-            {profile.photos && profile.photos.length > 0 ? (
-              <>
-                <Image
-                  source={{ uri: profile.photos[0] }}
-                  style={styles.photo}
-                  blurRadius={profile.isRevealed ? 0 : 25}
-                />
-                {!profile.isRevealed && (
-                  <BlurView
-                    intensity={80}
-                    tint="dark"
-                    style={styles.blurOverlay}
-                  >
-                    <View className="flex-1 items-center justify-center">
-                      <View className="w-16 h-16 rounded-full bg-surface-elevated/80 items-center justify-center mb-2">
-                        <Lock size={28} color="#7C3AED" />
-                      </View>
-                      <Typography variant="label" className="text-white">
-                        Photo Hidden
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="muted"
-                        className="mt-1"
-                      >
-                        Match & chat to unlock
-                      </Typography>
-                    </View>
-                  </BlurView>
-                )}
-              </>
-            ) : (
-              <View className="flex-1 items-center justify-center bg-surface">
-                <Lock size={32} color="#A6A6B2" />
-                <Typography variant="caption" color="muted" className="mt-2">
-                  No photo available
-                </Typography>
-              </View>
-            )}
-
+          {/* Personality-First Hero Section */}
+          <LinearGradient
+            colors={["#1E0A4A", "#170835", "#110827"]}
+            style={styles.heroSection}
+          >
             {/* Top Actions */}
-            <View className="absolute top-3 right-3 flex-row gap-2">
-              <Pressable
-                className="w-9 h-9 rounded-full bg-black/40 items-center justify-center"
-                onPress={handleShare}
-              >
-                <Share2 size={18} color="#FFFFFF" />
-              </Pressable>
-              <Pressable
-                className="w-9 h-9 rounded-full bg-black/40 items-center justify-center"
-                onPress={handleReport}
-              >
-                <Flag size={18} color="#FFFFFF" />
-              </Pressable>
-            </View>
-
-            {/* Match Score Badge */}
-            <View className="absolute bottom-3 left-3">
+            <View className="flex-row justify-between items-center px-4 pt-4 pb-2">
               <Badge
                 label={`${profile.matchScore}% Match`}
                 variant="ai"
                 icon={<Sparkles size={10} color="#FFD166" />}
               />
+              <View className="flex-row gap-2">
+                <Pressable
+                  className="w-8 h-8 rounded-full bg-white/8 items-center justify-center"
+                  onPress={handleShare}
+                >
+                  <Share2 size={16} color="#A6A3B8" />
+                </Pressable>
+                <Pressable
+                  className="w-8 h-8 rounded-full bg-white/8 items-center justify-center"
+                  onPress={handleReport}
+                >
+                  <Flag size={16} color="#A6A3B8" />
+                </Pressable>
+              </View>
             </View>
-          </View>
 
-          {/* Profile Info Section */}
-          <View className="p-4">
-            {/* Name, Age, Verified */}
-            <View className="flex-row items-center justify-between mb-2">
-              <View className="flex-row items-center gap-2 flex-1">
-                <Typography variant="h2" className="text-xl">
+            {/* Mystery Avatar + Name */}
+            <View className="items-center pt-2 pb-4">
+              <View style={styles.mysteryAvatarOuter}>
+                <LinearGradient
+                  colors={["#7C3AED", "#A78BFA", "#7C3AED"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.mysteryAvatarGradient}
+                >
+                  <View style={styles.mysteryAvatarInner}>
+                    {profile.photos && profile.photos.length > 0 ? (
+                      <>
+                        <Image
+                          source={{ uri: profile.photos[0] }}
+                          style={styles.mysteryPhoto}
+                          blurRadius={profile.isRevealed ? 0 : 30}
+                        />
+                        {!profile.isRevealed && (
+                          <View style={styles.mysteryOverlay}>
+                            <Fingerprint size={32} color="#A78BFA" />
+                          </View>
+                        )}
+                      </>
+                    ) : (
+                      <View style={styles.mysteryOverlay}>
+                        <Fingerprint size={32} color="#A78BFA" />
+                      </View>
+                    )}
+                  </View>
+                </LinearGradient>
+                {!profile.isRevealed && (
+                  <View style={styles.lockBadge}>
+                    <EyeOff size={10} color="#FFF" />
+                  </View>
+                )}
+              </View>
+
+              {/* Name & Age */}
+              <View className="flex-row items-center gap-2 mt-3">
+                <Typography variant="h2" className="text-xl text-white font-bold">
                   {profile.firstName}, {profile.age}
                 </Typography>
                 {profile.isVerified && (
                   <CheckCircle2 size={18} color="#16A34A" fill="#16A34A" />
                 )}
               </View>
-              {profile.lastActive && (
+
+              {/* Location & Meta */}
+              <View className="flex-row items-center gap-3 mt-1.5">
                 <View className="flex-row items-center">
-                  <Clock size={12} color="#A6A6B2" />
-                  <Typography
-                    variant="caption"
-                    color="muted"
-                    className="ml-1 text-xs"
-                  >
-                    {profile.lastActive}
+                  <MapPin size={12} color="#A6A3B8" />
+                  <Typography variant="caption" color="muted" className="ml-1">
+                    {profile.distance}
                   </Typography>
                 </View>
-              )}
-            </View>
+                {profile.zodiac && (
+                  <View className="flex-row items-center">
+                    <Star size={12} color="#FFD166" />
+                    <Typography variant="caption" color="muted" className="ml-1">
+                      {profile.zodiac}
+                    </Typography>
+                  </View>
+                )}
+                {profile.lastActive && (
+                  <View className="flex-row items-center">
+                    <Clock size={12} color="#A6A3B8" />
+                    <Typography variant="caption" color="muted" className="ml-1">
+                      {profile.lastActive}
+                    </Typography>
+                  </View>
+                )}
+              </View>
 
-            {/* Location */}
-            <View className="flex-row items-center mb-3">
-              <MapPin size={14} color="#A6A6B2" />
-              <Typography variant="caption" color="muted" className="ml-1">
-                {profile.distance}
-                {profile.area && ` • ${profile.area}`}
-              </Typography>
+              {/* Photos Hidden Label */}
+              {!profile.isRevealed && (
+                <View className="flex-row items-center mt-3 px-3 py-1.5 rounded-full" style={{ backgroundColor: "rgba(124,58,237,0.15)" }}>
+                  <EyeOff size={12} color="#A78BFA" />
+                  <Typography variant="caption" className="ml-1.5 text-[#A78BFA] text-[11px]">
+                    Photos reveal after matching & chatting
+                  </Typography>
+                </View>
+              )}
             </View>
+          </LinearGradient>
 
-            {/* Quick Info Row */}
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {profile.zodiac && (
-                <View className="flex-row items-center bg-surface rounded-full px-2.5 py-1">
-                  <Star size={12} color="#FFD166" />
-                  <Typography
-                    variant="caption"
-                    color="muted"
-                    className="ml-1.5"
-                  >
-                    {profile.zodiac}
+          {/* Profile Content */}
+          <View className="px-4 pb-6">
+            {/* Personality Traits - Visual Bars */}
+            {profile.traits && profile.traits.length > 0 && (
+              <View className="mb-5 mt-1">
+                <View className="flex-row items-center mb-3">
+                  <Brain size={14} color="#A78BFA" />
+                  <Typography variant="label" className="ml-2 text-[#A78BFA] uppercase tracking-wider text-[10px]">
+                    Personality
                   </Typography>
                 </View>
-              )}
-              {profile.languages && profile.languages.length > 0 && (
-                <View className="flex-row items-center bg-surface rounded-full px-2.5 py-1">
-                  <Globe size={12} color="#7C3AED" />
-                  <Typography
-                    variant="caption"
-                    color="muted"
-                    className="ml-1.5"
-                  >
-                    {profile.languages.slice(0, 2).join(", ")}
-                    {profile.languages.length > 2 &&
-                      ` +${profile.languages.length - 2}`}
-                  </Typography>
+                <View className="flex-row flex-wrap gap-2">
+                  {profile.traits.slice(0, 5).map((trait) => (
+                    <View
+                      key={trait}
+                      className="px-3 py-1.5 rounded-full border"
+                      style={{ backgroundColor: "rgba(124,58,237,0.12)", borderColor: "rgba(124,58,237,0.25)" }}
+                    >
+                      <Typography variant="caption" className="text-[#C4B5FD] text-xs font-medium">
+                        {trait}
+                      </Typography>
+                    </View>
+                  ))}
                 </View>
-              )}
-            </View>
+              </View>
+            )}
 
             {/* AI Summary */}
-            <View className="mb-6 bg-surface-elevated rounded-2xl p-4 border border-ai/20">
+            <View className="mb-5 rounded-2xl p-4 border" style={{ backgroundColor: "rgba(253,230,138,0.05)", borderColor: "rgba(253,230,138,0.15)" }}>
               <View className="flex-row items-center mb-2">
                 <Sparkles size={14} color="#FFD166" />
-                <Typography variant="label" color="ai" className="ml-2">
+                <Typography variant="label" color="ai" className="ml-2 text-xs">
                   AI Summary
                 </Typography>
               </View>
               <Typography
                 variant="body"
-                className="text-sm leading-relaxed text-muted"
+                className="text-sm leading-relaxed text-white/70"
               >
                 {profile.aiSummary ||
                   `${profile.firstName} appears to be a ${profile.traits[0]?.toLowerCase() || "unique"
@@ -495,60 +511,59 @@ export function SwipeCard({
               </Typography>
             </View>
 
-            {/* Ask Maytri Button */}
+            {/* Ask Maytri */}
             <Pressable
               onPress={handleAskAi}
-              className="flex-row items-center justify-center bg-ai/10 py-3 rounded-xl border border-ai/30 mb-6 active:bg-ai/20"
+              className="flex-row items-center justify-center py-2.5 rounded-xl mb-5 active:opacity-80"
+              style={{ backgroundColor: "rgba(253,230,138,0.08)", borderWidth: 1, borderColor: "rgba(253,230,138,0.2)" }}
             >
-              <MessageCircle size={18} color="#FFD166" />
-              <Typography
-                variant="label"
-                color="ai"
-                className="ml-2 font-semibold"
-              >
+              <MessageCircle size={16} color="#FFD166" />
+              <Typography variant="caption" color="ai" className="ml-2 font-semibold">
                 Ask Maytri about {profile.firstName}
               </Typography>
             </Pressable>
 
             {/* Bio */}
-            <View className="mb-6">
-              <Typography variant="h3" className="mb-2 text-base">
-                About Me
-              </Typography>
-              <Typography
-                variant="body"
-                className="leading-relaxed"
-                numberOfLines={4}
-              >
-                {profile.bio}
-              </Typography>
-            </View>
+            {profile.bio ? (
+              <View className="mb-5">
+                <Typography variant="label" className="mb-2 text-white/90 text-sm font-semibold">
+                  About
+                </Typography>
+                <Typography
+                  variant="body"
+                  className="leading-relaxed text-white/70 text-sm"
+                  numberOfLines={4}
+                >
+                  {profile.bio}
+                </Typography>
+              </View>
+            ) : null}
 
-            {/* Prompts - Enhanced UI */}
+            {/* Prompts */}
             {profile.prompts && profile.prompts.length > 0 && (
-              <View className="mb-6">
+              <View className="mb-5">
                 {profile.prompts.slice(0, 2).map((prompt, idx) => (
                   <View
                     key={idx}
-                    className="mb-3 bg-surface rounded-2xl p-4 border border-white/5"
+                    className="mb-3 rounded-2xl p-4 border"
+                    style={{ backgroundColor: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.06)" }}
                   >
                     <View className="flex-row items-start">
                       <Quote
-                        size={16}
+                        size={14}
                         color="#7C3AED"
                         style={{ marginTop: 2, marginRight: 8 }}
                       />
                       <View className="flex-1">
                         <Typography
                           variant="caption"
-                          color="primary"
-                          className="mb-1 font-medium uppercase tracking-wide text-[10px]"
+                          className="mb-1 font-medium uppercase tracking-wide text-[10px] text-[#A78BFA]"
                         >
                           {prompt.question}
                         </Typography>
                         <Typography
                           variant="body"
-                          className="text-base italic text-white/90 leading-6"
+                          className="text-sm italic text-white/80 leading-5"
                         >
                           &quot;{prompt.answer}&quot;
                         </Typography>
@@ -559,127 +574,96 @@ export function SwipeCard({
               </View>
             )}
 
-            {/* Interests */}
-            <View className="mb-6">
-              <Typography
-                variant="label"
-                color="muted"
-                className="mb-2 uppercase tracking-wider text-xs"
-              >
-                Interests
-              </Typography>
-              <View className="flex-row flex-wrap gap-2">
-                {profile.hobbies.slice(0, 5).map((hobby) => (
-                  <Chip key={hobby} label={hobby} variant="outline" />
-                ))}
-                {profile.hobbies.length > 5 && (
-                  <Chip
-                    label={`+${profile.hobbies.length - 5}`}
-                    variant="default"
-                  />
-                )}
+            {/* Hobbies & Interests */}
+            {profile.hobbies && profile.hobbies.length > 0 && (
+              <View className="mb-5">
+                <Typography variant="label" className="mb-2 text-white/50 uppercase tracking-wider text-[10px]">
+                  Interests & Hobbies
+                </Typography>
+                <View className="flex-row flex-wrap gap-2">
+                  {profile.hobbies.slice(0, 6).map((hobby) => (
+                    <View
+                      key={hobby}
+                      className="px-3 py-1.5 rounded-full border"
+                      style={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)" }}
+                    >
+                      <Typography variant="caption" className="text-white/70 text-xs">
+                        {hobby}
+                      </Typography>
+                    </View>
+                  ))}
+                  {profile.hobbies.length > 6 && (
+                    <View className="px-3 py-1.5 rounded-full" style={{ backgroundColor: "rgba(124,58,237,0.15)" }}>
+                      <Typography variant="caption" className="text-[#A78BFA] text-xs">
+                        +{profile.hobbies.length - 6}
+                      </Typography>
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
+            )}
 
-            {/* Personality Traits */}
-            <View className="mb-6">
-              <Typography
-                variant="label"
-                color="muted"
-                className="mb-2 uppercase tracking-wider text-xs"
-              >
-                Personality
-              </Typography>
-              <View className="flex-row flex-wrap gap-2">
-                {profile.traits.slice(0, 4).map((trait) => (
-                  <Badge
-                    key={trait}
-                    label={trait}
-                    variant="default"
-                    size="md"
-                  />
-                ))}
-                {profile.traits.length > 4 && (
-                  <Badge
-                    label={`+${profile.traits.length - 4}`}
-                    variant="default"
-                    size="md"
-                  />
-                )}
-              </View>
-            </View>
-
-            {/* Extra Info Section */}
+            {/* Quick Info Row */}
             {profile.extra && Object.values(profile.extra).some(v => v && (Array.isArray(v) ? v.length > 0 : true)) && (
-              <View className="mb-6">
-                <Typography
-                  variant="label"
-                  color="muted"
-                  className="mb-3 uppercase tracking-wider text-xs"
-                >
-                  More About Me
+              <View className="mb-5">
+                <Typography variant="label" className="mb-2 text-white/50 uppercase tracking-wider text-[10px]">
+                  Lifestyle
                 </Typography>
                 <View className="flex-row flex-wrap gap-2">
                   {profile.extra.work && (
-                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
-                      <Briefcase size={14} color="#A78BFA" />
-                      <Typography variant="caption" className="ml-2 text-white/80">
-                        {profile.extra.work}
-                      </Typography>
+                    <View className="flex-row items-center rounded-full px-3 py-1.5 border" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+                      <Briefcase size={12} color="#A78BFA" />
+                      <Typography variant="caption" className="ml-1.5 text-white/70 text-xs">{profile.extra.work}</Typography>
                     </View>
                   )}
                   {profile.extra.school && (
-                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
-                      <GraduationCap size={14} color="#60A5FA" />
-                      <Typography variant="caption" className="ml-2 text-white/80">
-                        {profile.extra.school}
-                      </Typography>
+                    <View className="flex-row items-center rounded-full px-3 py-1.5 border" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+                      <GraduationCap size={12} color="#60A5FA" />
+                      <Typography variant="caption" className="ml-1.5 text-white/70 text-xs">{profile.extra.school}</Typography>
                     </View>
                   )}
                   {profile.extra.exercise && (
-                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
-                      <Dumbbell size={14} color="#34D399" />
-                      <Typography variant="caption" className="ml-2 text-white/80">
-                        {profile.extra.exercise}
-                      </Typography>
+                    <View className="flex-row items-center rounded-full px-3 py-1.5 border" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+                      <Dumbbell size={12} color="#34D399" />
+                      <Typography variant="caption" className="ml-1.5 text-white/70 text-xs">{profile.extra.exercise}</Typography>
                     </View>
                   )}
                   {profile.extra.drinking && (
-                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
-                      <Wine size={14} color="#F472B6" />
-                      <Typography variant="caption" className="ml-2 text-white/80">
-                        {profile.extra.drinking}
-                      </Typography>
+                    <View className="flex-row items-center rounded-full px-3 py-1.5 border" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+                      <Wine size={12} color="#F472B6" />
+                      <Typography variant="caption" className="ml-1.5 text-white/70 text-xs">{profile.extra.drinking}</Typography>
                     </View>
                   )}
                   {profile.extra.smoking && (
-                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
-                      <Cigarette size={14} color="#FB923C" />
-                      <Typography variant="caption" className="ml-2 text-white/80">
-                        {profile.extra.smoking}
-                      </Typography>
+                    <View className="flex-row items-center rounded-full px-3 py-1.5 border" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+                      <Cigarette size={12} color="#FB923C" />
+                      <Typography variant="caption" className="ml-1.5 text-white/70 text-xs">{profile.extra.smoking}</Typography>
                     </View>
                   )}
                   {profile.extra.kids && (
-                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
-                      <Baby size={14} color="#FCD34D" />
-                      <Typography variant="caption" className="ml-2 text-white/80">
-                        {profile.extra.kids}
-                      </Typography>
+                    <View className="flex-row items-center rounded-full px-3 py-1.5 border" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+                      <Baby size={12} color="#FCD34D" />
+                      <Typography variant="caption" className="ml-1.5 text-white/70 text-xs">{profile.extra.kids}</Typography>
                     </View>
                   )}
                   {profile.extra.religion && (
-                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
-                      <Church size={14} color="#94A3B8" />
-                      <Typography variant="caption" className="ml-2 text-white/80">
-                        {profile.extra.religion}
+                    <View className="flex-row items-center rounded-full px-3 py-1.5 border" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+                      <Church size={12} color="#94A3B8" />
+                      <Typography variant="caption" className="ml-1.5 text-white/70 text-xs">{profile.extra.religion}</Typography>
+                    </View>
+                  )}
+                  {profile.languages && profile.languages.length > 0 && (
+                    <View className="flex-row items-center rounded-full px-3 py-1.5 border" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+                      <Globe size={12} color="#7C3AED" />
+                      <Typography variant="caption" className="ml-1.5 text-white/70 text-xs">
+                        {profile.languages.slice(0, 2).join(", ")}
                       </Typography>
                     </View>
                   )}
                   {profile.extra.lookingFor && profile.extra.lookingFor.length > 0 && (
-                    <View className="flex-row items-center bg-surface/80 rounded-full px-3 py-2 border border-white/5">
-                      <Users size={14} color="#E879F9" />
-                      <Typography variant="caption" className="ml-2 text-white/80">
+                    <View className="flex-row items-center rounded-full px-3 py-1.5 border" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+                      <Heart size={12} color="#F472B6" />
+                      <Typography variant="caption" className="ml-1.5 text-white/70 text-xs">
                         {profile.extra.lookingFor.join(", ")}
                       </Typography>
                     </View>
@@ -688,25 +672,8 @@ export function SwipeCard({
               </View>
             )}
 
-            {/* Photos Hidden Notice */}
-            {!profile.isRevealed && (
-              <View className="bg-primary/10 rounded-xl p-4 flex-row items-center border border-primary/20 mb-4">
-                <View className="w-10 h-10 rounded-full bg-primary/20 items-center justify-center mr-3">
-                  <Heart size={20} color="#7C3AED" />
-                </View>
-                <View className="flex-1">
-                  <Typography variant="label" className="mb-0.5">
-                    Photos Hidden
-                  </Typography>
-                  <Typography variant="caption" color="muted">
-                    Match & chat to unlock each other&apos;s photos
-                  </Typography>
-                </View>
-              </View>
-            )}
-
-            {/* Bottom spacing for scrolling */}
-            <View className="h-8" />
+            {/* Bottom Spacing */}
+            <View className="h-6" />
           </View>
         </Animated.ScrollView>
       </Animated.View>
@@ -726,13 +693,51 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
   },
-  photo: {
+  heroSection: {
+    paddingBottom: 8,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+  },
+  mysteryAvatarOuter: {
+    position: "relative",
+  },
+  mysteryAvatarGradient: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    padding: 3,
+  },
+  mysteryAvatarInner: {
+    flex: 1,
+    borderRadius: 41,
+    overflow: "hidden",
+    backgroundColor: "#110827",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  mysteryPhoto: {
     width: "100%",
     height: "100%",
     resizeMode: "cover",
   },
-  blurOverlay: {
+  mysteryOverlay: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(17,8,39,0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  lockBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#7C3AED",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#110827",
   },
   indicator: {
     position: "absolute",
@@ -747,7 +752,7 @@ const styles = StyleSheet.create({
   likeIndicator: {
     top: 60,
     left: 20,
-    borderColor: "#14D679", // Neon Green
+    borderColor: "#14D679",
     backgroundColor: "rgba(20, 214, 121, 0.2)",
     transform: [{ rotate: "-12deg" }],
     shadowColor: "#14D679",
@@ -758,7 +763,7 @@ const styles = StyleSheet.create({
   nopeIndicator: {
     top: 60,
     right: 20,
-    borderColor: "#FF4C61", // Neon Red
+    borderColor: "#FF4C61",
     backgroundColor: "rgba(255, 76, 97, 0.2)",
     transform: [{ rotate: "12deg" }],
     shadowColor: "#FF4C61",
@@ -769,7 +774,7 @@ const styles = StyleSheet.create({
   superLikeIndicator: {
     bottom: 100,
     alignSelf: "center",
-    borderColor: "#6A1BFF", // Neon Purple
+    borderColor: "#6A1BFF",
     backgroundColor: "rgba(106, 27, 255, 0.2)",
     shadowColor: "#6A1BFF",
     shadowOffset: { width: 0, height: 0 },

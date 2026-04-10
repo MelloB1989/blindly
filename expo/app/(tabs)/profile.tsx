@@ -16,7 +16,7 @@ import { authService } from "../../services/auth";
 import { GradientBackground } from "../../components/ui/GradientBackground";
 import { Typography } from "../../components/ui/Typography";
 import { Button } from "../../components/ui/Button";
-import { Settings, LogOut, X, Crown, Sparkles } from "lucide-react-native";
+import { Settings, LogOut, X, Crown, Sparkles, Camera, Zap, EyeOff, TrendingUp } from "lucide-react-native";
 import { useSubscriptionStore } from "../../store/useSubscriptionStore";
 
 // New Components
@@ -215,7 +215,82 @@ export default function ProfileScreen() {
             onStartVerification={() => setShowVerification(true)}
           />
 
-          <CompletionMeter percent={calculateCompletion()} />
+          <CompletionMeter
+            percent={calculateCompletion()}
+            onPress={() => router.push("/(modals)/edit-profile")}
+          />
+
+          {/* Photo Upload Prompt - Show when user has < 3 photos */}
+          {(!displayUser.photos || displayUser.photos.length < 3) && (
+            <View className="px-6 mb-6">
+              <Pressable
+                onPress={() => router.push("/(modals)/edit-profile")}
+                className="overflow-hidden rounded-2xl"
+                style={{
+                  backgroundColor: "rgba(124,58,237,0.08)",
+                  borderWidth: 1,
+                  borderColor: "rgba(124,58,237,0.2)",
+                }}
+              >
+                <View className="p-4">
+                  <View className="flex-row items-start">
+                    <View
+                      className="w-12 h-12 rounded-2xl items-center justify-center mr-3"
+                      style={{ backgroundColor: "rgba(124,58,237,0.2)" }}
+                    >
+                      <Camera size={24} color="#A78BFA" />
+                    </View>
+                    <View className="flex-1">
+                      <Typography
+                        variant="h3"
+                        className="text-white text-[15px] font-bold mb-1"
+                      >
+                        Add photos to boost your profile
+                      </Typography>
+                      <Typography variant="caption" className="text-white/50 leading-4 mb-2">
+                        Photos are hidden until you match & chat. But adding them makes the algorithm push your profile to more people.
+                      </Typography>
+                      <View className="flex-row items-center">
+                        <TrendingUp size={12} color="#14D679" />
+                        <Typography variant="caption" className="text-[#14D679] ml-1 font-semibold text-[11px]">
+                          {displayUser.photos?.length === 0
+                            ? "Add 3+ photos for 3x more visibility"
+                            : `Add ${3 - (displayUser.photos?.length || 0)} more for full boost`}
+                        </Typography>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Photo slots indicator */}
+                  <View className="flex-row gap-2 mt-3">
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                      <View
+                        key={i}
+                        className="flex-1 h-1.5 rounded-full"
+                        style={{
+                          backgroundColor:
+                            i < (displayUser.photos?.length || 0)
+                              ? "#7C3AED"
+                              : "rgba(255,255,255,0.08)",
+                        }}
+                      />
+                    ))}
+                  </View>
+                </View>
+
+                {/* Privacy note */}
+                <View
+                  className="flex-row items-center px-4 py-2.5"
+                  style={{ backgroundColor: "rgba(255,255,255,0.03)" }}
+                >
+                  <EyeOff size={11} color="rgba(255,255,255,0.35)" />
+                  <Typography variant="caption" className="text-white/35 ml-1.5 text-[10px]">
+                    Photos stay hidden until you match & chat - your privacy is protected
+                  </Typography>
+                </View>
+              </Pressable>
+            </View>
+          )}
 
           {!displayUser.isVerified && (
             <View className="px-6 mb-6">
